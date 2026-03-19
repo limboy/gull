@@ -1,0 +1,61 @@
+#activity-bar {
+  background: var(--bg-activity-bar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid var(--border);
+}
+
+#activity-bar .top-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#activity-bar .bottom-icons {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 8px;
+}
+
+.activity-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color 100ms;
+  -webkit-app-region: no-drag;
+}
+
+.activity-icon:hover {
+  color: var(--text-primary);
+}
+
+.activity-icon.active {
+  color: var(--text-primary);
+}
+
+.activity-icon.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 0 1px 1px 0;
+}
+
+.activity-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}

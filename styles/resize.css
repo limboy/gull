@@ -1,0 +1,22 @@
+.resize-handle {
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  transition: background 150ms;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--accent);
+}
+
+/* Expand the clickable area */
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  right: -2px;
+}

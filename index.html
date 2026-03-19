@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Yara</title>
+    <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/activity-bar.css" />
+    <link rel="stylesheet" href="styles/sidebar-left.css" />
+    <link rel="stylesheet" href="styles/main-area.css" />
+    <link rel="stylesheet" href="styles/sidebar-right.css" />
+    <link rel="stylesheet" href="styles/resize.css" />
+  </head>
+  <body>
+    <div id="app-layout">
+      <!-- Title Bar (traffic lights) -->
+      <div id="title-bar"></div>
+
+      <!-- Activity Bar -->
+      <div id="activity-bar">
+        <div class="top-icons">
+          <div class="activity-icon active" data-activity="books" title="Books">
+            <svg viewBox="0 0 24 24"><path d="M21 4H3a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zM4 18V6h5v12H4zm7 0V6h9v12h-9z"/></svg>
+          </div>
+          <div class="activity-icon" data-activity="search" title="Search">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          </div>
+        </div>
+        <div class="bottom-icons">
+          <div class="activity-icon" data-activity="settings" title="Settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left Sidebar -->
+      <div id="left-sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Library</span>
+        </div>
+        <div class="tab-row">
+          <div class="tab active" data-left-tab="all">All</div>
+          <div class="tab" data-left-tab="finished">Finished</div>
+          <div class="tab" data-left-tab="archived">Archived</div>
+        </div>
+        <div class="tab-panel active" data-left-panel="all">
+          <div class="book-list"></div>
+          <div class="drop-hint">Drop EPUB files here</div>
+        </div>
+        <div class="tab-panel" data-left-panel="finished">
+          <div class="book-list"></div>
+        </div>
+        <div class="tab-panel" data-left-panel="archived">
+          <div class="book-list"></div>
+        </div>
+      </div>
+
+      <!-- Resize Handle: Left -->
+      <div class="resize-handle" id="resize-left"></div>
+
+      <!-- Main Area -->
+      <div id="main-area">
+        <div id="tab-bar"></div>
+        <div id="content-area">
+          <div class="empty-state" id="empty-state">Open a book to start reading</div>
+        </div>
+      </div>
+
+      <!-- Resize Handle: Right -->
+      <div class="resize-handle" id="resize-right"></div>
+
+      <!-- Right Sidebar -->
+      <div id="right-sidebar">
+        <div class="tab-row">
+          <div class="tab active" data-right-tab="outline">Outline</div>
+          <div class="tab" data-right-tab="ai">AI</div>
+        </div>
+        <div class="tab-panel active" data-right-panel="outline" id="outline-panel">
+          <div class="outline-item level-1">Chapter 1: Introduction</div>
+          <div class="outline-item level-2">Background</div>
+          <div class="outline-item level-2">Key Concepts</div>
+          <div class="outline-item level-3">Definition</div>
+          <div class="outline-item level-3">Examples</div>
+          <div class="outline-item level-1">Chapter 2: Foundations</div>
+          <div class="outline-item level-2">Theory</div>
+          <div class="outline-item level-2">Practice</div>
+          <div class="outline-item level-1">Chapter 3: Applications</div>
+          <div class="outline-item level-2">Case Studies</div>
+          <div class="outline-item level-2">Analysis</div>
+        </div>
+        <div class="tab-panel" data-right-panel="ai" id="ai-panel">
+          <div class="chat-messages">
+            <div class="chat-message assistant">
+              <div class="sender">AI</div>
+              <div>Ask me anything about this book. I can help with summaries, explanations, and more.</div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <textarea id="ai-input" placeholder="Ask about this book..." rows="1"></textarea>
+            <button id="ai-send">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>
