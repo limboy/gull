@@ -312,6 +312,10 @@ function loadSidebarWidths() {
 appLayout.addEventListener('click', (e) => {
   const target = e.target.closest('[data-activity]');
   if (target) {
+    if (target.dataset.activity === 'settings') {
+      window.settings.open();
+      return;
+    }
     setActiveActivity(target.dataset.activity);
     return;
   }

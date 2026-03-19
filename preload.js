@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld('versions', {
   electron: () => process.versions.electron,
 });
 
+contextBridge.exposeInMainWorld('settings', {
+  open: () => ipcRenderer.send('open-settings'),
+});
+
 contextBridge.exposeInMainWorld('books', {
   getAll: () => ipcRenderer.invoke('get-books'),
   import: (paths) => ipcRenderer.invoke('import-books', paths),

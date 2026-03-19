@@ -87,6 +87,8 @@ function parseNcxNavMap(navMap, $) {
   return items;
 }
 
+let settingsWindow = null;
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -100,7 +102,70 @@ function createWindow() {
   win.loadFile('index.html');
 }
 
+function openSettings() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 660,
+    height: 480,
+    show: false,
+    resizable: false,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    backgroundColor: '#1e1e1e',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  settingsWindow.loadFile('settings.html');
+  settingsWindow.once('ready-to-show', () => {
+    settingsWindow.show();
+  });
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
+
+function createAppMenu() {
+  const template = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Settings…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => openSettings(),
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 app.whenReady().then(() => {
+  createAppMenu();
+
+  ipcMain.on('open-settings', () => {
+    openSettings();
+  });
+
   // IPC handlers
   ipcMain.handle('get-books', () => {
     return readMetadata();
