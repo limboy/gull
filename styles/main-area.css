@@ -92,3 +92,69 @@
 .book-content.active {
   display: block;
 }
+
+/* Book content typography */
+.book-content h1, .book-content h2, .book-content h3,
+.book-content h4, .book-content h5, .book-content h6 {
+  margin: 1.2em 0 0.6em;
+  line-height: 1.3;
+}
+
+.book-content h1 { font-size: 1.6em; }
+.book-content h2 { font-size: 1.4em; }
+.book-content h3 { font-size: 1.2em; }
+
+.book-content p {
+  margin: 0.6em 0;
+}
+
+.book-content img, .book-content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.book-content blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.book-content ul, .book-content ol {
+  margin: 0.6em 0;
+  padding-left: 1.5em;
+}
+
+.book-content pre {
+  background: var(--bg-sidebar);
+  padding: 0.8em;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+
+.book-content code {
+  font-size: 0.9em;
+}
+
+.book-content table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  width: 100%;
+}
+
+.book-content th, .book-content td {
+  border: 1px solid var(--border);
+  padding: 0.4em 0.8em;
+  text-align: left;
+}
+
+.book-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.book-content .chapter {
+  margin-bottom: 1em;
+}

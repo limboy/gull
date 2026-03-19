@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('books', {
   getAll: () => ipcRenderer.invoke('get-books'),
   import: (paths) => ipcRenderer.invoke('import-books', paths),
   delete: (id) => ipcRenderer.invoke('delete-book', id),
+  open: (id) => ipcRenderer.invoke('open-book', id),
   getFilePath: (file) => webUtils.getPathForFile(file),
 });

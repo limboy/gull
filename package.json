@@ -13,5 +13,9 @@
   "type": "commonjs",
   "devDependencies": {
     "electron": "^41.0.3"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "cheerio": "^1.2.0"
   }
 }

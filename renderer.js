@@ -6,6 +6,7 @@ const state = {
   openBooks: [],       // [{ id, title }]
   activeBookId: null,
   books: [],           // [{ id, title, filename, addedAt }]
+  bookContent: {},     // id -> { chapters, toc }
 };
 
 const STORAGE_KEY = 'yara-sidebar-widths';
@@ -96,7 +97,7 @@ function renderTabs() {
   });
 }
 
-function renderContent() {
+async function renderContent() {
   // Remove existing book content elements
   contentArea.querySelectorAll('.book-content').forEach(el => el.remove());
 
@@ -104,14 +105,97 @@ function renderContent() {
     emptyState.style.display = 'none';
     const book = state.openBooks.find(b => b.id === state.activeBookId);
     if (book) {
+      // Load content if not cached
+      if (!state.bookContent[book.id]) {
+        const div = document.createElement('div');
+        div.className = 'book-content active';
+        div.textContent = 'Loading…';
+        contentArea.appendChild(div);
+        try {
+          state.bookContent[book.id] = await window.books.open(book.id);
+        } catch (err) {
+          div.textContent = 'Failed to load book: ' + err.message;
+          return;
+        }
+        div.remove();
+      }
+
+      const data = state.bookContent[book.id];
       const div = document.createElement('div');
       div.className = 'book-content active';
-      div.textContent = `Content of "${book.title}" will appear here.`;
+
+      // Render chapters
+      data.chapters.forEach((ch, i) => {
+        const section = document.createElement('section');
+        section.className = 'chapter';
+        section.id = 'chapter-' + ch.id;
+        section.innerHTML = ch.html;
+        div.appendChild(section);
+        if (i < data.chapters.length - 1) {
+          div.appendChild(document.createElement('hr'));
+        }
+      });
+
       contentArea.appendChild(div);
+      renderOutline(data.toc, data.chapters);
     }
   } else {
     emptyState.style.display = '';
+    renderOutline([], []);
   }
+}
+
+function renderOutline(toc, chapters) {
+  const panel = document.getElementById('outline-panel');
+  panel.innerHTML = '';
+  if (!toc || toc.length === 0) return;
+
+  function addItems(items, level) {
+    for (const item of items) {
+      const div = document.createElement('div');
+      div.className = 'outline-item level-' + level;
+      div.textContent = item.title;
+      div.dataset.href = item.href || '';
+      div.addEventListener('click', () => {
+        // Try to find the chapter by href
+        const href = item.href || '';
+        const baseHref = href.split('#')[0];
+        const fragment = href.includes('#') ? href.split('#')[1] : null;
+
+        // Try fragment first
+        if (fragment) {
+          const target = contentArea.querySelector('#' + CSS.escape(fragment));
+          if (target) { target.scrollIntoView({ behavior: 'smooth' }); return; }
+        }
+
+        // Match chapter by href suffix
+        if (baseHref && chapters) {
+          const idx = chapters.findIndex(ch => baseHref.endsWith(ch.id + '.xhtml') || baseHref.endsWith(ch.id + '.html') || baseHref.includes(ch.id));
+          if (idx !== -1) {
+            const section = contentArea.querySelector('#chapter-' + CSS.escape(chapters[idx].id));
+            if (section) { section.scrollIntoView({ behavior: 'smooth' }); return; }
+          }
+          // Also try matching by filename
+          for (const ch of chapters) {
+            const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+            if (section) {
+              // Check if this section contains the fragment target
+              if (fragment) {
+                const target = section.querySelector('#' + CSS.escape(fragment));
+                if (target) { target.scrollIntoView({ behavior: 'smooth' }); return; }
+              }
+            }
+          }
+        }
+      });
+      panel.appendChild(div);
+      if (item.children && item.children.length > 0) {
+        addItems(item.children, Math.min(level + 1, 3));
+      }
+    }
+  }
+
+  addItems(toc, 1);
 }
 
 // --- Resize Handles ---
