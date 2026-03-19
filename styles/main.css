@@ -25,6 +25,7 @@ html, body {
   --bg-activity-bar: #333333;
   --bg-sidebar: #252526;
   --bg-main: #1e1e1e;
+  --bg-title-bar: #252526;
   --bg-tab-bar: #2d2d2d;
   --bg-tab-active: #1e1e1e;
   --bg-tab-hover: #2a2d2e;
@@ -41,17 +42,18 @@ html, body {
 
 /* Light theme */
 [data-theme="light"] {
-  --bg-activity-bar: #e8e8e8;
+  --bg-activity-bar: #ececec;
   --bg-sidebar: #f3f3f3;
   --bg-main: #ffffff;
-  --bg-tab-bar: #ececec;
+  --bg-title-bar: #ececec;
+  --bg-tab-bar: #f3f3f3;
   --bg-tab-active: #ffffff;
-  --bg-tab-hover: #e0e0e0;
+  --bg-tab-hover: #e8e8e8;
   --bg-input: #ffffff;
   --text-primary: #333333;
   --text-secondary: #717171;
   --accent: #007acc;
-  --border: #d4d4d4;
+  --border: #d5d5d5;
   --hover: rgba(0, 0, 0, 0.04);
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
@@ -79,7 +81,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  background: var(--bg-sidebar);
+  background: var(--bg-title-bar);
   -webkit-app-region: drag;
   border-bottom: 1px solid var(--border);
 }

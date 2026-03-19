@@ -16,9 +16,6 @@
 }
 
 
-#tab-bar:empty {
-  border-bottom: none;
-}
 
 .tab-item {
   display: flex;

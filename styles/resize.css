@@ -1,13 +1,42 @@
 .resize-handle {
-  background: transparent;
   cursor: col-resize;
   position: relative;
   z-index: 10;
-  transition: background 150ms;
 }
 
-.resize-handle:hover,
-.resize-handle.active {
+#resize-left {
+  background: var(--bg-sidebar);
+}
+
+#resize-right {
+  background: var(--bg-sidebar);
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  transition: width 150ms, left 150ms, right 150ms, background 150ms;
+}
+
+#resize-left::after {
+  right: 0;
+  left: auto;
+}
+
+#resize-right::after {
+  left: 0;
+  right: auto;
+}
+
+.resize-handle:hover::after,
+.resize-handle.active::after {
+  left: 0;
+  right: 0;
+  width: 100%;
   background: var(--accent);
 }
 

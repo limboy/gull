@@ -3,13 +3,13 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-left: 1px solid var(--border);
 }
 
 #right-sidebar .tab-row {
   display: flex;
   border-bottom: 1px solid var(--border);
   padding: 0 8px;
+  min-height: 35px;
   flex-shrink: 0;
 }
 
