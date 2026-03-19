@@ -113,6 +113,20 @@
   height: auto;
 }
 
+.book-content img {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.book-content img.image-loaded {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.book-content img.image-missing {
+  display: none !important;
+}
+
 .book-content blockquote {
   margin: 1em 0;
   padding: 0.5em 1em;

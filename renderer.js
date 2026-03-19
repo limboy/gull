@@ -130,6 +130,7 @@ async function renderContent() {
         section.className = 'chapter';
         section.id = 'chapter-' + ch.id;
         section.innerHTML = ch.html;
+        bindImageFallback(section);
         div.appendChild(section);
         if (i < data.chapters.length - 1) {
           div.appendChild(document.createElement('hr'));
@@ -142,6 +143,46 @@ async function renderContent() {
   } else {
     emptyState.style.display = '';
     renderOutline([], []);
+  }
+}
+
+function bindImageFallback(container) {
+  // Hide SVGs containing <image> elements (e.g. EPUB cover pages)
+  // that fail to render properly
+  const svgImages = container.querySelectorAll('svg image');
+  for (const svgImg of svgImages) {
+    const svg = svgImg.closest('svg');
+    if (svg) svg.style.display = 'none';
+  }
+
+  const imgs = container.querySelectorAll('img');
+  for (const img of imgs) {
+    const markMissing = () => {
+      img.classList.remove('image-loaded');
+      img.classList.add('image-missing');
+    };
+    const markLoaded = () => {
+      img.classList.remove('image-missing');
+      img.classList.add('image-loaded');
+    };
+
+    // Fail-closed: keep hidden unless we can confirm it loaded.
+    img.classList.remove('image-loaded');
+    img.classList.remove('image-missing');
+
+    img.addEventListener('error', markMissing);
+    img.addEventListener('load', markLoaded);
+
+    const src = img.getAttribute('src');
+    if (!src) {
+      markMissing();
+      continue;
+    }
+
+    if (img.complete) {
+      if (img.naturalWidth > 0) markLoaded();
+      else markMissing();
+    }
   }
 }
 
@@ -367,7 +408,18 @@ function initDragAndDrop() {
   });
 }
 
+// --- Broken image handling ---
+function initBrokenImageHandling() {
+  // image `error` does not bubble, so listen in capture phase
+  contentArea.addEventListener('error', (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    target.classList.add('image-missing');
+  }, true);
+}
+
 // Init
 initResize();
 initDragAndDrop();
+initBrokenImageHandling();
 loadBooks();
