@@ -357,16 +357,34 @@ aiInput.addEventListener('input', () => {
 // --- Book List Rendering ---
 const BOOK_ICON_SVG = '<svg class="book-icon" viewBox="0 0 24 24"><path d="M6 2h10l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm9 1.5V7h3.5L15 3.5zM6 4v16h12V8h-4a1 1 0 0 1-1-1V4H6z"/></svg>';
 
+function createBookItem(book) {
+  const div = document.createElement('div');
+  div.className = 'book-item';
+  div.dataset.bookId = book.id;
+  div.dataset.bookTitle = book.title;
+  div.innerHTML = `${BOOK_ICON_SVG}<span class="book-title">${book.title}</span>`;
+  div.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    window.books.showContextMenu(book.id);
+  });
+  return div;
+}
+
 function renderBookList() {
-  const bookList = document.querySelector('[data-left-panel="all"] .book-list');
-  bookList.innerHTML = '';
+  const panels = {
+    all: document.querySelector('[data-left-panel="all"] .book-list'),
+    reading: document.querySelector('[data-left-panel="reading"] .book-list'),
+    finished: document.querySelector('[data-left-panel="finished"] .book-list'),
+  };
+  Object.values(panels).forEach(el => el.innerHTML = '');
+
   state.books.forEach(book => {
-    const div = document.createElement('div');
-    div.className = 'book-item';
-    div.dataset.bookId = book.id;
-    div.dataset.bookTitle = book.title;
-    div.innerHTML = `${BOOK_ICON_SVG}<span class="book-title">${book.title}</span>`;
-    bookList.appendChild(div);
+    panels.all.appendChild(createBookItem(book));
+    if (book.status === 'reading') {
+      panels.reading.appendChild(createBookItem(book));
+    } else if (book.status === 'finished') {
+      panels.finished.appendChild(createBookItem(book));
+    }
   });
 }
 
@@ -433,6 +451,21 @@ function initBrokenImageHandling() {
 // --- Right Sidebar Toggle ---
 document.getElementById('toggle-right-sidebar').addEventListener('click', () => {
   appLayout.classList.toggle('right-sidebar-hidden');
+});
+
+// --- Book context menu responses ---
+window.books.onStatusUpdated((id, status) => {
+  const book = state.books.find(b => b.id === id);
+  if (book) {
+    book.status = status;
+    renderBookList();
+  }
+});
+
+window.books.onDeleteRequested(async (id) => {
+  state.books = await window.books.delete(id);
+  closeBook(id);
+  renderBookList();
 });
 
 // Init

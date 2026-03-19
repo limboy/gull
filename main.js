@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -214,6 +214,65 @@ app.whenReady().then(() => {
     }
 
     return { chapters, toc };
+  });
+
+  ipcMain.handle('update-book-status', (_event, id, status) => {
+    const metadata = readMetadata();
+    const entry = metadata.find(b => b.id === id);
+    if (entry) {
+      entry.status = status;
+      writeMetadata(metadata);
+    }
+    return metadata;
+  });
+
+  ipcMain.on('show-book-context-menu', (event, bookId) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const metadata = readMetadata();
+    const book = metadata.find(b => b.id === bookId);
+    if (!book) return;
+
+    const template = [
+      {
+        label: 'Currently Reading',
+        type: 'checkbox',
+        checked: book.status === 'reading',
+        click: () => {
+          const newStatus = book.status === 'reading' ? null : 'reading';
+          ipcMain.emit('_update-status', bookId, newStatus);
+          event.sender.send('book-status-updated', bookId, newStatus);
+        },
+      },
+      {
+        label: 'Mark as Finished',
+        type: 'checkbox',
+        checked: book.status === 'finished',
+        click: () => {
+          const newStatus = book.status === 'finished' ? null : 'finished';
+          ipcMain.emit('_update-status', bookId, newStatus);
+          event.sender.send('book-status-updated', bookId, newStatus);
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Delete',
+        click: () => {
+          event.sender.send('book-delete-requested', bookId);
+        },
+      },
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup({ window: win });
+  });
+
+  ipcMain.on('_update-status', (bookId, newStatus) => {
+    const metadata = readMetadata();
+    const entry = metadata.find(b => b.id === bookId);
+    if (entry) {
+      entry.status = newStatus;
+      writeMetadata(metadata);
+    }
   });
 
   ipcMain.handle('delete-book', (_event, id) => {

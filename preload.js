@@ -12,4 +12,11 @@ contextBridge.exposeInMainWorld('books', {
   delete: (id) => ipcRenderer.invoke('delete-book', id),
   open: (id) => ipcRenderer.invoke('open-book', id),
   getFilePath: (file) => webUtils.getPathForFile(file),
+  showContextMenu: (id) => ipcRenderer.send('show-book-context-menu', id),
+  onStatusUpdated: (cb) => {
+    ipcRenderer.on('book-status-updated', (_e, id, status) => cb(id, status));
+  },
+  onDeleteRequested: (cb) => {
+    ipcRenderer.on('book-delete-requested', (_e, id) => cb(id));
+  },
 });
