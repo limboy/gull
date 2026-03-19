@@ -430,6 +430,11 @@ function initBrokenImageHandling() {
   }, true);
 }
 
+// --- Right Sidebar Toggle ---
+document.getElementById('toggle-right-sidebar').addEventListener('click', () => {
+  appLayout.classList.toggle('right-sidebar-hidden');
+});
+
 // Init
 initResize();
 initDragAndDrop();

@@ -51,9 +51,38 @@ html, body {
 /* Title bar — spans full width, holds macOS traffic lights */
 #title-bar {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   background: var(--bg-sidebar);
   -webkit-app-region: drag;
   border-bottom: 1px solid var(--border);
+}
+
+#toggle-right-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  -webkit-app-region: no-drag;
+}
+
+#toggle-right-sidebar:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+#toggle-right-sidebar svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
 /* Scrollbar styling */
@@ -72,6 +101,22 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Right sidebar collapsed */
+#app-layout.right-sidebar-hidden {
+  grid-template-columns:
+    48px
+    var(--left-sidebar-width)
+    4px
+    1fr
+    0px
+    0px;
+}
+
+#app-layout.right-sidebar-hidden #right-sidebar,
+#app-layout.right-sidebar-hidden #resize-right {
+  display: none;
 }
 
 /* Utility: no text selection during resize */
