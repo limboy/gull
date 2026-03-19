@@ -86,11 +86,21 @@
 .book-content {
   display: none;
   color: var(--text-primary);
-  line-height: 1.6;
+  font-family: Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 .book-content.active {
   display: block;
+}
+
+.book-content * {
+  font-family: inherit !important;
+}
+
+.book-content code, .book-content pre {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace !important;
 }
 
 /* Book content typography */
@@ -125,6 +135,19 @@
 
 .book-content img.image-missing {
   display: none !important;
+}
+
+.book-content a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.book-content a[href] {
+  color: var(--accent);
+}
+
+.book-content a[href]:hover {
+  text-decoration: underline;
 }
 
 .book-content blockquote {

@@ -130,6 +130,7 @@ async function renderContent() {
         section.className = 'chapter';
         section.id = 'chapter-' + ch.id;
         section.innerHTML = ch.html;
+        stripEpubFonts(section);
         bindImageFallback(section);
         div.appendChild(section);
         if (i < data.chapters.length - 1) {
@@ -144,6 +145,17 @@ async function renderContent() {
     emptyState.style.display = '';
     renderOutline([], []);
   }
+}
+
+function stripEpubFonts(container) {
+  // Remove <style> tags from EPUB content
+  container.querySelectorAll('style').forEach(el => el.remove());
+  // Strip inline font-family from all elements
+  container.querySelectorAll('[style]').forEach(el => {
+    el.style.fontFamily = '';
+    el.style.fontSize = '';
+    el.style.lineHeight = '';
+  });
 }
 
 function bindImageFallback(container) {
