@@ -1,9 +1,34 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const cheerio = require('cheerio');
+
+// --- Settings persistence ---
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+
+function readSettings() {
+  const p = getSettingsPath();
+  if (!fs.existsSync(p)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeSettings(data) {
+  fs.writeFileSync(getSettingsPath(), JSON.stringify(data, null, 2));
+}
+
+function broadcastToAllWindows(channel, ...args) {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(channel, ...args);
+  }
+}
 
 function getBooksDir() {
   const dir = path.join(app.getPath('userData'), 'books');
@@ -108,13 +133,14 @@ function openSettings() {
     return;
   }
 
+  const currentTheme = readSettings().theme || 'dark';
   settingsWindow = new BrowserWindow({
     width: 660,
     height: 480,
     show: false,
     resizable: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: currentTheme === 'light' ? '#ffffff' : '#1e1e1e',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -164,6 +190,20 @@ app.whenReady().then(() => {
 
   ipcMain.on('open-settings', () => {
     openSettings();
+  });
+
+  ipcMain.handle('get-settings', () => {
+    return readSettings();
+  });
+
+  ipcMain.handle('set-setting', (_event, key, value) => {
+    const settings = readSettings();
+    settings[key] = value;
+    writeSettings(settings);
+    if (key === 'theme') {
+      broadcastToAllWindows('theme-changed', value);
+    }
+    return settings;
   });
 
   // IPC handlers

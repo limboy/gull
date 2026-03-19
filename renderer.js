@@ -472,8 +472,23 @@ window.books.onDeleteRequested(async (id) => {
   renderBookList();
 });
 
+// --- Theme ---
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme || 'dark');
+}
+
+async function loadTheme() {
+  const settings = await window.settings.getAll();
+  applyTheme(settings.theme);
+}
+
+window.settings.onThemeChanged((theme) => {
+  applyTheme(theme);
+});
+
 // Init
 initResize();
 initDragAndDrop();
 initBrokenImageHandling();
 loadBooks();
+loadTheme();

@@ -14,8 +14,14 @@ html, body {
   background: var(--bg-main);
 }
 
-/* Dark theme custom properties */
+/* Theme custom properties */
 :root {
+  --left-sidebar-width: 240px;
+  --right-sidebar-width: 280px;
+}
+
+/* Dark theme (default) */
+:root, [data-theme="dark"] {
   --bg-activity-bar: #333333;
   --bg-sidebar: #252526;
   --bg-main: #1e1e1e;
@@ -28,9 +34,28 @@ html, body {
   --accent: #007acc;
   --border: #3c3c3c;
   --hover: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+  --tab-close-hover: rgba(255, 255, 255, 0.1);
+}
 
-  --left-sidebar-width: 240px;
-  --right-sidebar-width: 280px;
+/* Light theme */
+[data-theme="light"] {
+  --bg-activity-bar: #e8e8e8;
+  --bg-sidebar: #f3f3f3;
+  --bg-main: #ffffff;
+  --bg-tab-bar: #ececec;
+  --bg-tab-active: #ffffff;
+  --bg-tab-hover: #e0e0e0;
+  --bg-input: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #717171;
+  --accent: #007acc;
+  --border: #d4d4d4;
+  --hover: rgba(0, 0, 0, 0.04);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+  --tab-close-hover: rgba(0, 0, 0, 0.1);
 }
 
 /* Main grid layout: activity-bar | left-sidebar | handle | main | handle | right-sidebar */
@@ -95,12 +120,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Right sidebar collapsed */

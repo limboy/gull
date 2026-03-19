@@ -14,7 +14,7 @@ html, body {
   background: var(--bg-main);
 }
 
-:root {
+:root, [data-theme="dark"] {
   --bg-sidebar: #252526;
   --bg-main: #1e1e1e;
   --text-primary: #cccccc;
@@ -23,6 +23,21 @@ html, body {
   --border: #3c3c3c;
   --hover: rgba(255, 255, 255, 0.05);
   --bg-input: #3c3c3c;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="light"] {
+  --bg-sidebar: #f3f3f3;
+  --bg-main: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #717171;
+  --accent: #007acc;
+  --border: #d4d4d4;
+  --hover: rgba(0, 0, 0, 0.04);
+  --bg-input: #ffffff;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
 }
 
 /* Scrollbar styling */
@@ -35,12 +50,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Layout */

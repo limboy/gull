@@ -61,7 +61,7 @@
 }
 
 .tab-item .tab-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--tab-close-hover);
 }
 
 .tab-item .tab-close svg {
