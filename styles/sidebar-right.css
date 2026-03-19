@@ -34,19 +34,24 @@
 /* Tab panels */
 #right-sidebar .tab-panel {
   display: none;
-  flex: 1;
   overflow: hidden;
 }
 
 #right-sidebar .tab-panel.active {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Outline panel */
-#outline-panel {
+#right-sidebar .tab-panel.active#outline-panel {
   padding: 8px 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .outline-item {
