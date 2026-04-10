@@ -10,10 +10,26 @@ function ReaderApp() {
 
   return (
     <div id="app-layout">
+      <aside id="left-sidebar">
+        <div className="left-sidebar-header" aria-hidden="true" />
+        <div id="tab-bar-tabs" />
+      </aside>
+
+      <div id="resize-left" className="resize-handle" />
+
       <div id="main-area">
         <div id="tab-bar">
+          <button id="toggle-left-sidebar" title="Toggle Files Sidebar" aria-label="Toggle Files Sidebar">
+            <svg className="sidebar-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M9 4v16" />
+            </svg>
+            <svg className="sidebar-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M15 4v16" />
+            </svg>
+          </button>
           <div className="tab-bar-drag" />
-          <div id="tab-bar-tabs" />
           <button id="btn-style" title="Reading Style" aria-label="Reading Style">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 7h16" />

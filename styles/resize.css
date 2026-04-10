@@ -4,6 +4,7 @@
   z-index: 10;
 }
 
+#resize-left,
 #resize-right {
   background:
     linear-gradient(to bottom, transparent 37px, var(--border) 37px, var(--border) 38px, transparent 38px),
@@ -18,6 +19,11 @@
   width: 1px;
   background: var(--border);
   transition: width 150ms, left 150ms, right 150ms, background 150ms;
+}
+
+#resize-left::after {
+  left: auto;
+  right: 0;
 }
 
 #resize-right::after {

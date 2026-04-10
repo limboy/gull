@@ -658,8 +658,10 @@ function renderOutline(toc, chapters) {
 // --- Resize Handle ---
 function initResize() {
   const saved = loadSidebarWidths();
+  if (saved.left) document.documentElement.style.setProperty('--left-sidebar-width', saved.left + 'px');
   if (saved.right) document.documentElement.style.setProperty('--right-sidebar-width', saved.right + 'px');
 
+  setupHandle('resize-left', '--left-sidebar-width', 'left');
   setupHandle('resize-right', '--right-sidebar-width', 'right');
 }
 
@@ -677,7 +679,9 @@ function setupHandle(handleId, cssVar, side) {
     document.body.classList.add('no-select');
 
     const onMouseMove = (e) => {
-      const delta = startX - e.clientX;
+      const delta = side === 'right'
+        ? startX - e.clientX
+        : e.clientX - startX;
       const maxWidth = window.innerWidth * 0.5;
       const newWidth = Math.max(150, Math.min(maxWidth, startWidth + delta));
       document.documentElement.style.setProperty(cssVar, newWidth + 'px');
@@ -697,8 +701,9 @@ function setupHandle(handleId, cssVar, side) {
 }
 
 function saveSidebarWidths() {
+  const left = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--left-sidebar-width'), 10);
   const right = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--right-sidebar-width'), 10);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ right }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ left, right }));
 }
 
 function loadSidebarWidths() {
@@ -722,6 +727,10 @@ appLayout.addEventListener('click', (e) => {
     setActiveBook(tabItem.dataset.bookPath);
     return;
   }
+});
+
+document.getElementById('toggle-left-sidebar').addEventListener('click', () => {
+  appLayout.classList.toggle('left-sidebar-hidden');
 });
 
 sidebarTabToc.addEventListener('click', () => {

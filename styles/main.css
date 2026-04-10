@@ -16,6 +16,7 @@ html, body {
 
 /* Theme custom properties */
 :root {
+  --left-sidebar-width: 220px;
   --right-sidebar-width: 260px;
 }
 
@@ -57,10 +58,12 @@ html, body {
   --tab-close-hover: rgba(0, 0, 0, 0.1);
 }
 
-/* Main grid layout: main | handle | right-sidebar */
+/* Main grid layout: left-sidebar | handle | main | handle | right-sidebar */
 #app-layout {
   display: grid;
   grid-template-columns:
+    var(--left-sidebar-width)
+    4px
     1fr
     4px
     var(--right-sidebar-width);
@@ -76,7 +79,7 @@ html, body {
   justify-content: center;
   width: 28px;
   height: 28px;
-  margin-right: 4px;
+  margin-right: 0;
   border: none;
   background: none;
   color: var(--text-secondary);
@@ -172,13 +175,13 @@ html, body {
   padding: 0 4px;
 }
 
+#toggle-left-sidebar,
 #toggle-right-sidebar {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  margin-right: 8px;
   border: none;
   background: none;
   color: var(--text-secondary);
@@ -188,8 +191,17 @@ html, body {
   flex-shrink: 0;
 }
 
+#toggle-left-sidebar:hover,
 #toggle-right-sidebar:hover {
   color: var(--text-primary);
+}
+
+#toggle-left-sidebar {
+  margin-right: 4px;
+}
+
+#toggle-right-sidebar {
+  margin-right: 0;
 }
 
 #toggle-right-sidebar svg {
@@ -197,27 +209,54 @@ html, body {
   height: 16px;
 }
 
+#toggle-left-sidebar svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Show/hide the correct icon based on sidebar state */
+#toggle-left-sidebar .sidebar-closed,
 #toggle-right-sidebar .sidebar-closed {
   display: none;
 }
 
+#app-layout.left-sidebar-hidden #toggle-left-sidebar .sidebar-open,
 #app-layout.right-sidebar-hidden #toggle-right-sidebar .sidebar-open {
   display: none;
 }
 
+#app-layout.left-sidebar-hidden #toggle-left-sidebar .sidebar-closed,
 #app-layout.right-sidebar-hidden #toggle-right-sidebar .sidebar-closed {
   display: block;
 }
 
+/* Left sidebar collapsed */
+#app-layout.left-sidebar-hidden {
+  grid-template-columns: 0px 0px 1fr 4px var(--right-sidebar-width);
+}
+
+#app-layout.left-sidebar-hidden #left-sidebar,
+#app-layout.left-sidebar-hidden #resize-left {
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 /* Right sidebar collapsed */
 #app-layout.right-sidebar-hidden {
-  grid-template-columns: 1fr 0px 0px;
+  grid-template-columns: var(--left-sidebar-width) 4px 1fr 0px 0px;
 }
 
 #app-layout.right-sidebar-hidden #right-sidebar,
 #app-layout.right-sidebar-hidden #resize-right {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Both sidebars collapsed */
+#app-layout.left-sidebar-hidden.right-sidebar-hidden {
+  grid-template-columns: 0px 0px 1fr 0px 0px;
 }
 
 /* Scrollbar styling */
