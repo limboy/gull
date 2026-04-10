@@ -1,6 +1,5 @@
-// State
 const state = {
-  openBooks: [],       // [{ filePath, title }]
+  openBooks: [],       // [{ filePath, title, position: { scrollTop, progress } }]
   activeBookPath: null,
   bookContent: {},     // filePath -> { chapters, toc }
   bookSearchIndex: {}, // filePath -> [{ id, href, title, text, textLower }]
@@ -9,6 +8,7 @@ const state = {
 };
 
 const STORAGE_KEY = 'yara-sidebar-widths';
+const STORAGE_KEY_BOOKS = 'yara-open-books';
 
 // DOM refs
 const appLayout = document.getElementById('app-layout');
@@ -35,6 +35,7 @@ function openBook(filePath, title) {
   }
   setActiveBook(filePath);
   renderTabs();
+  saveReaderState();
 }
 
 function closeBook(filePath) {
@@ -55,12 +56,14 @@ function closeBook(filePath) {
   }
   renderTabs();
   renderContent();
+  saveReaderState();
 }
 
 function setActiveBook(filePath) {
   state.activeBookPath = filePath;
   renderTabs();
   renderContent();
+  saveReaderState();
 }
 
 function renderTabs() {
@@ -377,6 +380,18 @@ async function renderContent() {
       renderSearchResults();
       initOutlineScrollTracking(data.chapters);
       initChapterScrollbar(data.chapters, data.toc);
+
+      // Restore position
+      if (book.position) {
+        requestAnimationFrame(() => {
+          if (book.position.progress !== undefined) {
+            const maxScroll = contentArea.scrollHeight - contentArea.clientHeight;
+            contentArea.scrollTop = maxScroll * book.position.progress;
+          } else if (book.position.scrollTop !== undefined) {
+            contentArea.scrollTop = book.position.scrollTop;
+          }
+        });
+      }
     }
   } else {
     emptyState.style.display = '';
@@ -788,6 +803,75 @@ function loadSidebarWidths() {
   }
 }
 
+// --- Reader State Persistence ---
+let isStateLoaded = false;
+
+function saveReaderState() {
+  if (!isStateLoaded) return;
+  const data = {
+    openBooks: state.openBooks.map(b => ({
+      filePath: b.filePath,
+      title: b.title,
+      position: b.position
+    })),
+    activeBookPath: state.activeBookPath
+  };
+  localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(data));
+}
+
+function loadReaderState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKS));
+    if (!saved || !saved.openBooks || saved.openBooks.length === 0) {
+      isStateLoaded = true;
+      return;
+    }
+
+    // Merge saved books into current state to avoid overwriting books 
+    // that might have been opened via IPC before loadReaderState ran.
+    const currentPaths = new Set(state.openBooks.map(b => b.filePath));
+    for (const b of saved.openBooks) {
+      if (!currentPaths.has(b.filePath)) {
+        state.openBooks.push(b);
+      }
+    }
+
+    if (!state.activeBookPath) {
+      state.activeBookPath = saved.activeBookPath;
+    }
+
+    isStateLoaded = true;
+    renderTabs();
+
+    if (state.activeBookPath) {
+      setActiveBook(state.activeBookPath);
+    }
+  } catch (e) {
+    console.warn('Failed to load reader state', e);
+    isStateLoaded = true;
+  }
+}
+
+let positionSaveTimer = null;
+contentArea.addEventListener('scroll', () => {
+  if (!state.activeBookPath) return;
+  if (positionSaveTimer) clearTimeout(positionSaveTimer);
+  positionSaveTimer = setTimeout(() => {
+    const book = state.openBooks.find(b => b.filePath === state.activeBookPath);
+    if (!book) return;
+
+    const scrollTop = contentArea.scrollTop;
+    const scrollHeight = contentArea.scrollHeight;
+    const clientHeight = contentArea.clientHeight;
+
+    book.position = {
+      scrollTop,
+      progress: scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) : 0
+    };
+    saveReaderState();
+  }, 1000);
+});
+
 // --- Event Delegation ---
 appLayout.addEventListener('click', (e) => {
   const closeBtn = e.target.closest('[data-close-book]');
@@ -1021,6 +1105,7 @@ window.settings.onThemeChanged((theme) => {
 });
 
 // Init
+loadReaderState();
 setSidebarMode('toc');
 initResize();
 initDragAndDrop();
