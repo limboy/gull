@@ -137,10 +137,17 @@ html, body {
   border-radius: 4px;
   color: var(--text-primary);
   font-size: 12px;
-  padding: 3px 6px;
+  padding: 0 8px;
   cursor: default;
   outline: none;
-  max-width: 120px;
+  width: 100px;
+  height: 26px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
 }
 
 .style-stepper {
@@ -150,11 +157,13 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
+  width: 100px;
+  height: 26px;
 }
 
 .style-stepper button {
   width: 28px;
-  height: 24px;
+  height: 100%;
   border: none;
   background: var(--bg-input);
   color: var(--text-primary);
@@ -163,6 +172,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .style-stepper button:hover {
@@ -170,7 +180,7 @@ html, body {
 }
 
 .style-stepper span {
-  min-width: 44px;
+  flex: 1;
   text-align: center;
   font-size: 12px;
   color: var(--text-primary);
