@@ -8,14 +8,77 @@
 #right-sidebar .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  gap: 8px;
+  padding: 0 10px;
   height: 38px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
   -webkit-app-region: drag;
+}
+
+.sidebar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.sidebar-tab:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.sidebar-tab.active {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.sidebar-tab svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sidebar-search-wrap {
+  flex: 1;
+  min-width: 0;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-search-wrap[hidden] {
+  display: none !important;
+}
+
+#sidebar-search-input {
+  width: 100%;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 0 8px;
+  outline: none;
+}
+
+#sidebar-search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+#sidebar-search-input:focus {
+  border-color: var(--accent);
 }
 
 /* Outline panel */
@@ -47,3 +110,38 @@
 .outline-item.level-1 { padding-left: 16px; color: var(--text-primary); }
 .outline-item.level-2 { padding-left: 28px; }
 .outline-item.level-3 { padding-left: 40px; }
+
+.search-result-item {
+  padding: 8px 12px;
+  cursor: default;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-result-item:hover {
+  background: var(--hover);
+}
+
+.search-result-title {
+  color: var(--text-primary);
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+
+.search-result-snippet {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.search-result-snippet mark {
+  background: rgba(0, 122, 204, 0.25);
+  color: var(--text-primary);
+  padding: 0;
+}
+
+.search-empty {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}

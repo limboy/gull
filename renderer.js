@@ -3,6 +3,9 @@ const state = {
   openBooks: [],       // [{ filePath, title }]
   activeBookPath: null,
   bookContent: {},     // filePath -> { chapters, toc }
+  bookSearchIndex: {}, // filePath -> [{ id, href, title, text, textLower }]
+  sidebarMode: 'toc',
+  searchQuery: '',
 };
 
 const STORAGE_KEY = 'yara-sidebar-widths';
@@ -12,6 +15,17 @@ const appLayout = document.getElementById('app-layout');
 const tabBar = document.getElementById('tab-bar-tabs');
 const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
+const sidebarTabToc = document.getElementById('sidebar-tab-toc');
+const sidebarTabSearch = document.getElementById('sidebar-tab-search');
+const sidebarSearchWrap = document.getElementById('sidebar-search-wrap');
+const sidebarSearchInput = document.getElementById('sidebar-search-input');
+const outlinePanel = document.getElementById('outline-panel');
+const searchPanel = document.getElementById('search-panel');
+
+const SEARCH_DEBOUNCE_MS = 100;
+const SEARCH_MIN_QUERY_LENGTH = 2;
+const SEARCH_MAX_RESULTS = 120;
+let sidebarSearchTimer = null;
 
 // --- Book Tab Management ---
 function openBook(filePath, title) {
@@ -29,6 +43,7 @@ function closeBook(filePath) {
 
   state.openBooks.splice(idx, 1);
   delete state.bookContent[filePath];
+  delete state.bookSearchIndex[filePath];
 
   if (state.activeBookPath === filePath) {
     if (state.openBooks.length > 0) {
@@ -62,6 +77,223 @@ function renderTabs() {
     `;
     tabBar.appendChild(tab);
   });
+}
+
+function setSidebarMode(mode) {
+  state.sidebarMode = mode === 'search' ? 'search' : 'toc';
+
+  const isSearch = state.sidebarMode === 'search';
+  sidebarTabToc.classList.toggle('active', !isSearch);
+  sidebarTabSearch.classList.toggle('active', isSearch);
+  sidebarTabToc.setAttribute('aria-selected', String(!isSearch));
+  sidebarTabSearch.setAttribute('aria-selected', String(isSearch));
+
+  sidebarSearchWrap.hidden = !isSearch;
+  outlinePanel.hidden = isSearch;
+  searchPanel.hidden = !isSearch;
+
+  if (isSearch) {
+    sidebarSearchInput.focus({ preventScroll: true });
+    renderSearchResults();
+  }
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildTocTitleMap(items, titleMap = {}) {
+  if (!items) return titleMap;
+  for (const item of items) {
+    const baseHref = (item.href || '').split('#')[0];
+    const file = baseHref.split('/').pop();
+    if (file && item.title && !titleMap[file]) {
+      titleMap[file] = item.title;
+    }
+    if (item.children) {
+      buildTocTitleMap(item.children, titleMap);
+    }
+  }
+  return titleMap;
+}
+
+function normalizeText(str) {
+  return str.replace(/\s+/g, ' ').trim();
+}
+
+function indexBookForSearch(filePath, chapters, toc) {
+  const titleMap = buildTocTitleMap(toc);
+  const index = [];
+  for (const chapter of chapters || []) {
+    const section = contentArea.querySelector('#chapter-' + CSS.escape(chapter.id));
+    if (!section) continue;
+    const text = normalizeText(section.textContent || '');
+    if (!text) continue;
+    const file = (chapter.href || '').split('/').pop();
+    index.push({
+      id: chapter.id,
+      href: chapter.href || '',
+      title: titleMap[file] || chapter.title || file || 'Untitled Chapter',
+      text,
+      textLower: text.toLowerCase(),
+    });
+  }
+  state.bookSearchIndex[filePath] = index;
+}
+
+function buildMatchSnippet(text, start, length = 46) {
+  const left = Math.max(0, start - length);
+  const right = Math.min(text.length, start + length);
+  const prefix = left > 0 ? '…' : '';
+  const suffix = right < text.length ? '…' : '';
+  return prefix + text.slice(left, right) + suffix;
+}
+
+function buildHighlightedSnippet(snippet, terms) {
+  let html = escapeHtml(snippet);
+  for (const term of terms) {
+    if (!term) continue;
+    const regex = new RegExp(`(${escapeRegExp(term)})`, 'ig');
+    html = html.replace(regex, '<mark>$1</mark>');
+  }
+  return html;
+}
+
+function findSearchMatches(filePath, query) {
+  const index = state.bookSearchIndex[filePath] || [];
+  const normalized = normalizeText(query).toLowerCase();
+  if (normalized.length < SEARCH_MIN_QUERY_LENGTH) return [];
+
+  const terms = normalized.split(' ').filter(Boolean);
+  if (terms.length === 0) return [];
+
+  const results = [];
+  for (const entry of index) {
+    if (!terms.every(term => entry.textLower.includes(term))) continue;
+
+    let from = 0;
+    let hits = 0;
+    while (results.length < SEARCH_MAX_RESULTS && hits < 3) {
+      const hitAt = entry.textLower.indexOf(terms[0], from);
+      if (hitAt === -1) break;
+      results.push({
+        chapterId: entry.id,
+        href: entry.href,
+        title: entry.title,
+        snippet: buildMatchSnippet(entry.text, hitAt),
+      });
+      from = hitAt + terms[0].length;
+      hits += 1;
+    }
+
+    if (results.length >= SEARCH_MAX_RESULTS) break;
+  }
+
+  return results;
+}
+
+function renderSearchResults() {
+  searchPanel.innerHTML = '';
+
+  if (!state.activeBookPath) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.textContent = 'Open a book to search.';
+    searchPanel.appendChild(empty);
+    return;
+  }
+
+  const query = state.searchQuery || '';
+  const normalized = normalizeText(query);
+  if (!normalized) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.textContent = 'Type to search in the current book.';
+    searchPanel.appendChild(empty);
+    return;
+  }
+
+  if (normalized.length < SEARCH_MIN_QUERY_LENGTH) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.textContent = `Enter at least ${SEARCH_MIN_QUERY_LENGTH} characters.`;
+    searchPanel.appendChild(empty);
+    return;
+  }
+
+  const results = findSearchMatches(state.activeBookPath, normalized);
+  if (results.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.textContent = `No matches for "${normalized}".`;
+    searchPanel.appendChild(empty);
+    return;
+  }
+
+  const terms = normalized.toLowerCase().split(' ').filter(Boolean);
+  for (const result of results) {
+    const row = document.createElement('div');
+    row.className = 'search-result-item';
+    row.dataset.chapterId = result.chapterId;
+    row.dataset.href = result.href || '';
+    row.innerHTML = `
+      <div class="search-result-title">${escapeHtml(result.title)}</div>
+      <div class="search-result-snippet">${buildHighlightedSnippet(result.snippet, terms)}</div>
+    `;
+    searchPanel.appendChild(row);
+  }
+}
+
+function scrollToHref(href, chapters, fallbackChapterId = null) {
+  const targetHref = href || '';
+  const baseHref = targetHref.split('#')[0];
+  const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
+
+  const matchChapter = (chapters || []).find(ch => {
+    if (fallbackChapterId && ch.id === fallbackChapterId) return true;
+    if (!baseHref) return false;
+    if (ch.href === baseHref) return true;
+    const chFile = ch.href.split('/').pop();
+    const tocFile = baseHref.split('/').pop();
+    return chFile === tocFile;
+  });
+
+  let scrolled = false;
+  if (matchChapter) {
+    const section = contentArea.querySelector('#chapter-' + CSS.escape(matchChapter.id));
+    if (section) {
+      if (fragment) {
+        const target = section.querySelector('#' + CSS.escape(fragment));
+        if (target) {
+          target.scrollIntoView({ behavior: 'instant' });
+          scrolled = true;
+        }
+      }
+      if (!scrolled) {
+        section.scrollIntoView({ behavior: 'instant' });
+        scrolled = true;
+      }
+    }
+  }
+
+  if (!scrolled && fragment) {
+    const target = contentArea.querySelector('#' + CSS.escape(fragment));
+    if (target) {
+      target.scrollIntoView({ behavior: 'instant' });
+      scrolled = true;
+    }
+  }
+
+  return scrolled;
 }
 
 async function renderContent() {
@@ -138,12 +370,18 @@ async function renderContent() {
 
       contentArea.appendChild(div);
       renderOutline(data.toc, data.chapters);
+      if (!state.bookSearchIndex[book.filePath]) {
+        indexBookForSearch(book.filePath, data.chapters, data.toc);
+      }
+      renderSearchResults();
       initOutlineScrollTracking(data.chapters);
       initChapterScrollbar(data.chapters, data.toc);
     }
   } else {
     emptyState.style.display = '';
     renderOutline([], []);
+    searchPanel.innerHTML = '';
+    renderSearchResults();
     initChapterScrollbar([]);
   }
 }
@@ -394,8 +632,7 @@ function initOutlineScrollTracking(chapters) {
 }
 
 function renderOutline(toc, chapters) {
-  const panel = document.getElementById('outline-panel');
-  panel.innerHTML = '';
+  outlinePanel.innerHTML = '';
   if (!toc || toc.length === 0) return;
 
   function addItems(items, level) {
@@ -405,39 +642,10 @@ function renderOutline(toc, chapters) {
       div.textContent = item.title;
       div.dataset.href = item.href || '';
       div.addEventListener('click', () => {
-        const href = item.href || '';
-        const baseHref = href.split('#')[0];
-        const fragment = href.includes('#') ? href.split('#')[1] : null;
-
-        // Find the matching chapter by comparing href (filename)
-        const matchChapter = (chapters || []).find(ch => {
-          if (!baseHref) return false;
-          if (ch.href === baseHref) return true;
-          const chFile = ch.href.split('/').pop();
-          const tocFile = baseHref.split('/').pop();
-          return chFile === tocFile;
-        });
-
-        let scrolled = false;
-        if (matchChapter) {
-          const section = contentArea.querySelector('#chapter-' + CSS.escape(matchChapter.id));
-          if (section) {
-            if (fragment) {
-              const target = section.querySelector('#' + CSS.escape(fragment));
-              if (target) { target.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
-            }
-            if (!scrolled) { section.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
-          }
-        }
-
-        if (!scrolled && fragment) {
-          const target = contentArea.querySelector('#' + CSS.escape(fragment));
-          if (target) { target.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
-        }
-
+        const scrolled = scrollToHref(item.href || '', chapters);
         if (scrolled) setActiveOutlineItem(div);
       });
-      panel.appendChild(div);
+      outlinePanel.appendChild(div);
       if (item.children && item.children.length > 0) {
         addItems(item.children, Math.min(level + 1, 3));
       }
@@ -513,6 +721,58 @@ appLayout.addEventListener('click', (e) => {
   if (tabItem) {
     setActiveBook(tabItem.dataset.bookPath);
     return;
+  }
+});
+
+sidebarTabToc.addEventListener('click', () => {
+  setSidebarMode('toc');
+});
+
+sidebarTabSearch.addEventListener('click', () => {
+  setSidebarMode('search');
+});
+
+sidebarSearchInput.addEventListener('input', (e) => {
+  state.searchQuery = e.target.value || '';
+  if (sidebarSearchTimer) {
+    clearTimeout(sidebarSearchTimer);
+  }
+  sidebarSearchTimer = setTimeout(() => {
+    renderSearchResults();
+  }, SEARCH_DEBOUNCE_MS);
+});
+
+sidebarSearchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    state.searchQuery = '';
+    sidebarSearchInput.value = '';
+    renderSearchResults();
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    const first = searchPanel.querySelector('.search-result-item');
+    if (first) first.click();
+  }
+});
+
+searchPanel.addEventListener('click', (e) => {
+  const item = e.target.closest('.search-result-item');
+  if (!item || !state.activeBookPath) return;
+
+  const data = state.bookContent[state.activeBookPath];
+  if (!data) return;
+
+  const chapterId = item.dataset.chapterId || null;
+  const href = item.dataset.href || '';
+  const scrolled = scrollToHref(href, data.chapters, chapterId);
+  if (!scrolled) return;
+
+  const targetOutline = [...outlinePanel.querySelectorAll('.outline-item')]
+    .find(el => (el.dataset.href || '') === href);
+
+  if (targetOutline) {
+    setActiveOutlineItem(targetOutline);
   }
 });
 
@@ -678,6 +938,7 @@ window.settings.onThemeChanged((theme) => {
 });
 
 // Init
+setSidebarMode('toc');
 initResize();
 initDragAndDrop();
 initBrokenImageHandling();

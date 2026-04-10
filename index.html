@@ -77,8 +77,55 @@
 
       <!-- Right Sidebar (Outline) -->
       <div id="right-sidebar">
-        <div class="sidebar-header">Table of Contents</div>
-        <div id="outline-panel" class="outline-panel-content">
+        <div class="sidebar-header">
+          <div class="sidebar-tabs" role="tablist" aria-label="Sidebar views">
+            <button
+              id="sidebar-tab-toc"
+              class="sidebar-tab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="outline-panel"
+              title="Table of contents"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="20" y2="6"></line>
+                <line x1="8" y1="12" x2="20" y2="12"></line>
+                <line x1="8" y1="18" x2="20" y2="18"></line>
+                <circle cx="4" cy="6" r="1"></circle>
+                <circle cx="4" cy="12" r="1"></circle>
+                <circle cx="4" cy="18" r="1"></circle>
+              </svg>
+            </button>
+            <button
+              id="sidebar-tab-search"
+              class="sidebar-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="search-panel"
+              title="Search in book"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+              </svg>
+            </button>
+          </div>
+          <div id="sidebar-search-wrap" class="sidebar-search-wrap" hidden>
+            <input
+              id="sidebar-search-input"
+              type="search"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Search in book..."
+              aria-label="Search in book"
+            />
+          </div>
+        </div>
+        <div id="outline-panel" class="outline-panel-content sidebar-panel">
+        </div>
+        <div id="search-panel" class="outline-panel-content sidebar-panel" hidden>
         </div>
       </div>
     </div>
