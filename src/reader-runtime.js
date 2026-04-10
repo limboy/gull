@@ -457,9 +457,63 @@ function initChapterScrollbar(chapters, toc) {
   }
   if (toc) flattenToc(toc);
 
+  function resolveHrefTarget(href) {
+    const targetHref = href || '';
+    const baseHref = targetHref.split('#')[0];
+    const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
+
+    const ch = chapters.find(c => {
+      if (!baseHref) return false;
+      if (c.href === baseHref) return true;
+      return c.href.split('/').pop() === baseHref.split('/').pop();
+    });
+    if (!ch) return null;
+
+    const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+    if (!section) return null;
+
+    if (fragment) {
+      const fragEl = section.querySelector('#' + CSS.escape(fragment));
+      if (fragEl) {
+        return { chapterId: ch.id, target: fragEl };
+      }
+    }
+
+    return { chapterId: ch.id, target: section };
+  }
+
+  // Build entries from rendered ToC items so indicator count matches visible ToC count.
+  const tocEntries = [];
+  const outlineItems = document.querySelectorAll('.outline-item');
+  for (const item of outlineItems) {
+    const href = item.dataset.href || '';
+    const resolved = resolveHrefTarget(href);
+    if (!resolved) continue;
+    tocEntries.push({
+      chapterId: resolved.chapterId,
+      target: resolved.target,
+      title: item.textContent || '',
+    });
+  }
+
+  // Fallback to chapter-level indicators if no ToC target could be resolved.
+  const sourceEntries = tocEntries.length > 0
+    ? tocEntries
+    : chapters.map(ch => {
+      const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+      const chFile = ch.href.split('/').pop();
+      return {
+        chapterId: ch.id,
+        target: section,
+        title: titleMap[chFile] || '',
+      };
+    }).filter(entry => !!entry.target);
+
+  if (sourceEntries.length === 0) return;
+
   // Build segment elements
   const segments = [];
-  for (const ch of chapters) {
+  for (const entry of sourceEntries) {
     const seg = document.createElement('div');
     seg.className = 'ch-scroll-segment';
     const fill = document.createElement('div');
@@ -467,9 +521,13 @@ function initChapterScrollbar(chapters, toc) {
     seg.appendChild(fill);
     bar.appendChild(seg);
 
-    const chFile = ch.href.split('/').pop();
-    const title = titleMap[chFile] || '';
-    segments.push({ id: ch.id, seg, fill, title });
+    segments.push({
+      chapterId: entry.chapterId,
+      target: entry.target,
+      seg,
+      fill,
+      title: entry.title,
+    });
   }
 
   // Tooltip element
@@ -478,37 +536,52 @@ function initChapterScrollbar(chapters, toc) {
   tooltip.style.display = 'none';
   document.body.appendChild(tooltip);
 
+  function getTargetTopInContent(el) {
+    const contentRect = contentArea.getBoundingClientRect();
+    const targetRect = el.getBoundingClientRect();
+    return targetRect.top - contentRect.top + contentArea.scrollTop;
+  }
+
+  function computeMeasures() {
+    const measures = [];
+    for (const s of segments) {
+      if (!s.target) continue;
+      measures.push({ ...s, top: getTargetTopInContent(s.target) });
+    }
+    if (measures.length === 0) return [];
+
+    for (let i = 0; i < measures.length; i++) {
+      const start = measures[i].top;
+      const end = i < measures.length - 1
+        ? measures[i + 1].top
+        : contentArea.scrollHeight;
+      const height = Math.max(1, end - start);
+      measures[i].height = height;
+    }
+    return measures;
+  }
+
   function update() {
     const scrollTop = contentArea.scrollTop;
     const viewportH = contentArea.clientHeight;
-    const barH = bar.clientHeight - (chapters.length - 1) * 3 - 16;
+    const barH = bar.clientHeight - (segments.length - 1) * 3 - 16;
 
-    const chapterMeasures = [];
-    let totalH = 0;
-    for (const s of segments) {
-      const section = contentArea.querySelector('#chapter-' + CSS.escape(s.id));
-      if (section) {
-        const h = section.offsetHeight;
-        chapterMeasures.push({ ...s, top: section.offsetTop, height: h });
-        totalH += h;
-      }
-    }
+    const measures = computeMeasures();
+    if (measures.length === 0) return;
 
-    if (totalH === 0) return;
+    const totalH = measures.reduce((sum, m) => sum + m.height, 0);
 
-    for (const m of chapterMeasures) {
+    const viewportEnd = scrollTop + viewportH;
+    for (const m of measures) {
       const ratio = m.height / totalH;
       const segH = Math.max(8, ratio * barH);
       m.seg.style.height = segH + 'px';
 
-      const chStart = m.top;
-      const viewEnd = scrollTop + viewportH;
-
       let fillRatio = 0;
-      if (viewEnd >= chStart + m.height) {
+      if (viewportEnd >= m.top + m.height) {
         fillRatio = 1;
-      } else if (viewEnd > chStart) {
-        fillRatio = (viewEnd - chStart) / m.height;
+      } else if (viewportEnd > m.top) {
+        fillRatio = (viewportEnd - m.top) / m.height;
       }
 
       fillRatio = Math.max(0, Math.min(1, fillRatio));
@@ -541,15 +614,15 @@ function initChapterScrollbar(chapters, toc) {
     const target = e.target.closest('.ch-scroll-segment');
     if (!target) return;
 
-    const seg = segments.find(s => s.seg === target);
-    if (!seg) return;
+    const measures = computeMeasures();
+    const measure = measures.find(m => m.seg === target);
+    if (!measure) return;
 
     const segRect = target.getBoundingClientRect();
-    const within = (e.clientY - segRect.top) / segRect.height;
-    const section = contentArea.querySelector('#chapter-' + CSS.escape(seg.id));
-    if (section) {
-      contentArea.scrollTop = section.offsetTop + section.offsetHeight * within - contentArea.clientHeight / 2;
-    }
+    const within = Math.max(0, Math.min(1, (e.clientY - segRect.top) / segRect.height));
+    const desiredTop = measure.top + measure.height * within;
+    const maxTop = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
+    contentArea.scrollTop = Math.max(0, Math.min(maxTop, desiredTop));
   });
 
   contentArea.addEventListener('scroll', update);
