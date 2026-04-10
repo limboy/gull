@@ -5,7 +5,7 @@ import './settings/App.css';
 
 function SettingsApp() {
   useEffect(() => {
-    import('./legacy/settings-legacy.js');
+    import('./settings-runtime.js');
   }, []);
 
   return (

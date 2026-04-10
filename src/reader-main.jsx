@@ -5,7 +5,7 @@ import './reader/App.css';
 
 function ReaderApp() {
   useEffect(() => {
-    import('./legacy/reader-legacy.js');
+    import('./reader-runtime.js');
   }, []);
 
   return (
