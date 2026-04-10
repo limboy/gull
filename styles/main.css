@@ -69,6 +69,109 @@ html, body {
   width: 100vw;
 }
 
+/* Style adjust button */
+#btn-style {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: default;
+  border-radius: 4px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+#btn-style:hover {
+  color: var(--text-primary);
+}
+
+#btn-style svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Style popover */
+#style-popover {
+  display: none;
+  position: fixed;
+  width: 240px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  -webkit-app-region: no-drag;
+}
+
+#style-popover.visible {
+  display: block;
+}
+
+.style-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.style-row label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.style-row select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 3px 6px;
+  cursor: default;
+  outline: none;
+  max-width: 120px;
+}
+
+.style-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.style-stepper button {
+  width: 28px;
+  height: 24px;
+  border: none;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.style-stepper button:hover {
+  background: var(--hover);
+}
+
+.style-stepper span {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-primary);
+  padding: 0 4px;
+}
+
 #toggle-right-sidebar {
   display: flex;
   align-items: center;

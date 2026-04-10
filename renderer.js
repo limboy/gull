@@ -519,6 +519,114 @@ function initBrokenImageHandling() {
   }, true);
 }
 
+// --- Style Popover ---
+const stylePopover = document.getElementById('style-popover');
+const btnStyle = document.getElementById('btn-style');
+
+const readingStyle = {
+  fontFamily: "Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif",
+  fontSize: 16,
+  lineHeight: 1.8,
+  paraSpacing: 0.6,
+};
+
+const FONT_SIZE_STEPS = [12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24];
+const LINE_HEIGHT_STEPS = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4];
+const PARA_SPACING_STEPS = [0, 0.3, 0.6, 1.0, 1.5, 2.0];
+
+function loadReadingStyle() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('yara-reading-style'));
+    if (saved) Object.assign(readingStyle, saved);
+  } catch {}
+}
+
+function saveReadingStyle() {
+  localStorage.setItem('yara-reading-style', JSON.stringify(readingStyle));
+}
+
+function applyReadingStyle() {
+  const root = document.documentElement;
+  root.style.setProperty('--book-font-family', readingStyle.fontFamily);
+  root.style.setProperty('--book-font-size', readingStyle.fontSize + 'px');
+  root.style.setProperty('--book-line-height', String(readingStyle.lineHeight));
+  root.style.setProperty('--book-para-spacing', readingStyle.paraSpacing + 'em');
+  updateStyleDisplay();
+}
+
+function updateStyleDisplay() {
+  document.getElementById('style-font-size-val').textContent = readingStyle.fontSize + 'px';
+  document.getElementById('style-line-height-val').textContent = readingStyle.lineHeight.toFixed(1);
+  document.getElementById('style-para-spacing-val').textContent = readingStyle.paraSpacing + 'em';
+
+  // Sync select
+  const fontSelect = document.getElementById('style-font');
+  for (const opt of fontSelect.options) {
+    if (readingStyle.fontFamily === opt.value) { fontSelect.value = opt.value; break; }
+  }
+}
+
+function stepValue(arr, current, dir) {
+  let idx = 0;
+  let minDiff = Infinity;
+  for (let i = 0; i < arr.length; i++) {
+    const diff = Math.abs(arr[i] - current);
+    if (diff < minDiff) { minDiff = diff; idx = i; }
+  }
+  const next = idx + dir;
+  return arr[Math.max(0, Math.min(arr.length - 1, next))];
+}
+
+btnStyle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (stylePopover.classList.contains('visible')) {
+    stylePopover.classList.remove('visible');
+    return;
+  }
+  // Position below the button, right-aligned to it
+  const rect = btnStyle.getBoundingClientRect();
+  stylePopover.style.top = (rect.bottom + 6) + 'px';
+  stylePopover.style.right = (window.innerWidth - rect.right) + 'px';
+  stylePopover.classList.add('visible');
+});
+
+// Close popover on outside click
+document.addEventListener('mousedown', (e) => {
+  if (!stylePopover.contains(e.target) && e.target !== btnStyle && !btnStyle.contains(e.target)) {
+    stylePopover.classList.remove('visible');
+  }
+});
+
+// Font select
+document.getElementById('style-font').addEventListener('change', (e) => {
+  readingStyle.fontFamily = e.target.value;
+  applyReadingStyle();
+  saveReadingStyle();
+});
+
+// Stepper buttons
+stylePopover.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-step]');
+  if (!btn) return;
+
+  const prop = btn.dataset.step;
+  const dir = parseInt(btn.dataset.dir, 10);
+
+  if (prop === 'font-size') {
+    readingStyle.fontSize = stepValue(FONT_SIZE_STEPS, readingStyle.fontSize, dir);
+  } else if (prop === 'line-height') {
+    readingStyle.lineHeight = stepValue(LINE_HEIGHT_STEPS, readingStyle.lineHeight, dir);
+  } else if (prop === 'para-spacing') {
+    readingStyle.paraSpacing = stepValue(PARA_SPACING_STEPS, readingStyle.paraSpacing, dir);
+  }
+
+  applyReadingStyle();
+  saveReadingStyle();
+});
+
+loadReadingStyle();
+applyReadingStyle();
+
 // --- Right Sidebar Toggle ---
 document.getElementById('toggle-right-sidebar').addEventListener('click', () => {
   appLayout.classList.toggle('right-sidebar-hidden');

@@ -181,9 +181,9 @@
 .book-content {
   display: none;
   color: var(--text-primary);
-  font-family: Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
-  font-size: 16px;
-  line-height: 1.8;
+  font-family: var(--book-font-family, Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif);
+  font-size: var(--book-font-size, 16px);
+  line-height: var(--book-line-height, 1.8);
 }
 
 .book-content.active {
@@ -223,7 +223,7 @@
 }
 
 .book-content p {
-  margin: 0.6em 0;
+  margin: var(--book-para-spacing, 0.6em) 0;
 }
 
 .book-content img,
