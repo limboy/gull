@@ -1,1 +1,10 @@
 node_modules/
+dist/
+
+# Electron build artifacts
+release/
+*.dmg
+*.blockmap
+
+# macOS
+.DS_Store

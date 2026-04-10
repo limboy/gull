@@ -1,135 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob: http://127.0.0.1:5173 ws://127.0.0.1:5173; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' http://127.0.0.1:5173; script-src 'self' 'unsafe-inline' http://127.0.0.1:5173; connect-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Yara</title>
-    <link rel="icon" type="image/png" href="logo.png" />
-    <link rel="stylesheet" href="styles/main.css" />
-    <link rel="stylesheet" href="styles/main-area.css" />
-    <link rel="stylesheet" href="styles/sidebar-right.css" />
-    <link rel="stylesheet" href="styles/resize.css" />
+    <link rel="icon" type="image/png" href="/logo.png" />
   </head>
   <body>
-    <div id="app-layout">
-      <!-- Main Area -->
-      <div id="main-area">
-        <div id="tab-bar">
-          <div id="tab-bar-drag" class="tab-bar-drag"></div>
-          <div id="tab-bar-tabs"></div>
-          <button id="btn-style" title="Reading style">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 16 2.536-7.328a1.02 1.02 1 0 1 1.928 0L22 16"/><path d="M15.697 14h5.606"/><path d="m2 16 4.039-9.69a.5.5 0 0 1 .923 0L11 16"/><path d="M3.304 13h6.392"/></svg>
-          </button>
-          <div id="style-popover">
-            <div class="style-row">
-              <label>Font</label>
-              <select id="style-font">
-                <option value="Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif">Serif</option>
-                <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Sans Serif</option>
-                <option value="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace">Monospace</option>
-              </select>
-            </div>
-            <div class="style-row">
-              <label>Size</label>
-              <div class="style-stepper">
-                <button data-step="font-size" data-dir="-1">−</button>
-                <span id="style-font-size-val">16px</span>
-                <button data-step="font-size" data-dir="1">+</button>
-              </div>
-            </div>
-            <div class="style-row">
-              <label>Line spacing</label>
-              <div class="style-stepper">
-                <button data-step="line-height" data-dir="-1">−</button>
-                <span id="style-line-height-val">1.8</span>
-                <button data-step="line-height" data-dir="1">+</button>
-              </div>
-            </div>
-            <div class="style-row">
-              <label>Paragraph spacing</label>
-              <div class="style-stepper">
-                <button data-step="para-spacing" data-dir="-1">−</button>
-                <span id="style-para-spacing-val">0.6em</span>
-                <button data-step="para-spacing" data-dir="1">+</button>
-              </div>
-            </div>
-          </div>
-          <button id="toggle-right-sidebar" title="Toggle outline sidebar">
-            <svg class="sidebar-open" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="15" ry="15" fill="none" stroke="currentColor" stroke-width="8"/><rect x="57" y="22" width="20" height="56" rx="6" ry="6" fill="currentColor"/></svg>
-            <svg class="sidebar-closed" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="15" ry="15" fill="none" stroke="currentColor" stroke-width="8"/><line x1="75" y1="25" x2="75" y2="75" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <div id="content-wrapper">
-          <div id="content-area">
-            <div class="empty-state" id="empty-state">
-              <div class="empty-state-content">
-                <svg class="empty-icon" viewBox="0 0 48 48"><path d="M14 4h14l10 10v26a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4zm12 2v9h9l-9-9zM14 6v34h20V17h-9a3 3 0 0 1-3-3V6H14z"/></svg>
-                <p>Open an EPUB file to start reading</p>
-                <p class="empty-hint">Use File > Open or drag and drop</p>
-              </div>
-            </div>
-          </div>
-          <div id="chapter-scrollbar"></div>
-        </div>
-      </div>
-
-      <!-- Resize Handle: Right -->
-      <div class="resize-handle" id="resize-right"></div>
-
-      <!-- Right Sidebar (Outline) -->
-      <div id="right-sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-tabs" role="tablist" aria-label="Sidebar views">
-            <button
-              id="sidebar-tab-toc"
-              class="sidebar-tab active"
-              type="button"
-              role="tab"
-              aria-selected="true"
-              aria-controls="outline-panel"
-              title="Table of contents"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="8" y1="6" x2="20" y2="6"></line>
-                <line x1="8" y1="12" x2="20" y2="12"></line>
-                <line x1="8" y1="18" x2="20" y2="18"></line>
-                <circle cx="4" cy="6" r="1"></circle>
-                <circle cx="4" cy="12" r="1"></circle>
-                <circle cx="4" cy="18" r="1"></circle>
-              </svg>
-            </button>
-            <button
-              id="sidebar-tab-search"
-              class="sidebar-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="search-panel"
-              title="Search in book"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="7"></circle>
-                <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-              </svg>
-            </button>
-          </div>
-          <div id="sidebar-search-wrap" class="sidebar-search-wrap" hidden>
-            <input
-              id="sidebar-search-input"
-              type="search"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="Search in book..."
-              aria-label="Search in book"
-            />
-          </div>
-        </div>
-        <div id="outline-panel" class="outline-panel-content sidebar-panel">
-        </div>
-        <div id="search-panel" class="outline-panel-content sidebar-panel" hidden>
-        </div>
-      </div>
-    </div>
-    <script src="renderer.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/reader-main.jsx"></script>
   </body>
-</html>
+  </html>

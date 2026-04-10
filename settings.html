@@ -1,74 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
-    <title>Settings</title>
-    <link rel="stylesheet" href="styles/settings.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob: http://127.0.0.1:5173 ws://127.0.0.1:5173; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' http://127.0.0.1:5173; script-src 'self' 'unsafe-inline' http://127.0.0.1:5173; connect-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yara Settings</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
   </head>
   <body>
-    <div id="settings-layout">
-      <div id="settings-title-bar"></div>
-
-      <div id="settings-sidebar">
-        <div class="settings-nav-item active" data-section="appearance">
-          <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          Appearance
-        </div>
-      </div>
-
-      <div id="settings-content">
-        <!-- Appearance Section -->
-        <div class="settings-section active" data-panel="appearance">
-          <div class="settings-section-title">Appearance</div>
-
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-label-text">Theme</span>
-            </div>
-            <select class="setting-select" id="setting-theme">
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="system">System</option>
-            </select>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-label-text">Font size</span>
-            </div>
-            <div class="font-size-control">
-              <input type="range" id="setting-font-size" min="12" max="20" value="14" step="1" />
-              <span class="font-size-value" id="font-size-display">14px</span>
-            </div>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-label-text">Font family</span>
-            </div>
-            <select class="setting-select" id="setting-font-family">
-              <option value="system">System Default</option>
-              <option value="serif">Serif</option>
-              <option value="sans-serif">Sans Serif</option>
-              <option value="monospace">Monospace</option>
-            </select>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-label-text">Line height</span>
-            </div>
-            <select class="setting-select" id="setting-line-height">
-              <option value="1.4">Compact</option>
-              <option value="1.6" selected>Normal</option>
-              <option value="1.8">Relaxed</option>
-              <option value="2.0">Spacious</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script src="settings-renderer.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/settings-main.jsx"></script>
   </body>
-</html>
+  </html>

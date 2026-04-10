@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 
 const APP_LOGO_PATH = path.join(__dirname, 'logo.png');
 const APP_DOCK_ICON_PATH = path.join(__dirname, 'logo-dock.png');
+const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
 function setMacDockIcon() {
   if (process.platform !== 'darwin' || !app.dock) return;
@@ -40,6 +41,12 @@ function broadcastToAllWindows(channel, ...args) {
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.webContents.getURL().includes('settings.html')) continue;
     win.webContents.send(channel, ...args);
+  }
+}
+
+function broadcastSettings(settings) {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('settings-changed', settings);
   }
 }
 
@@ -260,9 +267,11 @@ let settingsWindow = null;
 let pendingFiles = [];
 
 function getMainWindow() {
-  return BrowserWindow.getAllWindows().find(w =>
-    !w.isDestroyed() && w.webContents.getURL().includes('index.html')
-  );
+  return BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w !== settingsWindow);
+}
+
+function getRendererPath(page) {
+  return path.join(__dirname, 'dist', page);
 }
 
 function createWindow() {
@@ -277,7 +286,11 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  if (DEV_SERVER_URL) {
+    win.loadURL(new URL('index.html', `${DEV_SERVER_URL}/`).toString());
+  } else {
+    win.loadFile(getRendererPath('index.html'));
+  }
 
   win.webContents.on('did-finish-load', () => {
     // Open any files that were queued before the window was ready
@@ -337,7 +350,11 @@ function openSettings() {
     },
   });
 
-  settingsWindow.loadFile('settings.html');
+  if (DEV_SERVER_URL) {
+    settingsWindow.loadURL(new URL('settings.html', `${DEV_SERVER_URL}/`).toString());
+  } else {
+    settingsWindow.loadFile(getRendererPath('settings.html'));
+  }
   settingsWindow.once('ready-to-show', () => {
     settingsWindow.show();
   });
@@ -414,6 +431,7 @@ app.whenReady().then(() => {
     const settings = readSettings();
     settings[key] = value;
     writeSettings(settings);
+    broadcastSettings(settings);
     if (key === 'theme') {
       broadcastToAllWindows('theme-changed', value);
     }

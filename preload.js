@@ -12,6 +12,9 @@ contextBridge.exposeInMainWorld('settings', {
   open: () => ipcRenderer.send('open-settings'),
   getAll: () => ipcRenderer.invoke('get-settings'),
   set: (key, value) => ipcRenderer.invoke('set-setting', key, value),
+  onSettingsChanged: (cb) => {
+    ipcRenderer.on('settings-changed', (_e, settings) => cb(settings));
+  },
   onThemeChanged: (cb) => {
     ipcRenderer.on('theme-changed', (_e, theme) => cb(theme));
   },
