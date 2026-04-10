@@ -192,6 +192,7 @@
 
 .book-content * {
   font-family: inherit !important;
+  color: inherit;
 }
 
 .book-content code,
@@ -223,7 +224,7 @@
 }
 
 .book-content p {
-  margin: var(--book-para-spacing, 0.6em) 0;
+  margin: var(--book-para-spacing, 0.6em) 0 !important;
 }
 
 .book-content img,

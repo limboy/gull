@@ -96,6 +96,33 @@ async function renderContent() {
       const div = document.createElement('div');
       div.className = 'book-content active';
 
+      // Collect and deduplicate chapter CSS, scoped to .book-content
+      const seenCss = new Set();
+      const scopedStyles = [];
+      data.chapters.forEach((ch) => {
+        if (ch.css && ch.css.trim() && !seenCss.has(ch.css)) {
+          seenCss.add(ch.css);
+          scopedStyles.push(ch.css);
+        }
+      });
+      if (scopedStyles.length > 0) {
+        const styleEl = document.createElement('style');
+        // Scope all selectors under .book-content so they don't leak
+        const scoped = scopedStyles.join('\n').replace(
+          /([^\s@{}][^{}]*?)\{/g,
+          (match, selector) => {
+            // Don't scope @-rules
+            if (selector.trim().startsWith('@')) return match;
+            const parts = selector.split(',').map(s =>
+              `.book-content ${s.trim()}`
+            ).join(', ');
+            return `${parts} {`;
+          }
+        );
+        styleEl.textContent = scoped;
+        div.appendChild(styleEl);
+      }
+
       data.chapters.forEach((ch, i) => {
         const section = document.createElement('section');
         section.className = 'chapter';
@@ -122,11 +149,9 @@ async function renderContent() {
 }
 
 function stripEpubFonts(container) {
-  container.querySelectorAll('style').forEach(el => el.remove());
+  // CSS is already filtered in main process; just ensure no font-family leaks through
   container.querySelectorAll('[style]').forEach(el => {
-    el.style.fontFamily = '';
-    el.style.fontSize = '';
-    el.style.lineHeight = '';
+    if (el.style.fontFamily) el.style.fontFamily = '';
   });
 }
 

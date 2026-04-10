@@ -88,6 +88,39 @@ function parseNcxNavMap(navMap, $) {
   return items;
 }
 
+// Properties to strip from EPUB CSS (conflict with reader theme)
+const STRIP_CSS_PROPS = new Set([
+  'font-family', 'color', 'background', 'background-color',
+  'background-image', 'border-color',
+]);
+
+function filterInlineStyle(style) {
+  return style
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      const prop = s.split(':')[0]?.trim().toLowerCase();
+      return prop && !STRIP_CSS_PROPS.has(prop);
+    })
+    .join('; ');
+}
+
+function filterEpubCss(css) {
+  // Simple CSS property filter: process declaration blocks and strip conflicting properties.
+  // Handles nested @-rules like @media by working on individual declarations.
+  return css.replace(/\{([^}]*)\}/g, (match, block) => {
+    const filtered = block
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => {
+        const prop = s.split(':')[0]?.trim().toLowerCase();
+        return prop && !STRIP_CSS_PROPS.has(prop);
+      })
+      .join(';\n  ');
+    return filtered ? `{ ${filtered}; }` : '{ }';
+  });
+}
+
 function parseEpub(epubPath) {
   const zip = new AdmZip(epubPath);
 
@@ -138,9 +171,42 @@ function parseEpub(epubPath) {
     const chapterDir = path.dirname(chapterPath);
     const $ = cheerio.load(xhtml, { xmlMode: true });
 
-    // Remove styles
+    // Collect CSS from linked stylesheets and inline <style> blocks,
+    // filter out properties that conflict with our reader theme
+    let collectedCss = '';
+
+    $('link[rel="stylesheet"]').each((_, el) => {
+      const href = $(el).attr('href');
+      if (!href) return;
+      const cssPath = path.posix.normalize(chapterDir + '/' + href);
+      try {
+        collectedCss += zip.readAsText(cssPath) + '\n';
+      } catch {}
+    });
+    $('style').each((_, el) => {
+      collectedCss += $(el).html() + '\n';
+    });
+
+    // Remove original stylesheet refs
     $('link[rel="stylesheet"], style').remove();
-    $('[style]').removeAttr('style');
+
+    // Filter and scope CSS to this chapter's container
+    let chapterCss = '';
+    if (collectedCss.trim()) {
+      chapterCss = filterEpubCss(collectedCss);
+    }
+
+    // Strip conflicting inline styles, keep layout/formatting ones
+    $('[style]').each((_, el) => {
+      const $el = $(el);
+      const style = $el.attr('style') || '';
+      const cleaned = filterInlineStyle(style);
+      if (cleaned) {
+        $el.attr('style', cleaned);
+      } else {
+        $el.removeAttr('style');
+      }
+    });
 
     // Convert images to base64 data URIs
     $('img, image').each((_, el) => {
@@ -168,7 +234,7 @@ function parseEpub(epubPath) {
 
     const body = $('body');
     const html = body.length ? body.html() : $.html();
-    chapters.push({ id: idref, href: item.href, html });
+    chapters.push({ id: idref, href: item.href, html, css: chapterCss });
   }
 
   return { title, chapters, toc };
