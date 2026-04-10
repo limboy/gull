@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ALargeSmall } from 'lucide-react';
 
 import './reader/App.css';
 
@@ -31,11 +32,7 @@ function ReaderApp() {
           </button>
           <div className="tab-bar-drag" />
           <button id="btn-style" title="Reading Style" aria-label="Reading Style">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 7h16" />
-              <path d="M7 12h10" />
-              <path d="M10 17h4" />
-            </svg>
+            <ALargeSmall aria-hidden="true" />
           </button>
           <button id="toggle-right-sidebar" title="Toggle Sidebar" aria-label="Toggle Sidebar">
             <svg className="sidebar-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
