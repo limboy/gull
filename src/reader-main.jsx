@@ -102,7 +102,6 @@ function ReaderApp() {
           <select id="style-font" defaultValue="Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif">
             <option value="Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif">Serif</option>
             <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Sans</option>
-            <option value="'Avenir Next', 'Helvetica Neue', Arial, sans-serif">Avenir</option>
             <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter</option>
             <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans</option>
             <option value="'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Geist</option>
