@@ -4,6 +4,32 @@ const fs = require('fs');
 const AdmZip = require('adm-zip');
 const cheerio = require('cheerio');
 
+// --- Single Instance Lock ---
+const isPrimaryInstance = app.requestSingleInstanceLock();
+if (!isPrimaryInstance) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine) => {
+    // Someone tried to run a second instance, we should focus our window.
+    const win = getMainWindow();
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+    
+    // Process command line arguments for the second instance (Windows/Linux)
+    const args = commandLine.slice(app.isPackaged ? 1 : 2);
+    for (const arg of args) {
+      if (arg.toLowerCase().endsWith('.epub')) {
+        const resolved = path.resolve(arg);
+        if (fs.existsSync(resolved)) {
+          openFileInApp(resolved);
+        }
+      }
+    }
+  });
+}
+
 const APP_LOGO_PATH = path.join(__dirname, 'logo.png');
 const APP_DOCK_ICON_PATH = path.join(__dirname, 'logo-dock.png');
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
@@ -387,7 +413,11 @@ function openFileInApp(filePath) {
 
   const win = getMainWindow();
   if (win) {
-    win.webContents.send('open-file', filePath);
+    if (win.webContents.isLoading()) {
+      pendingFiles.push(filePath);
+    } else {
+      win.webContents.send('open-file', filePath);
+    }
     win.focus();
   } else {
     pendingFiles.push(filePath);
@@ -521,8 +551,6 @@ app.whenReady().then(() => {
     return parseEpub(filePath);
   });
 
-  createWindow();
-
   // Handle CLI args (e.g., `yara mybook.epub`)
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   for (const arg of args) {
@@ -533,6 +561,8 @@ app.whenReady().then(() => {
       }
     }
   }
+
+  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

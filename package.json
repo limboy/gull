@@ -19,18 +19,19 @@
   "build": {
     "appId": "com.yara.reader",
     "productName": "Yara",
+    "fileAssociations": [
+      {
+        "ext": "epub",
+        "name": "EPUB Document",
+        "description": "EPUB e-book file",
+        "role": "Viewer",
+        "mimeType": "application/epub+zip",
+        "uti": "org.idpf.epub-container"
+      }
+    ],
     "mac": {
       "category": "public.app-category.books",
-      "target": "dmg",
-      "fileAssociations": [
-        {
-          "ext": "epub",
-          "name": "EPUB Document",
-          "description": "EPUB e-book file",
-          "role": "Viewer",
-          "mimeType": "application/epub+zip"
-        }
-      ]
+      "target": "dmg"
     },
     "files": [
       "main.js",
