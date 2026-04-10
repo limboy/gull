@@ -1,82 +1,49 @@
 // State
 const state = {
-  activeActivity: 'books',
-  leftTab: 'all',
-  rightTab: 'outline',
-  openBooks: [],       // [{ id, title }]
-  activeBookId: null,
-  books: [],           // [{ id, title, filename, addedAt }]
-  bookContent: {},     // id -> { chapters, toc }
+  openBooks: [],       // [{ filePath, title }]
+  activeBookPath: null,
+  bookContent: {},     // filePath -> { chapters, toc }
 };
 
 const STORAGE_KEY = 'yara-sidebar-widths';
 
 // DOM refs
 const appLayout = document.getElementById('app-layout');
-const tabBar = document.getElementById('tab-bar');
+const tabBar = document.getElementById('tab-bar-tabs');
 const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
 
-// --- Activity Bar ---
-function setActiveActivity(name) {
-  state.activeActivity = name;
-  document.querySelectorAll('.activity-icon').forEach(el => {
-    el.classList.toggle('active', el.dataset.activity === name);
-  });
-}
-
-// --- Left Sidebar Tabs ---
-function setLeftTab(tab) {
-  state.leftTab = tab;
-  document.querySelectorAll('#left-sidebar .tab-row .tab').forEach(el => {
-    el.classList.toggle('active', el.dataset.leftTab === tab);
-  });
-  document.querySelectorAll('#left-sidebar .tab-panel').forEach(el => {
-    el.classList.toggle('active', el.dataset.leftPanel === tab);
-  });
-}
-
-// --- Right Sidebar Tabs ---
-function setRightTab(tab) {
-  state.rightTab = tab;
-  document.querySelectorAll('#right-sidebar .tab-row .tab').forEach(el => {
-    el.classList.toggle('active', el.dataset.rightTab === tab);
-  });
-  document.querySelectorAll('#right-sidebar .tab-panel').forEach(el => {
-    el.classList.toggle('active', el.dataset.rightPanel === tab);
-  });
-}
-
-// --- Book Management ---
-function openBook(id, title) {
-  const existing = state.openBooks.find(b => b.id === id);
+// --- Book Tab Management ---
+function openBook(filePath, title) {
+  const existing = state.openBooks.find(b => b.filePath === filePath);
   if (!existing) {
-    state.openBooks.push({ id, title });
+    state.openBooks.push({ filePath, title });
   }
-  setActiveBook(id);
+  setActiveBook(filePath);
   renderTabs();
 }
 
-function closeBook(id) {
-  const idx = state.openBooks.findIndex(b => b.id === id);
+function closeBook(filePath) {
+  const idx = state.openBooks.findIndex(b => b.filePath === filePath);
   if (idx === -1) return;
 
   state.openBooks.splice(idx, 1);
+  delete state.bookContent[filePath];
 
-  if (state.activeBookId === id) {
+  if (state.activeBookPath === filePath) {
     if (state.openBooks.length > 0) {
       const newIdx = Math.min(idx, state.openBooks.length - 1);
-      setActiveBook(state.openBooks[newIdx].id);
+      setActiveBook(state.openBooks[newIdx].filePath);
     } else {
-      state.activeBookId = null;
+      state.activeBookPath = null;
     }
   }
   renderTabs();
   renderContent();
 }
 
-function setActiveBook(id) {
-  state.activeBookId = id;
+function setActiveBook(filePath) {
+  state.activeBookPath = filePath;
   renderTabs();
   renderContent();
 }
@@ -85,11 +52,11 @@ function renderTabs() {
   tabBar.innerHTML = '';
   state.openBooks.forEach(book => {
     const tab = document.createElement('div');
-    tab.className = 'tab-item' + (book.id === state.activeBookId ? ' active' : '');
-    tab.dataset.bookId = book.id;
+    tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
+    tab.dataset.bookPath = book.filePath;
     tab.innerHTML = `
       <span class="tab-label">${book.title}</span>
-      <span class="tab-close" data-close-book="${book.id}">
+      <span class="tab-close" data-close-book="${book.filePath}">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </span>
     `;
@@ -98,21 +65,20 @@ function renderTabs() {
 }
 
 async function renderContent() {
-  // Remove existing book content elements
   contentArea.querySelectorAll('.book-content').forEach(el => el.remove());
 
-  if (state.activeBookId) {
+  if (state.activeBookPath) {
     emptyState.style.display = 'none';
-    const book = state.openBooks.find(b => b.id === state.activeBookId);
+    const book = state.openBooks.find(b => b.filePath === state.activeBookPath);
     if (book) {
       // Load content if not cached
-      if (!state.bookContent[book.id]) {
+      if (!state.bookContent[book.filePath]) {
         const div = document.createElement('div');
         div.className = 'book-content active';
         div.textContent = 'Loading…';
         contentArea.appendChild(div);
         try {
-          state.bookContent[book.id] = await window.books.open(book.id);
+          state.bookContent[book.filePath] = await window.epub.parse(book.filePath);
         } catch (err) {
           div.textContent = 'Failed to load book: ' + err.message;
           return;
@@ -120,11 +86,16 @@ async function renderContent() {
         div.remove();
       }
 
-      const data = state.bookContent[book.id];
+      const data = state.bookContent[book.filePath];
+      // Update title from metadata if available
+      if (data.title && book.title !== data.title) {
+        book.title = data.title;
+        renderTabs();
+      }
+
       const div = document.createElement('div');
       div.className = 'book-content active';
 
-      // Render chapters
       data.chapters.forEach((ch, i) => {
         const section = document.createElement('section');
         section.className = 'chapter';
@@ -140,6 +111,7 @@ async function renderContent() {
 
       contentArea.appendChild(div);
       renderOutline(data.toc, data.chapters);
+      initOutlineScrollTracking(data.chapters);
     }
   } else {
     emptyState.style.display = '';
@@ -148,9 +120,7 @@ async function renderContent() {
 }
 
 function stripEpubFonts(container) {
-  // Remove <style> tags from EPUB content
   container.querySelectorAll('style').forEach(el => el.remove());
-  // Strip inline font-family from all elements
   container.querySelectorAll('[style]').forEach(el => {
     el.style.fontFamily = '';
     el.style.fontSize = '';
@@ -159,8 +129,6 @@ function stripEpubFonts(container) {
 }
 
 function bindImageFallback(container) {
-  // Hide SVGs containing <image> elements (e.g. EPUB cover pages)
-  // that fail to render properly
   const svgImages = container.querySelectorAll('svg image');
   for (const svgImg of svgImages) {
     const svg = svgImg.closest('svg');
@@ -178,7 +146,6 @@ function bindImageFallback(container) {
       img.classList.add('image-loaded');
     };
 
-    // Fail-closed: keep hidden unless we can confirm it loaded.
     img.classList.remove('image-loaded');
     img.classList.remove('image-missing');
 
@@ -198,6 +165,77 @@ function bindImageFallback(container) {
   }
 }
 
+function setActiveOutlineItem(el) {
+  document.querySelectorAll('.outline-item.active').forEach(item => item.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// Track scroll position to highlight current ToC item
+let scrollTrackingCleanup = null;
+
+function initOutlineScrollTracking(chapters) {
+  // Clean up previous listener
+  if (scrollTrackingCleanup) {
+    scrollTrackingCleanup();
+    scrollTrackingCleanup = null;
+  }
+
+  if (!chapters || chapters.length === 0) return;
+
+  // Build a list of { outlineEl, scrollTarget } for each ToC item
+  function buildTocTargets() {
+    const targets = [];
+    const items = document.querySelectorAll('.outline-item');
+    for (const item of items) {
+      const href = item.dataset.href || '';
+      const baseHref = href.split('#')[0];
+      const fragment = href.includes('#') ? href.split('#')[1] : null;
+
+      // Find matching chapter
+      const ch = chapters.find(c => {
+        if (!baseHref) return false;
+        if (c.href === baseHref) return true;
+        return c.href.split('/').pop() === baseHref.split('/').pop();
+      });
+
+      if (ch) {
+        const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+        if (section) {
+          let target = section;
+          if (fragment) {
+            const fragEl = section.querySelector('#' + CSS.escape(fragment));
+            if (fragEl) target = fragEl;
+          }
+          targets.push({ el: item, target });
+        }
+      }
+    }
+    return targets;
+  }
+
+  const onScroll = () => {
+    const targets = buildTocTargets();
+    if (targets.length === 0) return;
+
+    const scrollTop = contentArea.scrollTop;
+    const offset = 60;
+
+    let active = targets[0].el;
+    for (const { el, target } of targets) {
+      if (target.offsetTop <= scrollTop + offset) {
+        active = el;
+      }
+    }
+    setActiveOutlineItem(active);
+  };
+
+  contentArea.addEventListener('scroll', onScroll);
+  scrollTrackingCleanup = () => contentArea.removeEventListener('scroll', onScroll);
+
+  // Set initial highlight
+  onScroll();
+}
+
 function renderOutline(toc, chapters) {
   const panel = document.getElementById('outline-panel');
   panel.innerHTML = '';
@@ -210,36 +248,37 @@ function renderOutline(toc, chapters) {
       div.textContent = item.title;
       div.dataset.href = item.href || '';
       div.addEventListener('click', () => {
-        // Try to find the chapter by href
         const href = item.href || '';
         const baseHref = href.split('#')[0];
         const fragment = href.includes('#') ? href.split('#')[1] : null;
 
-        // Try fragment first
-        if (fragment) {
-          const target = contentArea.querySelector('#' + CSS.escape(fragment));
-          if (target) { target.scrollIntoView({ behavior: 'smooth' }); return; }
+        // Find the matching chapter by comparing href (filename)
+        const matchChapter = (chapters || []).find(ch => {
+          if (!baseHref) return false;
+          if (ch.href === baseHref) return true;
+          const chFile = ch.href.split('/').pop();
+          const tocFile = baseHref.split('/').pop();
+          return chFile === tocFile;
+        });
+
+        let scrolled = false;
+        if (matchChapter) {
+          const section = contentArea.querySelector('#chapter-' + CSS.escape(matchChapter.id));
+          if (section) {
+            if (fragment) {
+              const target = section.querySelector('#' + CSS.escape(fragment));
+              if (target) { target.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
+            }
+            if (!scrolled) { section.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
+          }
         }
 
-        // Match chapter by href suffix
-        if (baseHref && chapters) {
-          const idx = chapters.findIndex(ch => baseHref.endsWith(ch.id + '.xhtml') || baseHref.endsWith(ch.id + '.html') || baseHref.includes(ch.id));
-          if (idx !== -1) {
-            const section = contentArea.querySelector('#chapter-' + CSS.escape(chapters[idx].id));
-            if (section) { section.scrollIntoView({ behavior: 'smooth' }); return; }
-          }
-          // Also try matching by filename
-          for (const ch of chapters) {
-            const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
-            if (section) {
-              // Check if this section contains the fragment target
-              if (fragment) {
-                const target = section.querySelector('#' + CSS.escape(fragment));
-                if (target) { target.scrollIntoView({ behavior: 'smooth' }); return; }
-              }
-            }
-          }
+        if (!scrolled && fragment) {
+          const target = contentArea.querySelector('#' + CSS.escape(fragment));
+          if (target) { target.scrollIntoView({ behavior: 'instant' }); scrolled = true; }
         }
+
+        if (scrolled) setActiveOutlineItem(div);
       });
       panel.appendChild(div);
       if (item.children && item.children.length > 0) {
@@ -251,13 +290,11 @@ function renderOutline(toc, chapters) {
   addItems(toc, 1);
 }
 
-// --- Resize Handles ---
+// --- Resize Handle ---
 function initResize() {
   const saved = loadSidebarWidths();
-  if (saved.left) document.documentElement.style.setProperty('--left-sidebar-width', saved.left + 'px');
   if (saved.right) document.documentElement.style.setProperty('--right-sidebar-width', saved.right + 'px');
 
-  setupHandle('resize-left', '--left-sidebar-width', 'left');
   setupHandle('resize-right', '--right-sidebar-width', 'right');
 }
 
@@ -275,7 +312,7 @@ function setupHandle(handleId, cssVar, side) {
     document.body.classList.add('no-select');
 
     const onMouseMove = (e) => {
-      const delta = side === 'left' ? e.clientX - startX : startX - e.clientX;
+      const delta = startX - e.clientX;
       const maxWidth = window.innerWidth * 0.5;
       const newWidth = Math.max(150, Math.min(maxWidth, startWidth + delta));
       document.documentElement.style.setProperty(cssVar, newWidth + 'px');
@@ -295,9 +332,8 @@ function setupHandle(handleId, cssVar, side) {
 }
 
 function saveSidebarWidths() {
-  const left = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--left-sidebar-width'), 10);
   const right = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--right-sidebar-width'), 10);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ left, right }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ right }));
 }
 
 function loadSidebarWidths() {
@@ -310,141 +346,40 @@ function loadSidebarWidths() {
 
 // --- Event Delegation ---
 appLayout.addEventListener('click', (e) => {
-  const target = e.target.closest('[data-activity]');
-  if (target) {
-    if (target.dataset.activity === 'settings') {
-      window.settings.open();
-      return;
-    }
-    setActiveActivity(target.dataset.activity);
-    return;
-  }
-
-  const leftTab = e.target.closest('[data-left-tab]');
-  if (leftTab) {
-    setLeftTab(leftTab.dataset.leftTab);
-    return;
-  }
-
-  const rightTab = e.target.closest('[data-right-tab]');
-  if (rightTab) {
-    setRightTab(rightTab.dataset.rightTab);
-    return;
-  }
-
   const closeBtn = e.target.closest('[data-close-book]');
   if (closeBtn) {
     closeBook(closeBtn.dataset.closeBook);
     return;
   }
 
-  const tabItem = e.target.closest('.tab-item[data-book-id]');
+  const tabItem = e.target.closest('.tab-item[data-book-path]');
   if (tabItem) {
-    setActiveBook(tabItem.dataset.bookId);
-    return;
-  }
-
-  const bookItem = e.target.closest('.book-item[data-book-id]');
-  if (bookItem) {
-    openBook(bookItem.dataset.bookId, bookItem.dataset.bookTitle);
+    setActiveBook(tabItem.dataset.bookPath);
     return;
   }
 });
 
-// Auto-resize textarea
-const aiInput = document.getElementById('ai-input');
-aiInput.addEventListener('input', () => {
-  aiInput.style.height = 'auto';
-  aiInput.style.height = Math.min(aiInput.scrollHeight, 120) + 'px';
-});
-
-// --- Book List Rendering ---
-const BOOK_ICON_SVG = '<svg class="book-icon" viewBox="0 0 24 24"><path d="M6 2h10l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm9 1.5V7h3.5L15 3.5zM6 4v16h12V8h-4a1 1 0 0 1-1-1V4H6z"/></svg>';
-
-function createBookItem(book) {
-  const div = document.createElement('div');
-  div.className = 'book-item';
-  div.dataset.bookId = book.id;
-  div.dataset.bookTitle = book.title;
-  div.innerHTML = `${BOOK_ICON_SVG}<span class="book-title">${book.title}</span>`;
-  div.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    window.books.showContextMenu(book.id);
-  });
-  return div;
-}
-
-function renderBookList() {
-  const panels = {
-    all: document.querySelector('[data-left-panel="all"] .book-list'),
-    reading: document.querySelector('[data-left-panel="reading"] .book-list'),
-    finished: document.querySelector('[data-left-panel="finished"] .book-list'),
-  };
-  Object.values(panels).forEach(el => el.innerHTML = '');
-
-  state.books.forEach(book => {
-    panels.all.appendChild(createBookItem(book));
-    if (book.status === 'reading') {
-      panels.reading.appendChild(createBookItem(book));
-    } else if (book.status === 'finished') {
-      panels.finished.appendChild(createBookItem(book));
-    }
-  });
-}
-
-async function loadBooks() {
-  state.books = await window.books.getAll();
-  renderBookList();
-}
-
-// --- Drag and Drop ---
+// --- Drag and Drop (on entire window) ---
 function initDragAndDrop() {
-  const sidebar = document.getElementById('left-sidebar');
-  let dragCounter = 0;
-
-  // Prevent default file loading on the whole document
-  document.addEventListener('dragover', (e) => e.preventDefault());
-  document.addEventListener('drop', (e) => e.preventDefault());
-
-  sidebar.addEventListener('dragenter', (e) => {
+  document.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dragCounter++;
-    if (dragCounter === 1) sidebar.classList.add('drag-over');
+    e.dataTransfer.dropEffect = 'copy';
   });
 
-  sidebar.addEventListener('dragleave', (e) => {
+  document.addEventListener('drop', async (e) => {
     e.preventDefault();
-    dragCounter--;
-    if (dragCounter === 0) sidebar.classList.remove('drag-over');
-  });
-
-  sidebar.addEventListener('dragover', (e) => {
-    e.preventDefault();
-  });
-
-  sidebar.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    dragCounter = 0;
-    sidebar.classList.remove('drag-over');
-
-    const paths = [];
     for (const file of e.dataTransfer.files) {
-      const filePath = window.books.getFilePath(file);
+      const filePath = window.epub.getFilePath(file);
       if (filePath && filePath.toLowerCase().endsWith('.epub')) {
-        paths.push(filePath);
+        const title = filePath.split('/').pop().replace(/\.epub$/i, '');
+        openBook(filePath, title);
       }
-    }
-
-    if (paths.length > 0) {
-      state.books = await window.books.import(paths);
-      renderBookList();
     }
   });
 }
 
 // --- Broken image handling ---
 function initBrokenImageHandling() {
-  // image `error` does not bubble, so listen in capture phase
   contentArea.addEventListener('error', (e) => {
     const target = e.target;
     if (!(target instanceof HTMLImageElement)) return;
@@ -457,19 +392,10 @@ document.getElementById('toggle-right-sidebar').addEventListener('click', () => 
   appLayout.classList.toggle('right-sidebar-hidden');
 });
 
-// --- Book context menu responses ---
-window.books.onStatusUpdated((id, status) => {
-  const book = state.books.find(b => b.id === id);
-  if (book) {
-    book.status = status;
-    renderBookList();
-  }
-});
-
-window.books.onDeleteRequested(async (id) => {
-  state.books = await window.books.delete(id);
-  closeBook(id);
-  renderBookList();
+// --- File open from main process (Finder double-click, File > Open) ---
+window.epub.onOpenFile((filePath) => {
+  const title = filePath.split('/').pop().replace(/\.epub$/i, '');
+  openBook(filePath, title);
 });
 
 // --- Theme ---
@@ -490,5 +416,4 @@ window.settings.onThemeChanged((theme) => {
 initResize();
 initDragAndDrop();
 initBrokenImageHandling();
-loadBooks();
 loadTheme();

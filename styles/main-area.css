@@ -9,10 +9,23 @@
   display: flex;
   align-items: center;
   background: var(--bg-tab-bar);
-  min-height: 35px;
-  overflow-x: auto;
+  min-height: 38px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+}
+
+.tab-bar-drag {
+  width: 76px;
+  flex-shrink: 0;
+}
+
+#tab-bar-tabs {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow-x: auto;
+  min-width: 0;
 }
 
 
@@ -24,7 +37,7 @@
   height: 35px;
   font-size: 13px;
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: default;
   border-right: 1px solid var(--border);
   white-space: nowrap;
   transition: background 100ms, color 100ms;
@@ -80,6 +93,24 @@
   height: 100%;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.empty-state-content {
+  text-align: center;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  fill: var(--text-secondary);
+  opacity: 0.4;
+  margin-bottom: 16px;
+}
+
+.empty-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.6;
 }
 
 .book-content {

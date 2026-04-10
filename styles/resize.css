@@ -4,12 +4,10 @@
   z-index: 10;
 }
 
-#resize-left {
-  background: var(--bg-sidebar);
-}
-
 #resize-right {
-  background: var(--bg-sidebar);
+  background:
+    linear-gradient(to bottom, transparent 37px, var(--border) 37px, var(--border) 38px, transparent 38px),
+    var(--bg-sidebar);
 }
 
 .resize-handle::after {
@@ -20,11 +18,6 @@
   width: 1px;
   background: var(--border);
   transition: width 150ms, left 150ms, right 150ms, background 150ms;
-}
-
-#resize-left::after {
-  right: 0;
-  left: auto;
 }
 
 #resize-right::after {
