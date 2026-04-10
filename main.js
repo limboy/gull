@@ -7,6 +7,7 @@ const cheerio = require('cheerio');
 const APP_LOGO_PATH = path.join(__dirname, 'logo.png');
 const APP_DOCK_ICON_PATH = path.join(__dirname, 'logo-dock.png');
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+const DEFAULT_MAIN_WINDOW_BOUNDS = { width: 1000, height: 800 };
 
 function setMacDockIcon() {
   if (process.platform !== 'darwin' || !app.dock) return;
@@ -35,6 +36,36 @@ function readSettings() {
 
 function writeSettings(data) {
   fs.writeFileSync(getSettingsPath(), JSON.stringify(data, null, 2));
+}
+
+function isValidWindowBounds(bounds) {
+  return bounds
+    && Number.isInteger(bounds.x)
+    && Number.isInteger(bounds.y)
+    && Number.isInteger(bounds.width)
+    && Number.isInteger(bounds.height)
+    && bounds.width > 200
+    && bounds.height > 200;
+}
+
+function saveMainWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+  const settings = readSettings();
+  settings.mainWindowBounds = win.isMaximized() ? win.getNormalBounds() : win.getBounds();
+  settings.mainWindowMaximized = win.isMaximized();
+  writeSettings(settings);
+}
+
+let mainWindowStateSaveTimer = null;
+
+function scheduleMainWindowStateSave(win) {
+  if (mainWindowStateSaveTimer) {
+    clearTimeout(mainWindowStateSaveTimer);
+  }
+  mainWindowStateSaveTimer = setTimeout(() => {
+    saveMainWindowState(win);
+    mainWindowStateSaveTimer = null;
+  }, 200);
 }
 
 function broadcastToAllWindows(channel, ...args) {
@@ -275,9 +306,14 @@ function getRendererPath(page) {
 }
 
 function createWindow() {
+  const settings = readSettings();
+  const savedBounds = settings.mainWindowBounds;
+  const hasSavedBounds = isValidWindowBounds(savedBounds);
   const win = new BrowserWindow({
-    width: 1000,
-    height: 800,
+    width: hasSavedBounds ? savedBounds.width : DEFAULT_MAIN_WINDOW_BOUNDS.width,
+    height: hasSavedBounds ? savedBounds.height : DEFAULT_MAIN_WINDOW_BOUNDS.height,
+    x: hasSavedBounds ? savedBounds.x : undefined,
+    y: hasSavedBounds ? savedBounds.y : undefined,
     titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
     trafficLightPosition: { x: 16, y: 12 },
     icon: fs.existsSync(APP_LOGO_PATH) ? APP_LOGO_PATH : undefined,
@@ -299,6 +335,20 @@ function createWindow() {
     }
     pendingFiles = [];
   });
+
+  win.on('resize', () => scheduleMainWindowStateSave(win));
+  win.on('move', () => scheduleMainWindowStateSave(win));
+  win.on('close', () => {
+    if (mainWindowStateSaveTimer) {
+      clearTimeout(mainWindowStateSaveTimer);
+      mainWindowStateSaveTimer = null;
+    }
+    saveMainWindowState(win);
+  });
+
+  if (settings.mainWindowMaximized) {
+    win.maximize();
+  }
 
   return win;
 }
