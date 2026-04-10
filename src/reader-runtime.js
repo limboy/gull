@@ -69,8 +69,9 @@ function renderTabs() {
     const tab = document.createElement('div');
     tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
     tab.dataset.bookPath = book.filePath;
+    const safeTitle = escapeHtml(book.title);
     tab.innerHTML = `
-      <span class="tab-label">${book.title}</span>
+      <span class="tab-label">${safeTitle}</span>
       <span class="tab-close" data-close-book="${book.filePath}">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </span>
