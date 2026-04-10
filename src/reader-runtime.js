@@ -1092,7 +1092,9 @@ window.epub.onOpenFile((filePath) => {
 
 // --- Theme ---
 function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme || 'dark');
+  const t = theme || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('yara-theme', t);
 }
 
 async function loadTheme() {

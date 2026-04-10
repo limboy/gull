@@ -26,7 +26,9 @@ fontSizeSlider.addEventListener('input', () => {
 const themeSelect = document.getElementById('setting-theme');
 
 function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme || 'dark');
+  const t = theme || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('yara-theme', t);
 }
 
 themeSelect.addEventListener('change', () => {
