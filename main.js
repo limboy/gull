@@ -139,10 +139,22 @@ function parseNcxNavMap(navMap, $) {
   return items;
 }
 
-// Properties to strip from EPUB CSS (conflict with reader theme)
+// Properties to strip from EPUB CSS.
+// We intentionally ignore book-defined line metrics and positioned text layout
+// because this reader reflows content using its own typography controls.
 const STRIP_CSS_PROPS = new Set([
   'font-family', 'color', 'background', 'background-color',
   'background-image', 'border-color',
+  'line-height',
+  'position', 'top', 'right', 'bottom', 'left',
+  'inset', 'inset-block', 'inset-block-start', 'inset-block-end',
+  'inset-inline', 'inset-inline-start', 'inset-inline-end',
+  'transform',
+]);
+
+const HTML_VOID_TAGS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
+  'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
 ]);
 
 function filterInlineStyle(style) {
@@ -170,6 +182,21 @@ function filterEpubCss(css) {
       .join(';\n  ');
     return filtered ? `{ ${filtered}; }` : '{ }';
   });
+}
+
+function normalizeXhtmlFragment(html) {
+  // Cheerio preserves XHTML self-closing syntax like <div />.
+  // When injected via innerHTML into the HTML renderer, non-void tags do not self-close
+  // and can swallow the rest of the chapter, collapsing section layout.
+  return html.replace(
+    /<([a-zA-Z][\w:-]*)(\s[^<>]*?)?\s*\/>/g,
+    (match, tagName, attrs = '') => {
+      if (HTML_VOID_TAGS.has(tagName.toLowerCase())) {
+        return `<${tagName}${attrs}>`;
+      }
+      return `<${tagName}${attrs}></${tagName}>`;
+    }
+  );
 }
 
 function parseEpub(epubPath) {
@@ -284,7 +311,8 @@ function parseEpub(epubPath) {
     });
 
     const body = $('body');
-    const html = body.length ? body.html() : $.html();
+    const rawHtml = body.length ? body.html() : $.html();
+    const html = normalizeXhtmlFragment(rawHtml);
     chapters.push({ id: idref, href: item.href, html, css: chapterCss });
   }
 
