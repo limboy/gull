@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ALargeSmall } from 'lucide-react';
 
+import './reader/fonts.css';
 import './reader/App.css';
 
 function ReaderApp() {
@@ -102,6 +103,10 @@ function ReaderApp() {
             <option value="Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif">Serif</option>
             <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Sans</option>
             <option value="'Avenir Next', 'Helvetica Neue', Arial, sans-serif">Avenir</option>
+            <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter</option>
+            <option value="'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Open Sans</option>
+            <option value="'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Geist</option>
+            <option value="'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace">Monospace</option>
           </select>
         </div>
 
