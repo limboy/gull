@@ -80,10 +80,75 @@
   fill: currentColor;
 }
 
+#content-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
 #content-area {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+#content-area::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chapter progress scrollbar */
+#chapter-scrollbar {
+  width: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 0;
+  margin-right: 8px;
+  flex-shrink: 0;
+  cursor: default;
+  position: relative;
+}
+
+#chapter-scrollbar:empty {
+  display: none;
+}
+
+.ch-scroll-segment {
+  flex: none;
+  min-height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--scrollbar-thumb);
+  position: relative;
+}
+
+.ch-scroll-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: height 60ms linear;
+}
+
+/* Chapter name tooltip */
+.ch-scroll-tooltip {
+  position: fixed;
+  right: 0;
+  padding: 4px 8px;
+  background: var(--bg-tab-bar);
+  color: var(--text-primary);
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  z-index: 100;
+  transform: translateY(-50%);
 }
 
 .empty-state {
@@ -129,26 +194,40 @@
   font-family: inherit !important;
 }
 
-.book-content code, .book-content pre {
+.book-content code,
+.book-content pre {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace !important;
 }
 
 /* Book content typography */
-.book-content h1, .book-content h2, .book-content h3,
-.book-content h4, .book-content h5, .book-content h6 {
+.book-content h1,
+.book-content h2,
+.book-content h3,
+.book-content h4,
+.book-content h5,
+.book-content h6 {
   margin: 1.2em 0 0.6em;
   line-height: 1.3;
 }
 
-.book-content h1 { font-size: 1.6em; }
-.book-content h2 { font-size: 1.4em; }
-.book-content h3 { font-size: 1.2em; }
+.book-content h1 {
+  font-size: 1.6em;
+}
+
+.book-content h2 {
+  font-size: 1.4em;
+}
+
+.book-content h3 {
+  font-size: 1.2em;
+}
 
 .book-content p {
   margin: 0.6em 0;
 }
 
-.book-content img, .book-content svg {
+.book-content img,
+.book-content svg {
   max-width: 100%;
   height: auto;
 }
@@ -187,7 +266,8 @@
   color: var(--text-secondary);
 }
 
-.book-content ul, .book-content ol {
+.book-content ul,
+.book-content ol {
   margin: 0.6em 0;
   padding-left: 1.5em;
 }
@@ -210,7 +290,8 @@
   width: 100%;
 }
 
-.book-content th, .book-content td {
+.book-content th,
+.book-content td {
   border: 1px solid var(--border);
   padding: 0.4em 0.8em;
   text-align: left;

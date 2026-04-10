@@ -112,10 +112,12 @@ async function renderContent() {
       contentArea.appendChild(div);
       renderOutline(data.toc, data.chapters);
       initOutlineScrollTracking(data.chapters);
+      initChapterScrollbar(data.chapters, data.toc);
     }
   } else {
     emptyState.style.display = '';
     renderOutline([], []);
+    initChapterScrollbar([]);
   }
 }
 
@@ -163,6 +165,136 @@ function bindImageFallback(container) {
       else markMissing();
     }
   }
+}
+
+// --- Chapter Progress Scrollbar ---
+let chapterScrollCleanup = null;
+
+function initChapterScrollbar(chapters, toc) {
+  if (chapterScrollCleanup) {
+    chapterScrollCleanup();
+    chapterScrollCleanup = null;
+  }
+
+  const bar = document.getElementById('chapter-scrollbar');
+  bar.innerHTML = '';
+
+  if (!chapters || chapters.length === 0) return;
+
+  // Build a chapter-href -> title map from ToC (top-level only)
+  const titleMap = {};
+  function flattenToc(items) {
+    for (const item of items) {
+      const baseHref = (item.href || '').split('#')[0];
+      const file = baseHref.split('/').pop();
+      if (file && !titleMap[file]) titleMap[file] = item.title;
+      if (item.children) flattenToc(item.children);
+    }
+  }
+  if (toc) flattenToc(toc);
+
+  // Build segment elements
+  const segments = [];
+  for (const ch of chapters) {
+    const seg = document.createElement('div');
+    seg.className = 'ch-scroll-segment';
+    const fill = document.createElement('div');
+    fill.className = 'ch-scroll-fill';
+    seg.appendChild(fill);
+    bar.appendChild(seg);
+
+    const chFile = ch.href.split('/').pop();
+    const title = titleMap[chFile] || '';
+    segments.push({ id: ch.id, seg, fill, title });
+  }
+
+  // Tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'ch-scroll-tooltip';
+  tooltip.style.display = 'none';
+  document.body.appendChild(tooltip);
+
+  function update() {
+    const scrollTop = contentArea.scrollTop;
+    const viewportH = contentArea.clientHeight;
+    const barH = bar.clientHeight - (chapters.length - 1) * 3 - 16;
+
+    const chapterMeasures = [];
+    let totalH = 0;
+    for (const s of segments) {
+      const section = contentArea.querySelector('#chapter-' + CSS.escape(s.id));
+      if (section) {
+        const h = section.offsetHeight;
+        chapterMeasures.push({ ...s, top: section.offsetTop, height: h });
+        totalH += h;
+      }
+    }
+
+    if (totalH === 0) return;
+
+    for (const m of chapterMeasures) {
+      const ratio = m.height / totalH;
+      const segH = Math.max(8, ratio * barH);
+      m.seg.style.height = segH + 'px';
+
+      const chStart = m.top;
+      const viewEnd = scrollTop + viewportH;
+
+      let fillRatio = 0;
+      if (viewEnd >= chStart + m.height) {
+        fillRatio = 1;
+      } else if (viewEnd > chStart) {
+        fillRatio = (viewEnd - chStart) / m.height;
+      }
+
+      fillRatio = Math.max(0, Math.min(1, fillRatio));
+      m.fill.style.height = (fillRatio * 100) + '%';
+    }
+  }
+
+  // Hover tooltip
+  bar.addEventListener('mousemove', (e) => {
+    const target = e.target.closest('.ch-scroll-segment');
+    if (!target) { tooltip.style.display = 'none'; return; }
+
+    const seg = segments.find(s => s.seg === target);
+    if (!seg || !seg.title) { tooltip.style.display = 'none'; return; }
+
+    tooltip.textContent = seg.title;
+    tooltip.style.display = '';
+    const barRect = bar.getBoundingClientRect();
+    tooltip.style.right = (window.innerWidth - barRect.left + 8) + 'px';
+    tooltip.style.top = e.clientY + 'px';
+  });
+
+  bar.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
+
+  // Click to jump
+  bar.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.ch-scroll-segment');
+    if (!target) return;
+
+    const seg = segments.find(s => s.seg === target);
+    if (!seg) return;
+
+    const segRect = target.getBoundingClientRect();
+    const within = (e.clientY - segRect.top) / segRect.height;
+    const section = contentArea.querySelector('#chapter-' + CSS.escape(seg.id));
+    if (section) {
+      contentArea.scrollTop = section.offsetTop + section.offsetHeight * within - contentArea.clientHeight / 2;
+    }
+  });
+
+  contentArea.addEventListener('scroll', update);
+  chapterScrollCleanup = () => {
+    contentArea.removeEventListener('scroll', update);
+    tooltip.remove();
+  };
+
+  requestAnimationFrame(() => requestAnimationFrame(update));
 }
 
 function setActiveOutlineItem(el) {
