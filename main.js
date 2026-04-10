@@ -1,8 +1,21 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, nativeTheme, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 const cheerio = require('cheerio');
+
+const APP_LOGO_PATH = path.join(__dirname, 'logo.png');
+const APP_DOCK_ICON_PATH = path.join(__dirname, 'logo-dock.png');
+
+function setMacDockIcon() {
+  if (process.platform !== 'darwin' || !app.dock) return;
+  const dockIconPath = fs.existsSync(APP_DOCK_ICON_PATH) ? APP_DOCK_ICON_PATH : APP_LOGO_PATH;
+  if (!fs.existsSync(dockIconPath)) return;
+  const dockIcon = nativeImage.createFromPath(dockIconPath);
+  if (!dockIcon.isEmpty()) {
+    app.dock.setIcon(dockIcon);
+  }
+}
 
 // --- Settings persistence ---
 function getSettingsPath() {
@@ -258,6 +271,7 @@ function createWindow() {
     height: 800,
     titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
     trafficLightPosition: { x: 16, y: 12 },
+    icon: fs.existsSync(APP_LOGO_PATH) ? APP_LOGO_PATH : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -317,6 +331,7 @@ function openSettings() {
     resizable: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: currentTheme === 'light' ? '#ffffff' : '#1e1e1e',
+    icon: fs.existsSync(APP_LOGO_PATH) ? APP_LOGO_PATH : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -382,6 +397,8 @@ app.on('open-file', (event, filePath) => {
 });
 
 app.whenReady().then(() => {
+  setMacDockIcon();
+
   createAppMenu();
 
   // IPC: settings

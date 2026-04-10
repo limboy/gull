@@ -33,6 +33,8 @@
       "preload.js",
       "renderer.js",
       "index.html",
+      "logo.png",
+      "logo-dock.png",
       "settings.html",
       "settings-renderer.js",
       "styles/**/*"
