@@ -8,3 +8,7 @@ release/
 
 # macOS
 .DS_Store
+
+# Local env (Apple notarization credentials)
+.env
+.env.local
