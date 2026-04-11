@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ALargeSmall } from 'lucide-react';
+import { ALargeSmall, Sun, Moon } from 'lucide-react';
 
 import './reader/fonts.css';
 import './reader/App.css';
@@ -32,6 +32,14 @@ function ReaderApp() {
             </svg>
           </button>
           <div className="tab-bar-drag" />
+          <div className="theme-switcher">
+            <button id="btn-theme-light" className="theme-btn" title="Light Theme" aria-label="Light Theme">
+              <Sun aria-hidden="true" />
+            </button>
+            <button id="btn-theme-dark" className="theme-btn" title="Dark Theme" aria-label="Dark Theme">
+              <Moon aria-hidden="true" />
+            </button>
+          </div>
           <button id="btn-style" title="Reading Style" aria-label="Reading Style">
             <ALargeSmall aria-hidden="true" />
           </button>

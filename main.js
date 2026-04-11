@@ -442,7 +442,7 @@ function openSettings() {
     return;
   }
 
-  const currentTheme = readSettings().theme || 'dark';
+  const currentTheme = readSettings().theme || 'light';
   settingsWindow = new BrowserWindow({
     width: 660,
     height: 480,

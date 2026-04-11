@@ -1084,6 +1084,16 @@ document.getElementById('toggle-right-sidebar').addEventListener('click', () => 
   appLayout.classList.toggle('right-sidebar-hidden');
 });
 
+document.getElementById('btn-theme-light').addEventListener('click', () => {
+  applyTheme('light');
+  window.settings.set('theme', 'light');
+});
+
+document.getElementById('btn-theme-dark').addEventListener('click', () => {
+  applyTheme('dark');
+  window.settings.set('theme', 'dark');
+});
+
 // --- File open from main process (Finder double-click, File > Open) ---
 window.epub.onOpenFile((filePath) => {
   const title = filePath.split('/').pop().replace(/\.epub$/i, '');
@@ -1092,9 +1102,17 @@ window.epub.onOpenFile((filePath) => {
 
 // --- Theme ---
 function applyTheme(theme) {
-  const t = theme || 'dark';
+  const t = theme || 'light';
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('gull-theme', t);
+  
+  // Update switcher UI
+  const btnLight = document.getElementById('btn-theme-light');
+  const btnDark = document.getElementById('btn-theme-dark');
+  if (btnLight && btnDark) {
+    btnLight.classList.toggle('active', t === 'light');
+    btnDark.classList.toggle('active', t === 'dark');
+  }
 }
 
 async function loadTheme() {
