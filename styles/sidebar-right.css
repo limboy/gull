@@ -145,3 +145,75 @@
   color: var(--text-secondary);
   font-size: 12px;
 }
+
+.highlight-item {
+  padding: 10px 16px;
+  cursor: default;
+  border-bottom: 1px solid var(--border);
+  transition: background 100ms;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.highlight-item:hover {
+  background: var(--hover);
+}
+
+.highlight-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.highlight-text {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.highlight-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.highlight-meta {
+  color: var(--text-secondary);
+  font-size: 10px;
+  flex: 1;
+}
+
+.highlight-delete {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 100ms, background 100ms, color 100ms;
+}
+
+.highlight-item:hover .highlight-delete {
+  opacity: 1;
+}
+
+.highlight-delete:hover {
+  background: var(--tab-close-hover);
+  color: #eb5757;
+}
+
+.highlight-delete svg {
+  width: 14px;
+  height: 14px;
+}

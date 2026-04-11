@@ -357,3 +357,42 @@
 .book-content .chapter {
   margin-bottom: 1em;
 }
+
+.selection-popup {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.selection-popup:hover {
+  background: var(--bg-tab-bar);
+  transform: translateX(-50%);
+}
+
+mark.reader-highlight {
+  background-color: rgba(255, 230, 0, 0.4);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+mark.reader-highlight:hover {
+  background-color: rgba(255, 230, 0, 0.6);
+}
+
+[data-theme="dark"] mark.reader-highlight {
+  background-color: rgba(255, 230, 0, 0.25);
+}

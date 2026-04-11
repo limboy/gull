@@ -5,6 +5,7 @@ const state = {
   bookSearchIndex: {}, // filePath -> [{ id, href, title, text, textLower }]
   sidebarMode: 'toc',
   searchQuery: '',
+  highlights: {},      // filePath -> [{ id, chapterId, start, end, text, createdAt }]
 };
 
 const STORAGE_KEY = 'gull-sidebar-widths';
@@ -17,10 +18,13 @@ const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
 const sidebarTabToc = document.getElementById('sidebar-tab-toc');
 const sidebarTabSearch = document.getElementById('sidebar-tab-search');
+const sidebarTabHighlights = document.getElementById('sidebar-tab-highlights');
 const sidebarSearchWrap = document.getElementById('sidebar-search-wrap');
 const sidebarSearchInput = document.getElementById('sidebar-search-input');
 const outlinePanel = document.getElementById('outline-panel');
 const searchPanel = document.getElementById('search-panel');
+const highlightsPanel = document.getElementById('highlights-panel');
+const selectionPopup = document.getElementById('selection-popup');
 
 const SEARCH_DEBOUNCE_MS = 100;
 const SEARCH_MIN_QUERY_LENGTH = 2;
@@ -84,21 +88,30 @@ function renderTabs() {
 }
 
 function setSidebarMode(mode) {
-  state.sidebarMode = mode === 'search' ? 'search' : 'toc';
+  state.sidebarMode = mode || 'toc';
 
   const isSearch = state.sidebarMode === 'search';
-  sidebarTabToc.classList.toggle('active', !isSearch);
+  const isHighlights = state.sidebarMode === 'highlights';
+  const isToc = state.sidebarMode === 'toc';
+
+  sidebarTabToc.classList.toggle('active', isToc);
   sidebarTabSearch.classList.toggle('active', isSearch);
-  sidebarTabToc.setAttribute('aria-selected', String(!isSearch));
+  sidebarTabHighlights.classList.toggle('active', isHighlights);
+
+  sidebarTabToc.setAttribute('aria-selected', String(isToc));
   sidebarTabSearch.setAttribute('aria-selected', String(isSearch));
+  sidebarTabHighlights.setAttribute('aria-selected', String(isHighlights));
 
   sidebarSearchWrap.hidden = !isSearch;
-  outlinePanel.hidden = isSearch;
+  outlinePanel.hidden = !isToc;
   searchPanel.hidden = !isSearch;
+  highlightsPanel.hidden = !isHighlights;
 
   if (isSearch) {
     sidebarSearchInput.focus({ preventScroll: true });
     renderSearchResults();
+  } else if (isHighlights) {
+    renderHighlights();
   }
 }
 
@@ -366,6 +379,7 @@ async function renderContent() {
         section.innerHTML = ch.html;
         stripEpubFonts(section);
         bindImageFallback(section);
+        applyHighlightsToChapter(ch.id, section);
         div.appendChild(section);
         if (i < data.chapters.length - 1) {
           div.appendChild(document.createElement('hr'));
@@ -399,7 +413,267 @@ async function renderContent() {
     searchPanel.innerHTML = '';
     renderSearchResults();
     initChapterScrollbar([]);
+    renderHighlights();
   }
+}
+
+// --- Highlights ---
+function getSelectionOffsets(root) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return null;
+  const range = selection.getRangeAt(0);
+
+  // Ensure selection is within the root
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return null;
+
+  const preSelectionRange = range.cloneRange();
+  preSelectionRange.selectNodeContents(root);
+  preSelectionRange.setEnd(range.startContainer, range.startOffset);
+  const start = preSelectionRange.toString().length;
+
+  return {
+    start,
+    end: start + range.toString().length,
+    text: range.toString()
+  };
+}
+
+function applyHighlightsToChapter(chapterId, container) {
+  if (!state.activeBookPath) return;
+  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  const chapterHighlights = bookHighlights.filter(h => h.chapterId === chapterId);
+
+  chapterHighlights.forEach(h => {
+    wrapHighlight(container, h.start, h.end, h.id);
+  });
+}
+
+function wrapHighlight(root, startOffset, endOffset, id) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  let currentOffset = 0;
+  const nodesToWrap = [];
+
+  let node;
+  while ((node = walker.nextNode())) {
+    const nodeLength = node.textContent.length;
+    const nodeEndOffset = currentOffset + nodeLength;
+
+    if (nodeEndOffset > startOffset && currentOffset < endOffset) {
+      nodesToWrap.push({
+        node,
+        start: Math.max(0, startOffset - currentOffset),
+        end: Math.min(nodeLength, endOffset - currentOffset)
+      });
+    }
+
+    currentOffset = nodeEndOffset;
+    if (currentOffset >= endOffset) break;
+  }
+
+  for (let i = nodesToWrap.length - 1; i >= 0; i--) {
+    const { node, start, end } = nodesToWrap[i];
+    try {
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      const mark = document.createElement('mark');
+      mark.className = 'reader-highlight';
+      mark.dataset.highlightId = id;
+      range.surroundContents(mark);
+    } catch (e) {
+      console.warn('Failed to wrap highlight', e);
+    }
+  }
+}
+
+function renderHighlights() {
+  highlightsPanel.innerHTML = '';
+  if (!state.activeBookPath) {
+    highlightsPanel.innerHTML = '<div class="search-empty">Open a book to see highlights.</div>';
+    return;
+  }
+
+  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  if (bookHighlights.length === 0) {
+    highlightsPanel.innerHTML = '<div class="search-empty">No highlights yet. Select text to highlight.</div>';
+    return;
+  }
+
+  // Sort by createdAt desc
+  [...bookHighlights].sort((a, b) => b.createdAt - a.createdAt).forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'highlight-item';
+    item.dataset.id = h.id;
+    item.innerHTML = `
+      <div class="highlight-content">
+        <div class="highlight-text">"${escapeHtml(h.text)}"</div>
+        <div class="highlight-footer">
+          <div class="highlight-meta">${new Date(h.createdAt).toLocaleString()}</div>
+          <button class="highlight-delete" title="Delete Highlight" data-delete-id="${h.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+
+    item.querySelector('.highlight-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeHighlight(h.id);
+    });
+
+    item.addEventListener('click', () => {
+      const data = state.bookContent[state.activeBookPath];
+      if (data) {
+        const scrolled = scrollToHref('', data.chapters, h.chapterId);
+        if (scrolled) {
+          // Precisely scroll to the mark if possible
+          const mark = document.querySelector(`.reader-highlight[data-highlight-id="${h.id}"]`);
+          if (mark) {
+            mark.scrollIntoView({ behavior: 'instant', block: 'center' });
+            // Flash effect
+            mark.style.transition = 'none';
+            mark.style.backgroundColor = 'rgba(255, 230, 0, 0.8)';
+            setTimeout(() => {
+              mark.style.transition = 'background-color 0.5s';
+              mark.style.backgroundColor = '';
+            }, 500);
+          }
+        }
+      }
+    });
+    highlightsPanel.appendChild(item);
+  });
+}
+
+function addHighlight() {
+  const selection = window.getSelection();
+  if (!selection.rangeCount || selection.isCollapsed) return;
+
+  const range = selection.getRangeAt(0);
+  const chapterSection = range.startContainer.parentElement.closest('section.chapter');
+  if (!chapterSection) return;
+
+  const chapterId = chapterSection.id.replace('chapter-', '');
+  const offsets = getSelectionOffsets(chapterSection);
+  if (!offsets || offsets.start === offsets.end) return;
+
+  const id = crypto.randomUUID();
+  const highlight = {
+    id,
+    chapterId,
+    start: offsets.start,
+    end: offsets.end,
+    text: offsets.text,
+    createdAt: Date.now()
+  };
+
+  if (!state.highlights[state.activeBookPath]) {
+    state.highlights[state.activeBookPath] = [];
+  }
+  state.highlights[state.activeBookPath].push(highlight);
+
+  wrapHighlight(chapterSection, highlight.start, highlight.end, highlight.id);
+  selection.removeAllRanges();
+  selectionPopup.hidden = true;
+  saveHighlights();
+  if (state.sidebarMode === 'highlights') renderHighlights();
+}
+
+function removeHighlight(id) {
+  if (!state.activeBookPath) return;
+  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  const idx = bookHighlights.findIndex(h => h.id === id);
+  if (idx === -1) return;
+
+  const h = bookHighlights[idx];
+  bookHighlights.splice(idx, 1);
+  saveHighlights();
+
+  // Remove the <mark> tags
+  document.querySelectorAll(`.reader-highlight[data-highlight-id="${id}"]`).forEach(mark => {
+    const parent = mark.parentNode;
+    while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+    parent.removeChild(mark);
+    parent.normalize();
+  });
+
+  if (state.sidebarMode === 'highlights') renderHighlights();
+  selectionPopup.hidden = true;
+}
+
+function saveHighlights() {
+  localStorage.setItem('gull-highlights', JSON.stringify(state.highlights));
+}
+
+function loadHighlights() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('gull-highlights'));
+    if (saved) state.highlights = saved;
+  } catch (e) {
+    console.warn('Failed to load highlights', e);
+  }
+}
+
+document.addEventListener('mouseup', (e) => {
+  // Use a small timeout to ensure the selection is finalized
+  setTimeout(() => handleSelectionChange(e.target), 20);
+});
+
+document.addEventListener('selectionchange', () => {
+  // Hide popup while selecting or if selection is cleared
+  selectionPopup.hidden = true;
+});
+
+function handleSelectionChange(targetEl) {
+  const selection = window.getSelection();
+  const isCollapsed = !selection.rangeCount || selection.isCollapsed;
+  const markEl = targetEl?.closest?.('mark.reader-highlight');
+
+  if (isCollapsed && !markEl) {
+    selectionPopup.hidden = true;
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  const chapterSection = range.startContainer.parentElement?.closest('section.chapter');
+  if (!chapterSection) {
+    selectionPopup.hidden = true;
+    return;
+  }
+
+  let existing = null;
+  let targetRect = null;
+
+  if (markEl) {
+    const id = markEl.dataset.highlightId;
+    existing = (state.highlights[state.activeBookPath] || []).find(h => h.id === id);
+    targetRect = markEl.getBoundingClientRect();
+  } else {
+    // Check if selection is already a highlight
+    const offsets = getSelectionOffsets(chapterSection);
+    existing = (state.highlights[state.activeBookPath] || []).find(h => 
+      h.chapterId === chapterSection.id.replace('chapter-', '') &&
+      Math.abs(h.start - offsets.start) < 2 &&
+      Math.abs(h.end - offsets.end) < 2
+    );
+    targetRect = selection.getRangeAt(0).getBoundingClientRect();
+  }
+
+  if (existing) {
+    selectionPopup.textContent = 'Remove Highlight';
+    selectionPopup.onclick = () => removeHighlight(existing.id);
+  } else {
+    selectionPopup.textContent = 'Highlight';
+    selectionPopup.onclick = () => addHighlight();
+  }
+
+  selectionPopup.style.top = (targetRect.top + window.scrollY - 40) + 'px';
+  selectionPopup.style.left = (targetRect.left + targetRect.width / 2 + window.scrollX) + 'px';
+  selectionPopup.hidden = false;
 }
 
 function stripEpubFonts(container) {
@@ -899,6 +1173,10 @@ sidebarTabSearch.addEventListener('click', () => {
   setSidebarMode('search');
 });
 
+sidebarTabHighlights.addEventListener('click', () => {
+  setSidebarMode('highlights');
+});
+
 sidebarSearchInput.addEventListener('input', (e) => {
   state.searchQuery = e.target.value || '';
   if (sidebarSearchTimer) {
@@ -1126,6 +1404,7 @@ window.settings.onThemeChanged((theme) => {
 
 // Init
 loadReaderState();
+loadHighlights();
 setSidebarMode('toc');
 initResize();
 initDragAndDrop();
