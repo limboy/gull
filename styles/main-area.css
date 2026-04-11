@@ -154,9 +154,8 @@
   width: 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
   padding: 8px 0;
-  margin-right: 8px;
+  margin: 0 8px 20px 0;
   flex-shrink: 0;
   cursor: default;
   position: relative;
@@ -168,7 +167,6 @@
 
 .ch-scroll-segment {
   flex: none;
-  min-height: 8px;
   border-radius: 2px;
   overflow: hidden;
   background: var(--scrollbar-thumb);

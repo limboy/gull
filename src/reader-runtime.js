@@ -150,21 +150,39 @@ function normalizeText(str) {
 function indexBookForSearch(filePath, chapters, toc) {
   const titleMap = buildTocTitleMap(toc);
   const index = [];
-  for (const chapter of chapters || []) {
-    const section = contentArea.querySelector('#chapter-' + CSS.escape(chapter.id));
-    if (!section) continue;
-    const text = normalizeText(section.textContent || '');
-    if (!text) continue;
-    const file = (chapter.href || '').split('/').pop();
-    index.push({
-      id: chapter.id,
-      href: chapter.href || '',
-      title: titleMap[file] || chapter.title || file || 'Untitled Chapter',
-      text,
-      textLower: text.toLowerCase(),
-    });
+  const tempDiv = document.createElement('div');
+  let i = 0;
+
+  function processChunk() {
+    const start = performance.now();
+    while (i < (chapters || []).length && performance.now() - start < 15) {
+      const chapter = chapters[i];
+      tempDiv.innerHTML = chapter.html || '';
+      const text = normalizeText(tempDiv.textContent || '');
+      if (text) {
+        const file = (chapter.href || '').split('/').pop();
+        index.push({
+          id: chapter.id,
+          href: chapter.href || '',
+          title: titleMap[file] || chapter.title || file || 'Untitled Chapter',
+          text,
+          textLower: text.toLowerCase(),
+        });
+      }
+      i++;
+    }
+
+    if (i < (chapters || []).length) {
+      setTimeout(processChunk, 10);
+    } else {
+      state.bookSearchIndex[filePath] = index;
+      if (state.activeBookPath === filePath) {
+        renderSearchResults();
+      }
+    }
   }
-  state.bookSearchIndex[filePath] = index;
+
+  setTimeout(processChunk, 200);
 }
 
 function buildMatchSnippet(text, start, length = 46) {
@@ -345,6 +363,9 @@ async function renderContent() {
 
       const div = document.createElement('div');
       div.className = 'book-content active';
+      div.style.opacity = '0';
+      div.style.transition = 'opacity 0.15s ease-in-out';
+      isRestoringBook = true;
 
       // Collect and deduplicate chapter CSS, scoped to .book-content
       const seenCss = new Set();
@@ -373,40 +394,62 @@ async function renderContent() {
         div.appendChild(styleEl);
       }
 
-      data.chapters.forEach((ch, i) => {
-        const section = document.createElement('section');
-        section.className = 'chapter';
-        section.id = 'chapter-' + ch.id;
-        section.innerHTML = ch.html;
-        stripEpubFonts(section);
-        bindImageFallback(section);
-        applyHighlightsToChapter(ch.id, section);
-        div.appendChild(section);
-        if (i < data.chapters.length - 1) {
-          div.appendChild(document.createElement('hr'));
-        }
-      });
-
+      // Batched chapter DOM insertion
       contentArea.appendChild(div);
+      const searchToRun = !state.bookSearchIndex[book.filePath];
       renderOutline(data.toc, data.chapters);
-      if (!state.bookSearchIndex[book.filePath]) {
+      if (searchToRun) {
         indexBookForSearch(book.filePath, data.chapters, data.toc);
+      } else {
+        renderSearchResults();
       }
-      renderSearchResults();
-      initOutlineScrollTracking(data.chapters);
-      initChapterScrollbar(data.chapters, data.toc);
 
-      // Restore position
-      if (book.position) {
-        requestAnimationFrame(() => {
-          if (book.position.progress !== undefined) {
-            const maxScroll = contentArea.scrollHeight - contentArea.clientHeight;
-            contentArea.scrollTop = maxScroll * book.position.progress;
-          } else if (book.position.scrollTop !== undefined) {
-            contentArea.scrollTop = book.position.scrollTop;
+      let chapterIdx = 0;
+      function processChapterBatch() {
+        if (state.activeBookPath !== book.filePath) {
+          isRestoringBook = false;
+          return;
+        }
+
+        const start = performance.now();
+        while (chapterIdx < data.chapters.length && performance.now() - start < 15) {
+          const ch = data.chapters[chapterIdx];
+          const section = document.createElement('section');
+          section.className = 'chapter';
+          section.id = 'chapter-' + ch.id;
+          section.innerHTML = ch.html;
+          stripEpubFonts(section);
+          bindImageFallback(section);
+          applyHighlightsToChapter(ch.id, section);
+          div.appendChild(section);
+          if (chapterIdx < data.chapters.length - 1) {
+            div.appendChild(document.createElement('hr'));
           }
-        });
+          chapterIdx++;
+        }
+
+        if (chapterIdx < data.chapters.length) {
+          requestAnimationFrame(processChapterBatch);
+        } else {
+          initOutlineScrollTracking(data.chapters);
+          initChapterScrollbar(data.chapters, data.toc);
+
+          // Restore position instantly before showing
+          if (book.position) {
+            if (book.position.progress !== undefined) {
+              const maxScroll = contentArea.scrollHeight - contentArea.clientHeight;
+              contentArea.scrollTop = maxScroll * book.position.progress;
+            } else if (book.position.scrollTop !== undefined) {
+              contentArea.scrollTop = book.position.scrollTop;
+            }
+          }
+          
+          div.style.opacity = '1';
+          setTimeout(() => { isRestoringBook = false; }, 100);
+        }
       }
+
+      requestAnimationFrame(processChapterBatch);
     }
   } else {
     emptyState.style.display = '';
@@ -851,32 +894,54 @@ function initChapterScrollbar(chapters, toc) {
     return measures;
   }
 
+  let cachedMeasures = null;
+  const invalidateScrollbar = () => {
+    cachedMeasures = null;
+    requestAnimationFrame(update);
+  };
+  const ro = new ResizeObserver(invalidateScrollbar);
+  ro.observe(contentArea);
+  contentArea.addEventListener('force-update-scrollbar', invalidateScrollbar);
+
+  let updating = false;
   function update() {
-    const scrollTop = contentArea.scrollTop;
-    const viewportH = contentArea.clientHeight;
-    const barH = bar.clientHeight - (segments.length - 1) * 3 - 16;
-
-    const measures = computeMeasures();
-    if (measures.length === 0) return;
-
-    const totalH = measures.reduce((sum, m) => sum + m.height, 0);
-
-    const viewportEnd = scrollTop + viewportH;
-    for (const m of measures) {
-      const ratio = m.height / totalH;
-      const segH = Math.max(8, ratio * barH);
-      m.seg.style.height = segH + 'px';
-
-      let fillRatio = 0;
-      if (viewportEnd >= m.top + m.height) {
-        fillRatio = 1;
-      } else if (viewportEnd > m.top) {
-        fillRatio = (viewportEnd - m.top) / m.height;
+    if (updating) return;
+    updating = true;
+    requestAnimationFrame(() => {
+      updating = false;
+      const scrollTop = contentArea.scrollTop;
+      const viewportH = contentArea.clientHeight;
+      
+      let gap = 3;
+      if (segments.length * 6 + segments.length * gap > bar.clientHeight) gap = 1;
+      if (segments.length * 3 + segments.length * gap > bar.clientHeight) gap = 0;
+      bar.style.gap = gap + 'px';
+      
+      const barH = bar.clientHeight - (segments.length - 1) * gap;
+  
+      if (!cachedMeasures) cachedMeasures = computeMeasures();
+      const measures = cachedMeasures;
+      if (measures.length === 0) return;
+  
+      const totalH = measures.reduce((sum, m) => sum + m.height, 0);
+  
+      const viewportEnd = scrollTop + viewportH;
+      for (const m of measures) {
+        // Pure mathematical proportionality (no minH pixel stealing)
+        const rawRatio = m.height / totalH;
+        m.seg.style.height = (rawRatio * barH) + 'px';
+  
+        let fillRatio = 0;
+        if (viewportEnd >= m.top + m.height) {
+          fillRatio = 1;
+        } else if (viewportEnd > m.top) {
+          fillRatio = (viewportEnd - m.top) / m.height;
+        }
+  
+        fillRatio = Math.max(0, Math.min(1, fillRatio));
+        m.fill.style.height = (fillRatio * 100) + '%';
       }
-
-      fillRatio = Math.max(0, Math.min(1, fillRatio));
-      m.fill.style.height = (fillRatio * 100) + '%';
-    }
+    });
   }
 
   // Hover tooltip
@@ -904,7 +969,8 @@ function initChapterScrollbar(chapters, toc) {
     const target = e.target.closest('.ch-scroll-segment');
     if (!target) return;
 
-    const measures = computeMeasures();
+    if (!cachedMeasures) cachedMeasures = computeMeasures();
+    const measures = cachedMeasures;
     const measure = measures.find(m => m.seg === target);
     if (!measure) return;
 
@@ -917,6 +983,8 @@ function initChapterScrollbar(chapters, toc) {
 
   contentArea.addEventListener('scroll', update);
   chapterScrollCleanup = () => {
+    ro.disconnect();
+    contentArea.removeEventListener('force-update-scrollbar', invalidateScrollbar);
     contentArea.removeEventListener('scroll', update);
     tooltip.remove();
   };
@@ -972,24 +1040,44 @@ function initOutlineScrollTracking(chapters) {
     return targets;
   }
 
+  let cachedTargets = null;
+  const invalidateOutline = () => {
+    cachedTargets = null;
+    requestAnimationFrame(onScroll);
+  };
+  const ro = new ResizeObserver(invalidateOutline);
+  ro.observe(contentArea);
+  contentArea.addEventListener('force-update-scrollbar', invalidateOutline);
+
+  let ticking = false;
   const onScroll = () => {
-    const targets = buildTocTargets();
-    if (targets.length === 0) return;
-
-    const scrollTop = contentArea.scrollTop;
-    const offset = 60;
-
-    let active = targets[0].el;
-    for (const { el, target } of targets) {
-      if (target.offsetTop <= scrollTop + offset) {
-        active = el;
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (!cachedTargets) cachedTargets = buildTocTargets();
+      const targets = cachedTargets;
+      if (targets.length === 0) return;
+  
+      const scrollTop = contentArea.scrollTop;
+      const offset = 60;
+  
+      let active = targets[0].el;
+      for (const { el, target } of targets) {
+        if (target.offsetTop <= scrollTop + offset) {
+          active = el;
+        }
       }
-    }
-    setActiveOutlineItem(active);
+      setActiveOutlineItem(active);
+    });
   };
 
   contentArea.addEventListener('scroll', onScroll);
-  scrollTrackingCleanup = () => contentArea.removeEventListener('scroll', onScroll);
+  scrollTrackingCleanup = () => {
+    ro.disconnect();
+    contentArea.removeEventListener('force-update-scrollbar', invalidateOutline);
+    contentArea.removeEventListener('scroll', onScroll);
+  };
 
   // Set initial highlight
   onScroll();
@@ -1042,13 +1130,44 @@ function setupHandle(handleId, cssVar, side) {
     handle.classList.add('active');
     document.body.classList.add('no-select');
 
-    const onMouseMove = (e) => {
-      const delta = side === 'right'
-        ? startX - e.clientX
-        : e.clientX - startX;
+    // Lock onto the visible chapter to prevent scroll jumping
+    const scrollTop = contentArea.scrollTop;
+    const chapters = Array.from(contentArea.querySelectorAll('section.chapter'));
+    let targetCh = null;
+    let targetRatio = 0;
+    
+    for (const ch of chapters) {
+      if (ch.offsetTop + ch.offsetHeight > scrollTop) {
+        targetCh = ch;
+        targetRatio = Math.max(0, scrollTop - ch.offsetTop) / (ch.offsetHeight || 1);
+        break;
+      }
+    }
+
+    let isUpdating = false;
+    let currentX = e.clientX;
+
+    const updateWidth = () => {
+      isUpdating = false;
+      const delta = side === 'right' ? startX - currentX : currentX - startX;
       const maxWidth = 500;
       const newWidth = Math.max(250, Math.min(maxWidth, startWidth + delta));
+      
       document.documentElement.style.setProperty(cssVar, newWidth + 'px');
+      
+      if (targetCh) {
+        contentArea.scrollTop = targetCh.offsetTop + (targetCh.offsetHeight * targetRatio);
+      }
+      
+      contentArea.dispatchEvent(new CustomEvent('force-update-scrollbar'));
+    };
+
+    const onMouseMove = (e) => {
+      currentX = e.clientX;
+      if (!isUpdating) {
+        isUpdating = true;
+        requestAnimationFrame(updateWidth);
+      }
     };
 
     const onMouseUp = () => {
@@ -1128,8 +1247,10 @@ function loadReaderState() {
 }
 
 let positionSaveTimer = null;
+let isRestoringBook = false;
+
 contentArea.addEventListener('scroll', () => {
-  if (!state.activeBookPath) return;
+  if (!state.activeBookPath || isRestoringBook) return;
   if (positionSaveTimer) clearTimeout(positionSaveTimer);
   positionSaveTimer = setTimeout(() => {
     const book = state.openBooks.find(b => b.filePath === state.activeBookPath);
