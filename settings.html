@@ -7,11 +7,11 @@
       content="default-src 'self' data: blob: http://127.0.0.1:5173 ws://127.0.0.1:5173; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' http://127.0.0.1:5173; script-src 'self' 'unsafe-inline' http://127.0.0.1:5173; connect-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173;"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yara Settings</title>
+    <title>Gull Settings</title>
     <link rel="icon" type="image/png" href="/logo.png" />
     <script>
       (function() {
-        const saved = localStorage.getItem('yara-theme');
+        const saved = localStorage.getItem('gull-theme');
         const theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
       })();

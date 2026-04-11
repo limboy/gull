@@ -7,8 +7,8 @@ const state = {
   searchQuery: '',
 };
 
-const STORAGE_KEY = 'yara-sidebar-widths';
-const STORAGE_KEY_BOOKS = 'yara-open-books';
+const STORAGE_KEY = 'gull-sidebar-widths';
+const STORAGE_KEY_BOOKS = 'gull-open-books';
 
 // DOM refs
 const appLayout = document.getElementById('app-layout');
@@ -988,13 +988,13 @@ const PARA_SPACING_STEPS = [0, 0.3, 0.6, 1.0, 1.5, 2.0];
 
 function loadReadingStyle() {
   try {
-    const saved = JSON.parse(localStorage.getItem('yara-reading-style'));
+    const saved = JSON.parse(localStorage.getItem('gull-reading-style'));
     if (saved) Object.assign(readingStyle, saved);
   } catch {}
 }
 
 function saveReadingStyle() {
-  localStorage.setItem('yara-reading-style', JSON.stringify(readingStyle));
+  localStorage.setItem('gull-reading-style', JSON.stringify(readingStyle));
 }
 
 function applyReadingStyle() {
@@ -1094,7 +1094,7 @@ window.epub.onOpenFile((filePath) => {
 function applyTheme(theme) {
   const t = theme || 'dark';
   document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('yara-theme', t);
+  localStorage.setItem('gull-theme', t);
 }
 
 async function loadTheme() {

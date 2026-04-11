@@ -549,7 +549,7 @@ app.whenReady().then(() => {
     return parseEpub(filePath);
   });
 
-  // Handle CLI args (e.g., `yara mybook.epub`)
+  // Handle CLI args (e.g., `gull mybook.epub`)
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   for (const arg of args) {
     if (arg.toLowerCase().endsWith('.epub')) {

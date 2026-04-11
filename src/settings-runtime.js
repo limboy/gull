@@ -28,7 +28,7 @@ const themeSelect = document.getElementById('setting-theme');
 function applyTheme(theme) {
   const t = theme || 'dark';
   document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('yara-theme', t);
+  localStorage.setItem('gull-theme', t);
 }
 
 themeSelect.addEventListener('change', () => {

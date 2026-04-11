@@ -1,5 +1,5 @@
 {
-  "name": "yara",
+  "name": "gull",
   "version": "1.0.0",
   "description": "A pure EPUB reader",
   "main": "main.js",
@@ -17,8 +17,8 @@
   "license": "ISC",
   "type": "commonjs",
   "build": {
-    "appId": "com.yara.reader",
-    "productName": "Yara",
+    "appId": "me.limboy.gull",
+    "productName": "Gull",
     "fileAssociations": [
       {
         "ext": "epub",
