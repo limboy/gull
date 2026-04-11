@@ -31,15 +31,13 @@ if (!isPrimaryInstance) {
 }
 
 const APP_LOGO_PATH = path.join(__dirname, 'logo.png');
-const APP_DOCK_ICON_PATH = path.join(__dirname, 'logo-dock.png');
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const DEFAULT_MAIN_WINDOW_BOUNDS = { width: 1000, height: 800 };
 
 function setMacDockIcon() {
   if (process.platform !== 'darwin' || !app.dock) return;
-  const dockIconPath = fs.existsSync(APP_DOCK_ICON_PATH) ? APP_DOCK_ICON_PATH : APP_LOGO_PATH;
-  if (!fs.existsSync(dockIconPath)) return;
-  const dockIcon = nativeImage.createFromPath(dockIconPath);
+  if (!fs.existsSync(APP_LOGO_PATH)) return;
+  const dockIcon = nativeImage.createFromPath(APP_LOGO_PATH);
   if (!dockIcon.isEmpty()) {
     app.dock.setIcon(dockIcon);
   }
