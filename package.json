@@ -25,13 +25,13 @@
         "name": "EPUB Document",
         "description": "EPUB e-book file",
         "role": "Viewer",
-        "mimeType": "application/epub+zip",
-        "uti": "org.idpf.epub-container"
+        "mimeType": "application/epub+zip"
       }
     ],
     "mac": {
       "category": "public.app-category.books",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "logo.png"
     },
     "files": [
       "main.js",
