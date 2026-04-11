@@ -94,7 +94,6 @@ function scheduleMainWindowStateSave(win) {
 
 function broadcastToAllWindows(channel, ...args) {
   for (const win of BrowserWindow.getAllWindows()) {
-    if (win.webContents.getURL().includes('settings.html')) continue;
     win.webContents.send(channel, ...args);
   }
 }
@@ -345,12 +344,11 @@ function parseEpub(epubPath) {
 
 // --- Window Management ---
 
-let settingsWindow = null;
 // Queue of file paths to open once the main window is ready
 let pendingFiles = [];
 
 function getMainWindow() {
-  return BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w !== settingsWindow);
+  return BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
 }
 
 function getRendererPath(page) {
@@ -436,38 +434,7 @@ async function showOpenDialog() {
   }
 }
 
-function openSettings() {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.focus();
-    return;
-  }
 
-  const currentTheme = readSettings().theme || 'light';
-  settingsWindow = new BrowserWindow({
-    width: 660,
-    height: 480,
-    show: false,
-    resizable: false,
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    backgroundColor: currentTheme === 'light' ? '#ffffff' : '#1e1e1e',
-    icon: fs.existsSync(APP_LOGO_PATH) ? APP_LOGO_PATH : undefined,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-    },
-  });
-
-  if (DEV_SERVER_URL) {
-    settingsWindow.loadURL(new URL('settings.html', `${DEV_SERVER_URL}/`).toString());
-  } else {
-    settingsWindow.loadFile(getRendererPath('settings.html'));
-  }
-  settingsWindow.once('ready-to-show', () => {
-    settingsWindow.show();
-  });
-  settingsWindow.on('closed', () => {
-    settingsWindow = null;
-  });
-}
 
 function createAppMenu() {
   const template = [
@@ -475,12 +442,6 @@ function createAppMenu() {
       label: app.name,
       submenu: [
         { role: 'about' },
-        { type: 'separator' },
-        {
-          label: 'Settings…',
-          accelerator: 'CmdOrCtrl+,',
-          click: () => openSettings(),
-        },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -524,10 +485,7 @@ app.whenReady().then(() => {
 
   createAppMenu();
 
-  // IPC: settings
-  ipcMain.on('open-settings', () => {
-    openSettings();
-  });
+
 
   ipcMain.handle('get-settings', () => {
     return readSettings();

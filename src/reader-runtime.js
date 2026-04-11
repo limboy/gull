@@ -771,8 +771,8 @@ function setupHandle(handleId, cssVar, side) {
       const delta = side === 'right'
         ? startX - e.clientX
         : e.clientX - startX;
-      const maxWidth = window.innerWidth * 0.5;
-      const newWidth = Math.max(150, Math.min(maxWidth, startWidth + delta));
+      const maxWidth = 500;
+      const newWidth = Math.max(250, Math.min(maxWidth, startWidth + delta));
       document.documentElement.style.setProperty(cssVar, newWidth + 'px');
     };
 

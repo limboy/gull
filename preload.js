@@ -9,7 +9,6 @@ contextBridge.exposeInMainWorld('epub', {
 });
 
 contextBridge.exposeInMainWorld('settings', {
-  open: () => ipcRenderer.send('open-settings'),
   getAll: () => ipcRenderer.invoke('get-settings'),
   set: (key, value) => ipcRenderer.invoke('set-setting', key, value),
   onSettingsChanged: (cb) => {

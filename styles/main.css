@@ -19,7 +19,7 @@ body {
 
 /* Theme custom properties */
 :root {
-  --left-sidebar-width: 220px;
+  --left-sidebar-width: 250px;
   --right-sidebar-width: 260px;
 }
 
