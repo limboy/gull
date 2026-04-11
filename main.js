@@ -386,6 +386,29 @@ function createWindow() {
     pendingFiles = [];
   });
 
+  // Prevent internal navigation (e.g. from link clicks that aren't intercepted)
+  // which can lead to a white screen in this SPA-style app.
+  win.webContents.on('will-navigate', (event, url) => {
+    const isDev = DEV_SERVER_URL && url.startsWith(DEV_SERVER_URL);
+    if (!isDev && url !== win.webContents.getURL()) {
+      event.preventDefault();
+      // If it's an external link, we could open it in the system browser here,
+      // but setWindowOpenHandler handles most cases.
+      if (url.startsWith('http:') || url.startsWith('https:')) {
+        require('electron').shell.openExternal(url);
+      }
+    }
+  });
+
+  // Open external links in the default browser
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http:') || url.startsWith('https:')) {
+      require('electron').shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
   win.on('resize', () => scheduleMainWindowStateSave(win));
   win.on('move', () => scheduleMainWindowStateSave(win));
   win.on('close', () => {

@@ -276,12 +276,13 @@ function scrollToHref(href, chapters, fallbackChapterId = null) {
   const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
 
   const matchChapter = (chapters || []).find(ch => {
-    if (fallbackChapterId && ch.id === fallbackChapterId) return true;
-    if (!baseHref) return false;
-    if (ch.href === baseHref) return true;
-    const chFile = ch.href.split('/').pop();
-    const tocFile = baseHref.split('/').pop();
-    return chFile === tocFile;
+    if (baseHref) {
+      if (ch.href === baseHref) return true;
+      const chFile = ch.href.split('/').pop();
+      const tocFile = baseHref.split('/').pop();
+      return chFile === tocFile;
+    }
+    return fallbackChapterId && ch.id === fallbackChapterId;
   });
 
   let scrolled = false;
@@ -1247,6 +1248,27 @@ function initBrokenImageHandling() {
     if (!(target instanceof HTMLImageElement)) return;
     target.classList.add('image-missing');
   }, true);
+
+  // Intercept link clicks to prevent navigation and handle internal jumps (footnotes, etc.)
+  contentArea.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (!link || !state.activeBookPath) return;
+
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+      // For external links, we might want to open them in system browser,
+      // but for now let default happen (or block if needed)
+      return;
+    }
+
+    e.preventDefault();
+    const data = state.bookContent[state.activeBookPath];
+    if (data) {
+      const chapterSection = link.closest('section.chapter');
+      const chapterId = chapterSection ? chapterSection.id.replace('chapter-', '') : null;
+      scrollToHref(href, data.chapters, chapterId);
+    }
+  });
 }
 
 // --- Style Popover ---
