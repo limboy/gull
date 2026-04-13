@@ -168,7 +168,7 @@ function parseNcxNavMap(navMap, $) {
 const STRIP_CSS_PROPS = new Set([
   'font-family', 'color', 'background', 'background-color',
   'background-image', 'border-color',
-  'line-height',
+  'font-size', 'line-height',
   'position', 'top', 'right', 'bottom', 'left',
   'inset', 'inset-block', 'inset-block-start', 'inset-block-end',
   'inset-inline', 'inset-inline-start', 'inset-inline-end',
