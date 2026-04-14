@@ -7,11 +7,18 @@ This file is generated automatically from [Conventional Commits](https://www.con
 
 ### Features
 
+- add script to list and validate documentation metadata from markdown files ([00e1a3f](https://github.com/limboy/gull/commit/00e1a3f06788fcc6e768f6c2f955434395fc58d0))
 - add releaseType field to configuration in package.json ([e1cc027](https://github.com/limboy/gull/commit/e1cc02798cb0e86e4ee4a0e54c63c9442dee1f51))
 - set application name to Gull in main process ([067d22d](https://github.com/limboy/gull/commit/067d22d2825bd2b6506d6184ddc61cc96f818c2d))
 
+### Documentation
+
+- add agent operating guides and commit conventions ([9e88744](https://github.com/limboy/gull/commit/9e88744f3683d819a26b0ca939dbcaab2a4beab7))
+- add technical documentation covering architecture, build process, EPUB parsing, and runtime logic ([3030971](https://github.com/limboy/gull/commit/3030971e1a2cf0a9a837b6eb75403e0fab7c8ee7))
+
 ### Chores
 
+- add auto-generated CHANGELOG from conventional commits ([94ccb55](https://github.com/limboy/gull/commit/94ccb55a51c30e94842220aa57cfe9b8ad6d2da1))
 - upgrade actions/checkout and actions/setup-node to v6 ([b9c8ce1](https://github.com/limboy/gull/commit/b9c8ce162d35e7628e653f7a0a32decf534b798e))
 
 ## [v1.2.5](https://github.com/limboy/gull/compare/v1.2.4...v1.2.5) - 2026-04-15
