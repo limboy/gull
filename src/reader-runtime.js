@@ -144,15 +144,28 @@ function buildTocTitleMap(items, titleMap = {}) {
   return titleMap;
 }
 
+function flattenToc(items, out = []) {
+  if (!items) return out;
+  for (const item of items) {
+    if (item.href && item.title) out.push(item);
+    if (item.children) flattenToc(item.children, out);
+  }
+  return out;
+}
+
 function normalizeText(str) {
   return str.replace(/\s+/g, ' ').trim();
 }
 
 function indexBookForSearch(filePath, chapters, toc) {
   const titleMap = buildTocTitleMap(toc);
+  const tocFiles = new Set(
+    flattenToc(toc).map(t => (t.href || '').split('#')[0].split('/').pop()).filter(Boolean)
+  );
   const index = [];
   const tempDiv = document.createElement('div');
   let i = 0;
+  let inheritedTitle = '';
 
   function processChunk() {
     const start = performance.now();
@@ -162,12 +175,15 @@ function indexBookForSearch(filePath, chapters, toc) {
       const text = normalizeText(tempDiv.textContent || '');
       if (text) {
         const file = (chapter.href || '').split('/').pop();
+        if (tocFiles.has(file) && titleMap[file]) {
+          inheritedTitle = titleMap[file];
+        }
         const heading = tempDiv.querySelector('h1, h2, h3, h4, h5, h6, title');
         const headingTitle = heading ? normalizeText(heading.textContent || '') : '';
         index.push({
           id: chapter.id,
           href: chapter.href || '',
-          title: titleMap[file] || chapter.title || headingTitle || file || 'Untitled Chapter',
+          title: titleMap[file] || chapter.title || inheritedTitle || headingTitle || '',
           text,
           textLower: text.toLowerCase(),
         });
@@ -287,8 +303,11 @@ function renderSearchResults() {
     row.dataset.href = result.href || '';
     row.dataset.matchIndex = String(result.matchIndex ?? 0);
     row.dataset.term = result.term || '';
+    const titleHtml = result.title
+      ? `<div class="search-result-title">${escapeHtml(result.title)}</div>`
+      : '';
     row.innerHTML = `
-      <div class="search-result-title">${escapeHtml(result.title)}</div>
+      ${titleHtml}
       <div class="search-result-snippet">${buildHighlightedSnippet(result.snippet, terms)}</div>
     `;
     searchPanel.appendChild(row);
