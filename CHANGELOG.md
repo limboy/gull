@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
-## [Unreleased](https://github.com/limboy/gull/compare/v1.2.5...HEAD)
+## [v1.2.6](https://github.com/limboy/gull/compare/v1.2.5...v1.2.6) - 2026-04-15
 
 ### Features
 
@@ -21,6 +21,8 @@ This file is generated automatically from [Conventional Commits](https://www.con
 
 ### Documentation
 
+- update build and release documentation with CI/CD workflow details ([f35d18a](https://github.com/limboy/gull/commit/f35d18a49502b5ade0eff4475f204cc5f2632027))
+- regenerate changelog ([917300a](https://github.com/limboy/gull/commit/917300ab3735c3cd076cbd0958cc04e961597e8a))
 - update changelog with new features, documentation, and chore entries ([75c8dcd](https://github.com/limboy/gull/commit/75c8dcdee0af5c6933c6669e4ff6655e3fc219b2))
 - add agent operating guides and commit conventions ([9e88744](https://github.com/limboy/gull/commit/9e88744f3683d819a26b0ca939dbcaab2a4beab7))
 - add technical documentation covering architecture, build process, EPUB parsing, and runtime logic ([3030971](https://github.com/limboy/gull/commit/3030971e1a2cf0a9a837b6eb75403e0fab7c8ee7))
