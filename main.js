@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 const cheerio = require('cheerio');
+const { autoUpdater } = require('electron-updater');
 
 // --- Single Instance Lock ---
 const isPrimaryInstance = app.requestSingleInstanceLock();
@@ -516,6 +517,27 @@ function createAppMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+// --- Auto-update ---
+function initAutoUpdater() {
+  if (!app.isPackaged) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-downloaded', (info) => {
+    broadcastToAllWindows('update-ready', { version: info.version });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[autoUpdater]', err);
+  });
+
+  autoUpdater.checkForUpdates().catch(() => {});
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 6 * 60 * 60 * 1000);
+}
+
 // --- macOS: handle file open before app is ready ---
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
@@ -553,6 +575,11 @@ app.whenReady().then(() => {
     return parseEpub(filePath);
   });
 
+  ipcMain.handle('apply-update', () => {
+    if (!app.isPackaged) return;
+    autoUpdater.quitAndInstall();
+  });
+
   ipcMain.handle('check-paths-existence', (_event, paths) => {
     if (!Array.isArray(paths)) return [];
     return paths.map(p => ({ path: p, exists: fs.existsSync(p) }));
@@ -581,6 +608,8 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+
+  initAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -10,6 +10,13 @@ contextBridge.exposeInMainWorld('epub', {
   checkPathsExistence: (paths) => ipcRenderer.invoke('check-paths-existence', paths),
 });
 
+contextBridge.exposeInMainWorld('updater', {
+  onUpdateReady: (cb) => {
+    ipcRenderer.on('update-ready', (_e, info) => cb(info));
+  },
+  apply: () => ipcRenderer.invoke('apply-update'),
+});
+
 contextBridge.exposeInMainWorld('settings', {
   getAll: () => ipcRenderer.invoke('get-settings'),
   set: (key, value) => ipcRenderer.invoke('set-setting', key, value),

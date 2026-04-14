@@ -1572,6 +1572,18 @@ window.settings.onThemeChanged((theme) => {
   applyTheme(theme);
 });
 
+function initUpdatePill() {
+  const btn = document.getElementById('btn-update');
+  if (!btn || !window.updater) return;
+  window.updater.onUpdateReady(() => {
+    btn.hidden = false;
+  });
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    window.updater.apply();
+  });
+}
+
 // Init
 async function initApp() {
   await loadReaderState();
@@ -1580,6 +1592,7 @@ async function initApp() {
   initResize();
   initDragAndDrop();
   initBrokenImageHandling();
+  initUpdatePill();
   await loadTheme();
   window.epub.signalReady();
 }

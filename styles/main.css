@@ -161,6 +161,39 @@ body {
   stroke-width: 2.5;
 }
 
+/* Update pill */
+.update-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  margin-right: 8px;
+  border-radius: 999px;
+  border: 1px solid #e07a3c;
+  background: transparent;
+  color: #e07a3c;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.update-pill[hidden] {
+  display: none;
+}
+
+.update-pill:hover {
+  background: rgba(224, 122, 60, 0.12);
+}
+
+.update-pill svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.25;
+}
+
 /* Style popover */
 #style-popover {
   display: none;

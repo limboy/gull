@@ -30,7 +30,10 @@
     ],
     "mac": {
       "category": "public.app-category.books",
-      "target": "dmg",
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "logo.png",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -44,6 +47,13 @@
       "dist/index.html",
       "dist/assets/**/*",
       "logo.png"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "limboy",
+        "repo": "gull"
+      }
     ]
   },
   "devDependencies": {
@@ -74,6 +84,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "cheerio": "^1.2.0"
+    "cheerio": "^1.2.0",
+    "electron-updater": "^6.8.3"
   }
 }
