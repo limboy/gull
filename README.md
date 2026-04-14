@@ -16,14 +16,18 @@ Gull is a minimalist, distraction-free EPUB reader for macOS. Designed with a fo
 - **Customizable Styles**: Personalize your reading experience by adjusting fonts (Inter, Charter, Open Sans, etc.), font sizes, line heights, and paragraph spacing.
 - **Native macOS Experience**: Support for file associations (`.epub`), drag-and-drop, and a refined UI that feels right at home on macOS.
 
-## 🚀 Getting Started
+## 🚀 Installation
+
+You can download the latest version (`.dmg` or `.zip`) from the [Releases](https://github.com/limboy/gull/releases/latest) page.
+
+## 🛠 Development
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (Latest LTS recommended)
 - [npm](https://www.npmjs.com/)
 
-### Installation
+### Setup
 
 1. Clone the repository:
    ```bash
@@ -36,7 +40,7 @@ Gull is a minimalist, distraction-free EPUB reader for macOS. Designed with a fo
    npm install
    ```
 
-### Development
+### Running Locally
 
 Start the development server with Hot Module Replacement (HMR) for the renderer and auto-reloading for the main process:
 
