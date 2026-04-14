@@ -58,7 +58,7 @@
   align-items: stretch;
   flex: 1;
   overflow-y: auto;
-  gap: 6px;
+  gap: 4px;
   padding: 8px;
   min-width: 0;
 }
@@ -74,17 +74,20 @@
   color: var(--text-primary);
   cursor: default;
   white-space: nowrap;
-  transition: background 120ms, color 120ms;
+  opacity: 0.8;
+  transition: background 120ms, color 120ms, opacity 120ms;
   -webkit-app-region: no-drag;
 }
 
 .tab-item:hover {
   background: rgba(0, 0, 0, 0.08);
+  opacity: 1;
 }
 
 .tab-item.active {
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.14);
+  opacity: 1;
 }
 
 [data-theme="light"] .tab-item:hover {
@@ -113,7 +116,7 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .tab-item:hover .tab-close {
@@ -372,6 +375,10 @@
 
 .book-content .chapter {
   margin-bottom: 1em;
+}
+
+.book-content small {
+  font-size: smaller;
 }
 
 .selection-popup {
