@@ -54,7 +54,8 @@
         "provider": "github",
         "owner": "limboy",
         "repo": "gull",
-        "releaseType": "release"
+        "releaseType": "release",
+        "releaseNotesFile": "RELEASENOTES.md"
       }
     ]
   },

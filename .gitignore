@@ -12,3 +12,4 @@ release/
 # Local env (Apple notarization credentials)
 .env
 .env.local
+RELEASENOTES.md

@@ -135,6 +135,20 @@ function main() {
   const out = path.resolve(__dirname, '..', 'CHANGELOG.md');
   fs.writeFileSync(out, content);
   console.log(`Wrote ${out} (${sections.length} section${sections.length === 1 ? '' : 's'})`);
+
+  // Write RELEASENOTES.md (only the latest tagged release)
+  // we skip the "Unreleased" section if it exists at index 0
+  const releaseNotesIndex = unreleasedCommits.length && sections.length > 1 ? 1 : 0;
+  if (sections[releaseNotesIndex]) {
+    // For RELEASENOTES.md, we don't want the "## [v1.2.6](...)" header
+    // but rather just the content. Or maybe a simpler header.
+    // Let's strip the first line (the header) for GitHub Release Body
+    const lines = sections[releaseNotesIndex].split('\n');
+    const body = lines.slice(2).join('\n').trim(); // Skip header and empty line
+    const notesPath = path.resolve(__dirname, '..', 'RELEASENOTES.md');
+    fs.writeFileSync(notesPath, body);
+    console.log(`Wrote ${notesPath}`);
+  }
 }
 
 main();

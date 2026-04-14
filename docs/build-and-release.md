@@ -18,7 +18,7 @@ npm run dev        # vite + electron, HMR for the renderer
 
 ## Release
 
-Pushing a `v*` tag triggers `.github/workflows/release.yml`, which regenerates `CHANGELOG.md`, builds, signs, notarizes, and publishes to GitHub Releases:
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which regenerates `CHANGELOG.md`, extracts the latest version's notes to `RELEASENOTES.md`, builds, signs, notarizes, and publishes to GitHub Releases (using `RELEASENOTES.md` for the release body):
 
 ```bash
 npm version patch   # or minor / major — bumps package.json and creates a v* tag
