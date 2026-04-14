@@ -1564,3 +1564,4 @@ initResize();
 initDragAndDrop();
 initBrokenImageHandling();
 loadTheme();
+window.epub.signalReady();

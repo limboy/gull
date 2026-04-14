@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('epub', {
   onOpenFile: (cb) => {
     ipcRenderer.on('open-file', (_e, filePath) => cb(filePath));
   },
+  signalReady: () => ipcRenderer.send('renderer-ready'),
 });
 
 contextBridge.exposeInMainWorld('settings', {

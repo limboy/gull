@@ -364,7 +364,8 @@ function parseEpub(epubPath) {
 
 // --- Window Management ---
 
-// Queue of file paths to open once the main window is ready
+// State to track if the renderer is ready to receive files
+let rendererReady = false;
 let pendingFiles = [];
 
 function getMainWindow() {
@@ -399,11 +400,7 @@ function createWindow() {
   }
 
   win.webContents.on('did-finish-load', () => {
-    // Open any files that were queued before the window was ready
-    for (const filePath of pendingFiles) {
-      win.webContents.send('open-file', filePath);
-    }
-    pendingFiles = [];
+    // We no longer send pending files here, as we wait for 'renderer-ready'
   });
 
   // Prevent internal navigation (e.g. from link clicks that aren't intercepted)
@@ -437,6 +434,7 @@ function createWindow() {
       mainWindowStateSaveTimer = null;
     }
     saveMainWindowState(win);
+    rendererReady = false;
   });
 
   if (settings.mainWindowMaximized) {
@@ -452,14 +450,19 @@ function openFileInApp(filePath) {
 
   const win = getMainWindow();
   if (win) {
-    if (win.webContents.isLoading()) {
-      pendingFiles.push(filePath);
-    } else {
+    if (rendererReady) {
       win.webContents.send('open-file', filePath);
+    } else {
+      if (!pendingFiles.includes(filePath)) {
+        pendingFiles.push(filePath);
+      }
     }
+    if (win.isMinimized()) win.restore();
     win.focus();
   } else {
-    pendingFiles.push(filePath);
+    if (!pendingFiles.includes(filePath)) {
+      pendingFiles.push(filePath);
+    }
     createWindow();
   }
 }
@@ -560,6 +563,17 @@ app.whenReady().then(() => {
       }
     }
   }
+
+  ipcMain.on('renderer-ready', () => {
+    rendererReady = true;
+    const win = getMainWindow();
+    if (win) {
+      for (const filePath of pendingFiles) {
+        win.webContents.send('open-file', filePath);
+      }
+    }
+    pendingFiles = [];
+  });
 
   createWindow();
 
