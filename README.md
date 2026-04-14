@@ -2,12 +2,12 @@
 
 Gull is a minimalist, distraction-free EPUB reader for macOS. Designed with a focus on typography and readability, it provides a premium reading experience inspired by modern e-book aesthetics.
 
+![Screenshot](assets/screenshot.png)
+
 ## 💻 Requirements
 
 - **macOS 12.0 (Monterey)** or later
 - **Apple Silicon** (M1/M2/M3/M4 chips) only
-
-![Screenshot](assets/screenshot.png)
 
 ## ✨ Features
 
