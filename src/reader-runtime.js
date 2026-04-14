@@ -162,10 +162,12 @@ function indexBookForSearch(filePath, chapters, toc) {
       const text = normalizeText(tempDiv.textContent || '');
       if (text) {
         const file = (chapter.href || '').split('/').pop();
+        const heading = tempDiv.querySelector('h1, h2, h3, h4, h5, h6, title');
+        const headingTitle = heading ? normalizeText(heading.textContent || '') : '';
         index.push({
           id: chapter.id,
           href: chapter.href || '',
-          title: titleMap[file] || chapter.title || file || 'Untitled Chapter',
+          title: titleMap[file] || chapter.title || headingTitle || file || 'Untitled Chapter',
           text,
           textLower: text.toLowerCase(),
         });
@@ -226,6 +228,8 @@ function findSearchMatches(filePath, query) {
         href: entry.href,
         title: entry.title,
         snippet: buildMatchSnippet(entry.text, hitAt),
+        matchIndex: hits,
+        term: terms[0],
       });
       from = hitAt + terms[0].length;
       hits += 1;
@@ -281,12 +285,78 @@ function renderSearchResults() {
     row.className = 'search-result-item';
     row.dataset.chapterId = result.chapterId;
     row.dataset.href = result.href || '';
+    row.dataset.matchIndex = String(result.matchIndex ?? 0);
+    row.dataset.term = result.term || '';
     row.innerHTML = `
       <div class="search-result-title">${escapeHtml(result.title)}</div>
       <div class="search-result-snippet">${buildHighlightedSnippet(result.snippet, terms)}</div>
     `;
     searchPanel.appendChild(row);
   }
+}
+
+function clearContentSearchHighlights() {
+  contentArea.querySelectorAll('mark.search-match').forEach(mark => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+    while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+    parent.removeChild(mark);
+    parent.normalize();
+  });
+}
+
+function highlightTermsInContent(terms) {
+  if (!terms || terms.length === 0) return;
+  const pattern = new RegExp(terms.map(escapeRegExp).join('|'), 'ig');
+  const walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      let p = node.parentNode;
+      while (p && p !== contentArea) {
+        const tag = p.nodeName;
+        if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+        if (p.classList && p.classList.contains('search-match')) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+
+  for (const node of nodes) {
+    const text = node.nodeValue;
+    pattern.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let match;
+    let found = false;
+    while ((match = pattern.exec(text)) !== null) {
+      if (match[0].length === 0) { pattern.lastIndex++; continue; }
+      found = true;
+      if (match.index > last) frag.appendChild(document.createTextNode(text.slice(last, match.index)));
+      const mark = document.createElement('mark');
+      mark.className = 'search-match';
+      mark.textContent = match[0];
+      frag.appendChild(mark);
+      last = match.index + match[0].length;
+    }
+    if (found) {
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    }
+  }
+}
+
+function refreshContentSearchHighlights() {
+  clearContentSearchHighlights();
+  const q = normalizeText(state.searchQuery || '').toLowerCase();
+  if (q.length < SEARCH_MIN_QUERY_LENGTH) return;
+  const terms = q.split(' ').filter(Boolean);
+  if (terms.length === 0) return;
+  highlightTermsInContent(terms);
 }
 
 function scrollToHref(href, chapters, fallbackChapterId = null) {
@@ -446,6 +516,7 @@ async function renderContent() {
           }
           
           div.style.opacity = '1';
+          refreshContentSearchHighlights();
           setTimeout(() => { isRestoringBook = false; }, 100);
         }
       }
@@ -1339,6 +1410,7 @@ sidebarSearchInput.addEventListener('input', (e) => {
   }
   sidebarSearchTimer = setTimeout(() => {
     renderSearchResults();
+    refreshContentSearchHighlights();
   }, SEARCH_DEBOUNCE_MS);
 });
 
@@ -1347,6 +1419,7 @@ sidebarSearchClear.addEventListener('click', () => {
   sidebarSearchInput.value = '';
   updateSearchClearVisibility();
   renderSearchResults();
+  refreshContentSearchHighlights();
   sidebarSearchInput.focus({ preventScroll: true });
 });
 
@@ -1356,6 +1429,7 @@ sidebarSearchInput.addEventListener('keydown', (e) => {
     sidebarSearchInput.value = '';
     updateSearchClearVisibility();
     renderSearchResults();
+    refreshContentSearchHighlights();
     return;
   }
 
@@ -1374,8 +1448,20 @@ searchPanel.addEventListener('click', (e) => {
 
   const chapterId = item.dataset.chapterId || null;
   const href = item.dataset.href || '';
+  const matchIndex = parseInt(item.dataset.matchIndex || '0', 10);
+  const term = (item.dataset.term || '').toLowerCase();
   const scrolled = scrollToHref(href, data.chapters, chapterId);
   if (!scrolled) return;
+
+  if (chapterId && term) {
+    const section = contentArea.querySelector('#chapter-' + CSS.escape(chapterId));
+    if (section) {
+      const marks = [...section.querySelectorAll('mark.search-match')]
+        .filter(m => m.textContent.toLowerCase() === term);
+      const target = marks[matchIndex] || marks[0];
+      if (target) target.scrollIntoView({ behavior: 'instant', block: 'center' });
+    }
+  }
 
   const targetOutline = [...outlinePanel.querySelectorAll('.outline-item')]
     .find(el => (el.dataset.href || '') === href);
