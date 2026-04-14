@@ -54,6 +54,7 @@
 .sidebar-search-wrap {
   flex: 1;
   min-width: 0;
+  position: relative;
   -webkit-app-region: no-drag;
 }
 
@@ -69,8 +70,35 @@
   background: var(--bg-input);
   color: var(--text-primary);
   font-size: 12px;
-  padding: 0 8px;
+  padding: 0 24px 0 8px;
   outline: none;
+}
+
+.sidebar-search-clear {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  color: var(--bg-input);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sidebar-search-clear:hover {
+  opacity: 1;
+}
+
+.sidebar-search-clear[hidden] {
+  display: none;
 }
 
 #sidebar-search-input::placeholder {

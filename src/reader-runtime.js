@@ -21,6 +21,7 @@ const sidebarTabSearch = document.getElementById('sidebar-tab-search');
 const sidebarTabHighlights = document.getElementById('sidebar-tab-highlights');
 const sidebarSearchWrap = document.getElementById('sidebar-search-wrap');
 const sidebarSearchInput = document.getElementById('sidebar-search-input');
+const sidebarSearchClear = document.getElementById('sidebar-search-clear');
 const outlinePanel = document.getElementById('outline-panel');
 const searchPanel = document.getElementById('search-panel');
 const highlightsPanel = document.getElementById('highlights-panel');
@@ -1326,8 +1327,13 @@ sidebarTabHighlights.addEventListener('click', () => {
   setSidebarMode('highlights');
 });
 
+function updateSearchClearVisibility() {
+  sidebarSearchClear.hidden = !sidebarSearchInput.value;
+}
+
 sidebarSearchInput.addEventListener('input', (e) => {
   state.searchQuery = e.target.value || '';
+  updateSearchClearVisibility();
   if (sidebarSearchTimer) {
     clearTimeout(sidebarSearchTimer);
   }
@@ -1336,10 +1342,19 @@ sidebarSearchInput.addEventListener('input', (e) => {
   }, SEARCH_DEBOUNCE_MS);
 });
 
+sidebarSearchClear.addEventListener('click', () => {
+  state.searchQuery = '';
+  sidebarSearchInput.value = '';
+  updateSearchClearVisibility();
+  renderSearchResults();
+  sidebarSearchInput.focus({ preventScroll: true });
+});
+
 sidebarSearchInput.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     state.searchQuery = '';
     sidebarSearchInput.value = '';
+    updateSearchClearVisibility();
     renderSearchResults();
     return;
   }
