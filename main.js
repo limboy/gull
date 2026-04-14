@@ -553,6 +553,11 @@ app.whenReady().then(() => {
     return parseEpub(filePath);
   });
 
+  ipcMain.handle('check-paths-existence', (_event, paths) => {
+    if (!Array.isArray(paths)) return [];
+    return paths.map(p => ({ path: p, exists: fs.existsSync(p) }));
+  });
+
   // Handle CLI args (e.g., `gull mybook.epub`)
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   for (const arg of args) {

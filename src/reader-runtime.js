@@ -1224,7 +1224,7 @@ function saveReaderState() {
   localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(data));
 }
 
-function loadReaderState() {
+async function loadReaderState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKS));
     if (!saved || !saved.openBooks || saved.openBooks.length === 0) {
@@ -1232,17 +1232,30 @@ function loadReaderState() {
       return;
     }
 
+    // Verify file existence
+    const pathsToCheck = saved.openBooks.map(b => b.filePath);
+    const existenceResults = await window.epub.checkPathsExistence(pathsToCheck);
+    const existingFilePaths = new Set(
+      existenceResults.filter(r => r.exists).map(r => r.path)
+    );
+
+    const validSavedBooks = saved.openBooks.filter(b => existingFilePaths.has(b.filePath));
+
     // Merge saved books into current state to avoid overwriting books 
     // that might have been opened via IPC before loadReaderState ran.
     const currentPaths = new Set(state.openBooks.map(b => b.filePath));
-    for (const b of saved.openBooks) {
+    for (const b of validSavedBooks) {
       if (!currentPaths.has(b.filePath)) {
         state.openBooks.push(b);
       }
     }
 
     if (!state.activeBookPath) {
-      state.activeBookPath = saved.activeBookPath;
+      if (validSavedBooks.some(b => b.filePath === saved.activeBookPath)) {
+        state.activeBookPath = saved.activeBookPath;
+      } else if (state.openBooks.length > 0) {
+        state.activeBookPath = state.openBooks[0].filePath;
+      }
     }
 
     isStateLoaded = true;
@@ -1251,6 +1264,9 @@ function loadReaderState() {
     if (state.activeBookPath) {
       setActiveBook(state.activeBookPath);
     }
+
+    // Persist filtered state back to localStorage
+    saveReaderState();
   } catch (e) {
     console.warn('Failed to load reader state', e);
     isStateLoaded = true;
@@ -1557,11 +1573,15 @@ window.settings.onThemeChanged((theme) => {
 });
 
 // Init
-loadReaderState();
-loadHighlights();
-setSidebarMode('toc');
-initResize();
-initDragAndDrop();
-initBrokenImageHandling();
-loadTheme();
-window.epub.signalReady();
+async function initApp() {
+  await loadReaderState();
+  loadHighlights();
+  setSidebarMode('toc');
+  initResize();
+  initDragAndDrop();
+  initBrokenImageHandling();
+  await loadTheme();
+  window.epub.signalReady();
+}
+
+initApp();
