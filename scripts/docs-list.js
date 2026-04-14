@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
+const { join, relative } = require("node:path");
 
 process.stdout.on("error", (error) => {
   if (error?.code === "EPIPE") {
