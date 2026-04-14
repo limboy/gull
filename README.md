@@ -49,6 +49,14 @@ npm run build
 
 The output will be available in the `dist` directory.
 
+> [!TIP]
+> **Notarization**: If you want to use an Apple Developer account for notarization, make sure to set the following environment variables in your `.env` file (see `.env.example`):
+> - `APPLE_ID`: Your Apple ID email.
+> - `APPLE_APP_SPECIFIC_PASSWORD`: An app-specific password created at [appleid.apple.com](https://appleid.apple.com).
+> - `APPLE_TEAM_ID`: Your Apple Team ID.
+>
+> You also need to have a valid **Developer ID Application** certificate in your macOS Keychain.
+
 ## 🛠 Tech Stack
 
 - **Core**: [Electron](https://www.electronjs.org/)
