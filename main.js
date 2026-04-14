@@ -312,7 +312,7 @@ function parseEpub(epubPath) {
     // Convert images to base64 data URIs
     $('img, image').each((_, el) => {
       const $el = $(el);
-      const src = $el.attr('src') || $el.attr('xlink:href');
+      const src = $el.attr('src') || $el.attr('xlink:href') || $el.attr('href');
       if (!src || src.startsWith('data:')) return;
       const imgPath = path.posix.normalize(chapterDir + '/' + src);
       try {
@@ -326,7 +326,16 @@ function parseEpub(epubPath) {
             : ext === 'webp' ? 'image/webp'
             : 'image/png';
           const b64 = imgData.toString('base64');
-          $el.attr('src', `data:${mime};base64,${b64}`);
+          const dataUri = `data:${mime};base64,${b64}`;
+          if (el.name === 'img') {
+            $el.attr('src', dataUri);
+          } else {
+            // SVG image uses href or xlink:href
+            $el.attr('href', dataUri);
+            $el.attr('xlink:href', dataUri);
+            // Also remove any src attribute that might have been mistakenly added
+            $el.removeAttr('src');
+          }
         }
       } catch {
         // skip missing images

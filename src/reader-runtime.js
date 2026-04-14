@@ -732,7 +732,13 @@ function bindImageFallback(container) {
   const svgImages = container.querySelectorAll('svg image');
   for (const svgImg of svgImages) {
     const svg = svgImg.closest('svg');
-    if (svg) svg.style.display = 'none';
+    // Previously we were hiding these, which prevented covers from showing.
+    // Now we ensure they are visible and have reasonable defaults.
+    if (svg) {
+      svg.style.display = 'block';
+      svg.style.maxWidth = '100%';
+      svg.style.height = 'auto';
+    }
   }
 
   const imgs = container.querySelectorAll('img');
