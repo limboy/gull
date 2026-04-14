@@ -11,8 +11,17 @@ This file is generated automatically from [Conventional Commits](https://www.con
 - add releaseType field to configuration in package.json ([e1cc027](https://github.com/limboy/gull/commit/e1cc02798cb0e86e4ee4a0e54c63c9442dee1f51))
 - set application name to Gull in main process ([067d22d](https://github.com/limboy/gull/commit/067d22d2825bd2b6506d6184ddc61cc96f818c2d))
 
+### Bug Fixes
+
+- **docs:** convert docs-list.js to CommonJS ([1b543c1](https://github.com/limboy/gull/commit/1b543c15ba053bfd021ff0dd528ec672e3fea9d7))
+
+### Refactoring
+
+- **main:** add explicit label to About menu item ([00645c0](https://github.com/limboy/gull/commit/00645c02ee2829de5d60fbf4e650fcb00af48b04))
+
 ### Documentation
 
+- update changelog with new features, documentation, and chore entries ([75c8dcd](https://github.com/limboy/gull/commit/75c8dcdee0af5c6933c6669e4ff6655e3fc219b2))
 - add agent operating guides and commit conventions ([9e88744](https://github.com/limboy/gull/commit/9e88744f3683d819a26b0ca939dbcaab2a4beab7))
 - add technical documentation covering architecture, build process, EPUB parsing, and runtime logic ([3030971](https://github.com/limboy/gull/commit/3030971e1a2cf0a9a837b6eb75403e0fab7c8ee7))
 
