@@ -14,6 +14,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -22,6 +24,23 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate CHANGELOG.md
+        run: npm run changelog
+
+      - name: Commit CHANGELOG.md to main
+        run: |
+          if [ -n "$(git status --porcelain CHANGELOG.md)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            cp CHANGELOG.md /tmp/CHANGELOG.md
+            git fetch origin main
+            git checkout -B main origin/main
+            cp /tmp/CHANGELOG.md CHANGELOG.md
+            git add CHANGELOG.md
+            git commit -m "docs: update CHANGELOG for ${GITHUB_REF_NAME}" && git push origin main || true
+            git checkout ${GITHUB_REF_NAME}
+          fi
 
       - name: Build renderer
         run: npm run build:renderer
