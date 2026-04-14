@@ -7,7 +7,7 @@ read_when:
 title: "Project Overview"
 ---
 
-Gull is a minimalist, macOS-first EPUB reader built on Electron. It parses `.epub` files in the main process and reflows chapter content in a React + Vite renderer using its own typography controls instead of book-defined styles.
+Gull is a minimalist, macOS-first EPUB reader built on Electron. It requires **macOS 12.0 (Monterey) or later** and runs exclusively on **Apple Silicon**. It parses `.epub` files in the main process and reflows chapter content in a React + Vite renderer using its own typography controls instead of book-defined styles.
 
 ## Stack
 
