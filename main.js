@@ -490,7 +490,7 @@ function createAppMenu() {
     {
       label: app.name,
       submenu: [
-        { role: 'about' },
+        { role: 'about', label: `About ${app.name}` },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
