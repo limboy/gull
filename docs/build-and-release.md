@@ -16,22 +16,24 @@ npm run dev        # vite + electron, HMR for the renderer
 
 `npm run dev` starts Vite on `127.0.0.1:5173` and launches Electron once the port is up. Electron detects dev mode via the `VITE_DEV_SERVER_URL` env var set by the script.
 
-## Production build
+## Release
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which regenerates `CHANGELOG.md`, builds, signs, notarizes, and publishes to GitHub Releases:
+
+```bash
+npm version patch   # or minor / major — bumps package.json and creates a v* tag
+git push && git push --tags
+```
+
+Required repo secrets: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`. `GITHUB_TOKEN` is provided by Actions.
+
+## Local build (optional)
 
 ```bash
 npm run build      # vite build → dist/, then electron-builder --mac
 ```
 
-Outputs `.dmg` and `.zip` targets (see `build.mac.target` in `package.json`). Only `main.js`, `preload.js`, `dist/index.html`, `dist/assets/**`, and `logo.png` are packaged (`build.files`).
-
-## Notarization
-
-`build.mac.notarize = true`. You need:
-
-- A valid **Developer ID Application** certificate in Keychain
-- `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` in a `.env` file (loaded via `dotenv-cli` in the `build` script)
-
-Hardened runtime is on (`hardenedRuntime: true`); entitlements live at `build/entitlements.mac.plist`.
+Outputs `.dmg` and `.zip` (see `build.mac.target`). Only `main.js`, `preload.js`, `dist/index.html`, `dist/assets/**`, and `logo.png` are packaged (`build.files`). Local builds need a Developer ID Application cert in Keychain and the Apple env vars in `.env` (loaded via `dotenv-cli`). Hardened runtime is on; entitlements live at `build/entitlements.mac.plist`.
 
 ## Auto-update
 
