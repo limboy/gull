@@ -98,6 +98,11 @@
   background: #e2e2e6;
 }
 
+[data-theme="dark"] .tab-item:hover,
+[data-theme="dark"] .tab-item.active {
+  background: #111;
+}
+
 .tab-item .tab-close {
   display: flex;
   align-items: center;
