@@ -180,13 +180,17 @@ const HTML_VOID_TAGS = new Set([
   'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
 ]);
 
-function filterInlineStyle(style) {
+function filterInlineStyle(style, preserveMetrics = false) {
   return style
     .split(';')
     .map(s => s.trim())
     .filter(s => {
       const prop = s.split(':')[0]?.trim().toLowerCase();
-      return prop && !STRIP_CSS_PROPS.has(prop);
+      if (!prop) return false;
+      if (preserveMetrics && (prop === 'font-size' || prop === 'line-height')) {
+        return true;
+      }
+      return !STRIP_CSS_PROPS.has(prop);
     })
     .join('; ');
 }
@@ -194,16 +198,21 @@ function filterInlineStyle(style) {
 function filterEpubCss(css) {
   // Simple CSS property filter: process declaration blocks and strip conflicting properties.
   // Handles nested @-rules like @media by working on individual declarations.
-  return css.replace(/\{([^}]*)\}/g, (match, block) => {
+  return css.replace(/([^{]*)\{([^}]*)\}/g, (match, selector, block) => {
+    const isDropCap = selector.toLowerCase().includes('dropcap') || selector.toLowerCase().includes('drop-cap');
     const filtered = block
       .split(';')
       .map(s => s.trim())
       .filter(s => {
         const prop = s.split(':')[0]?.trim().toLowerCase();
-        return prop && !STRIP_CSS_PROPS.has(prop);
+        if (!prop) return false;
+        if (isDropCap && (prop === 'font-size' || prop === 'line-height')) {
+          return true;
+        }
+        return !STRIP_CSS_PROPS.has(prop);
       })
       .join(';\n  ');
-    return filtered ? `{ ${filtered}; }` : '{ }';
+    return filtered ? `${selector}{ ${filtered}; }` : '';
   });
 }
 
@@ -301,7 +310,9 @@ function parseEpub(epubPath) {
     $('[style]').each((_, el) => {
       const $el = $(el);
       const style = $el.attr('style') || '';
-      const cleaned = filterInlineStyle(style);
+      const cls = ($el.attr('class') || '').toLowerCase();
+      const isDropCap = cls.includes('dropcap') || cls.includes('drop-cap');
+      const cleaned = filterInlineStyle(style, isDropCap);
       if (cleaned) {
         $el.attr('style', cleaned);
       } else {

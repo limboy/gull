@@ -248,9 +248,12 @@
   display: block;
 }
 
-.book-content * {
+.book-content *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
   font-family: inherit !important;
   font-size: inherit;
+}
+
+.book-content * {
   color: inherit;
   max-width: 100% !important;
   box-sizing: border-box !important;
@@ -385,7 +388,7 @@
 
 .book-content small,
 .book-content sup {
-  font-size: smaller;
+  font-size: smaller !important;
 }
 
 .selection-popup {

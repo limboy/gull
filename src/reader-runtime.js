@@ -723,8 +723,12 @@ function handleSelectionChange(targetEl) {
 function stripEpubFonts(container) {
   // CSS is already filtered in main process; just ensure no font-family leaks through
   container.querySelectorAll('[style]').forEach(el => {
-    if (el.style.fontFamily) el.style.fontFamily = '';
-    if (el.style.fontSize) el.style.fontSize = '';
+    const cls = (el.getAttribute('class') || '').toLowerCase();
+    const isDropCap = cls.includes('dropcap') || cls.includes('drop-cap');
+    if (!isDropCap) {
+      if (el.style.fontFamily) el.style.fontFamily = '';
+      if (el.style.fontSize) el.style.fontSize = '';
+    }
   });
 }
 
