@@ -58,7 +58,7 @@
   align-items: stretch;
   flex: 1;
   overflow-y: auto;
-  gap: 4px;
+  gap: 2px;
   padding: 8px;
   min-width: 0;
 }
@@ -66,10 +66,8 @@
 .tab-item {
   display: flex;
   align-items: center;
-  padding: 0px 10px;
-  min-height: 36px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 3px 8px;
+  border-radius: 8px;
   font-weight: 500;
   color: var(--text-primary);
   cursor: default;
