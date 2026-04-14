@@ -5,6 +5,8 @@ const AdmZip = require('adm-zip');
 const cheerio = require('cheerio');
 const { autoUpdater } = require('electron-updater');
 
+app.setName('Gull');
+
 // --- Single Instance Lock ---
 const isPrimaryInstance = app.requestSingleInstanceLock();
 if (!isPrimaryInstance) {
