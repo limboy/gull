@@ -1404,7 +1404,7 @@ const stylePopover = document.getElementById('style-popover');
 const btnStyle = document.getElementById('btn-style');
 
 const readingStyle = {
-  fontFamily: "Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif",
+  fontFamily: "'Charter', serif",
   fontSize: 16,
   lineHeight: 1.8,
   paraSpacing: 0.6,

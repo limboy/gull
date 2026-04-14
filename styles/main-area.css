@@ -228,7 +228,7 @@
 .book-content {
   display: none;
   color: var(--text-primary);
-  font-family: var(--book-font-family, Charter, 'Iowan Old Style', Georgia, 'Times New Roman', serif);
+  font-family: var(--book-font-family, 'Charter', serif);
   font-size: var(--book-font-size, 16px);
   line-height: var(--book-line-height, 1.8);
   max-width: 800px;
