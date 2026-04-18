@@ -65,6 +65,16 @@ function writeSettings(data) {
   fs.writeFileSync(getSettingsPath(), JSON.stringify(data, null, 2));
 }
 
+// iCloud Drive evicts files by replacing `/dir/Name.epub` with a placeholder
+// at `/dir/.Name.epub.icloud`. Treat that as "still exists" so a transient
+// offload doesn't drop the book from the user's tabs.
+function pathExistsOrIcloudPlaceholder(p) {
+  if (fs.existsSync(p)) return true;
+  const dir = path.dirname(p);
+  const base = path.basename(p);
+  return fs.existsSync(path.join(dir, `.${base}.icloud`));
+}
+
 function isValidWindowBounds(bounds) {
   return bounds
     && Number.isInteger(bounds.x)
@@ -584,7 +594,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('check-paths-existence', (_event, paths) => {
     if (!Array.isArray(paths)) return [];
-    return paths.map(p => ({ path: p, exists: fs.existsSync(p) }));
+    return paths.map(p => ({ path: p, exists: pathExistsOrIcloudPlaceholder(p) }));
   });
 
   // Handle CLI args (e.g., `gull mybook.epub`)

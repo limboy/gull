@@ -31,7 +31,9 @@ Persisted via `window.settings.set`:
 
 Persisted via `localStorage`:
 - `gull-sidebar-widths` — left/right panel widths (`saveSidebarWidths`)
-- `gull-open-books` — legacy; state now lives in `readerState`
+- `gull-open-books` — open books + positions + active tab (`saveReaderState` / `loadReaderState`)
+
+`loadReaderState` filters out books whose files no longer exist for the current session but never re-writes the pruned list back to `gull-open-books`. Reason: a transient miss (iCloud-evicted files, unmounted drives) would otherwise permanently erase the user's tabs.
 
 ## Feature map (by function)
 

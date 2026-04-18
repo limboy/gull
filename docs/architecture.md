@@ -25,7 +25,7 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
 | `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
-| `check-paths-existence` | R→M (invoke) | Batch `fs.existsSync` for cleaning stale tabs |
+| `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
 | `apply-update` | R→M (invoke) | Calls `autoUpdater.quitAndInstall()` |
 | `renderer-ready` | R→M (send) | Signals the renderer has wired `open-file` listener; main then flushes `pendingFiles` |
 | `open-file` | M→R | Deliver a file path to open as a tab |

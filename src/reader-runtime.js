@@ -1,5 +1,6 @@
 const state = {
   openBooks: [],       // [{ filePath, title, position: { scrollTop, progress } }]
+  offlineBooks: [],    // transient missing books kept across sessions
   activeBookPath: null,
   bookContent: {},     // filePath -> { chapters, toc }
   bookSearchIndex: {}, // filePath -> [{ id, href, title, text, textLower }]
@@ -1305,11 +1306,14 @@ let isStateLoaded = false;
 function saveReaderState() {
   if (!isStateLoaded) return;
   const data = {
-    openBooks: state.openBooks.map(b => ({
-      filePath: b.filePath,
-      title: b.title,
-      position: b.position
-    })),
+    openBooks: [
+      ...state.openBooks.map(b => ({
+        filePath: b.filePath,
+        title: b.title,
+        position: b.position
+      })),
+      ...state.offlineBooks
+    ],
     activeBookPath: state.activeBookPath
   };
   localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(data));
@@ -1331,6 +1335,7 @@ async function loadReaderState() {
     );
 
     const validSavedBooks = saved.openBooks.filter(b => existingFilePaths.has(b.filePath));
+    state.offlineBooks = saved.openBooks.filter(b => !existingFilePaths.has(b.filePath));
 
     // Merge saved books into current state to avoid overwriting books 
     // that might have been opened via IPC before loadReaderState ran.
@@ -1353,11 +1358,8 @@ async function loadReaderState() {
     renderTabs();
 
     if (state.activeBookPath) {
-      setActiveBook(state.activeBookPath);
+      setActiveBook(state.activeBookPath); // Persists all offline books via saveReaderState()
     }
-
-    // Persist filtered state back to localStorage
-    saveReaderState();
   } catch (e) {
     console.warn('Failed to load reader state', e);
     isStateLoaded = true;
