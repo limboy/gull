@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.8](https://github.com/limboy/gull/compare/v1.2.7...v1.2.8) - 2026-04-29
+
+### Bug Fixes
+
+- **build:** move releaseNotesFile to releaseInfo block ([8ac21ce](https://github.com/limboy/gull/commit/8ac21ce29ffa44274d57031f269147d326099735))
+
+### Documentation
+
+- update CHANGELOG for v1.2.7 ([8340e7c](https://github.com/limboy/gull/commit/8340e7c9e820e78187dda2472e1988b7de19790a))
+
 ## [v1.2.7](https://github.com/limboy/gull/compare/v1.2.6...v1.2.7) - 2026-04-29
 
 ### Features
