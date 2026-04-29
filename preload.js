@@ -26,4 +26,7 @@ contextBridge.exposeInMainWorld('settings', {
   onThemeChanged: (cb) => {
     ipcRenderer.on('theme-changed', (_e, theme) => cb(theme));
   },
+  onChapterScrollbarChanged: (cb) => {
+    ipcRenderer.on('chapter-scrollbar-changed', (_e, enabled) => cb(enabled));
+  },
 });

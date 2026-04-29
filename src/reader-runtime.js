@@ -1771,6 +1771,14 @@ window.settings.onThemeChanged((theme) => {
   applyTheme(theme);
 });
 
+function setChapterScrollbar(enabled) {
+  appLayout.classList.toggle('native-scrollbar', !enabled);
+}
+
+window.settings.onChapterScrollbarChanged((enabled) => {
+  setChapterScrollbar(enabled);
+});
+
 function initUpdatePill() {
   const btn = document.getElementById('btn-update');
   if (!btn || !window.updater) return;
@@ -1793,6 +1801,11 @@ async function initApp() {
   initBrokenImageHandling();
   initUpdatePill();
   await loadTheme();
+
+  // Load chapter scrollbar preference
+  const settings = await window.settings.getAll();
+  setChapterScrollbar(settings.chapterScrollbar !== false);
+
   window.epub.signalReady();
 }
 

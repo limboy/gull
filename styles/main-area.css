@@ -154,6 +154,30 @@
   display: none;
 }
 
+/* When chapter scrollbar is off, show the native scrollbar */
+.native-scrollbar #content-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.native-scrollbar #content-area::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+}
+
+.native-scrollbar #content-area::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.native-scrollbar #content-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.native-scrollbar #chapter-scrollbar {
+  display: none !important;
+}
+
 /* Chapter progress scrollbar */
 #chapter-scrollbar {
   width: 8px;
