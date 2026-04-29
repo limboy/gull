@@ -128,11 +128,20 @@
 
 .outline-item:hover {
   color: var(--text-primary);
-  background: var(--hover);
+  background: rgba(0, 122, 204, 0.06);
 }
 
 .outline-item.active {
   color: var(--accent) !important;
+  background: rgba(0, 122, 204, 0.10);
+}
+
+[data-theme="dark"] .outline-item:hover {
+  background: rgba(0, 122, 204, 0.08);
+}
+
+[data-theme="dark"] .outline-item.active {
+  background: rgba(0, 122, 204, 0.14);
 }
 
 .outline-item.level-1 {
