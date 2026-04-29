@@ -3,6 +3,31 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.7](https://github.com/limboy/gull/compare/v1.2.6...v1.2.7) - 2026-04-29
+
+### Features
+
+- add toggleable native scrollbar option in View menu ([29c9940](https://github.com/limboy/gull/commit/29c994049ceb6adbbfcc81b5ac32e5ed412ccc89))
+- active background styles for light and dark themes ([9188d4a](https://github.com/limboy/gull/commit/9188d4a41c455baccbf1084b18f4a2bbcfc9df4c))
+- add findChapterByHref helper to resolve ambiguous navigation paths in multi-book EPUB collections ([3010c84](https://github.com/limboy/gull/commit/3010c8401b29b706a727598f8be47f8b34655c96))
+- persist offline books across sessions and treat iCloud placeholders as existing files to prevent tab loss ([fd65d86](https://github.com/limboy/gull/commit/fd65d86c6463c500848c0a32fde4c435e0fd23c5))
+- automate release note generation and integration for GitHub releases ([109262a](https://github.com/limboy/gull/commit/109262a1aaff622cb2e63b7b3a6f118ea72b5416))
+
+### Documentation
+
+- update README installation and development sections for clarity ([38fac7f](https://github.com/limboy/gull/commit/38fac7f176044991f77083ba24bd9994396d1e20))
+- move screenshot to top of README ([208477b](https://github.com/limboy/gull/commit/208477bcc85aa1395e03c44b420df9190e1c6a30))
+- update CHANGELOG for v1.2.6 ([50eca5f](https://github.com/limboy/gull/commit/50eca5f0cf43737352bebc41a02b8ff992efa1e3))
+
+### Styles
+
+- update accent color and adjust active outline item text color ([0671289](https://github.com/limboy/gull/commit/067128994b7b04128c3484d5686d1d073386d857))
+
+### Chores
+
+- add *.epub to .gitignore to exclude ebook files from version control ([d0e0a97](https://github.com/limboy/gull/commit/d0e0a97bef7a569ee573a76ac83fbd53c9d44f56))
+- restrict macOS support to Apple Silicon and update system requirements documentation ([3e054d1](https://github.com/limboy/gull/commit/3e054d10054b321e08d72498b6e0e91457d35f81))
+
 ## [v1.2.6](https://github.com/limboy/gull/compare/v1.2.5...v1.2.6) - 2026-04-15
 
 ### Features
