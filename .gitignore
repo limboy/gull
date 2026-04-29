@@ -13,3 +13,4 @@ release/
 .env
 .env.local
 RELEASENOTES.md
+*.epub
