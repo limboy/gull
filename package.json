@@ -61,10 +61,12 @@
         "provider": "github",
         "owner": "limboy",
         "repo": "gull",
-        "releaseType": "release",
-        "releaseNotesFile": "RELEASENOTES.md"
+        "releaseType": "release"
       }
-    ]
+    ],
+    "releaseInfo": {
+      "releaseNotesFile": "RELEASENOTES.md"
+    }
   },
   "devDependencies": {
     "@fontsource/inter": "^5.2.8",
