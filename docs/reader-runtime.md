@@ -41,7 +41,7 @@ Persisted via `localStorage`:
 |---|---|
 | Tabs | `openBook`, `closeBook`, `setActiveBook`, `renderTabs` |
 | Chapter render | `renderContent`, `stripEpubFonts`, `bindImageFallback` |
-| TOC | `renderOutline`, `initOutlineScrollTracking`, `setActiveOutlineItem`, `scrollToHref` |
+| TOC | `renderOutline`, `initOutlineScrollTracking`, `setActiveOutlineItem`, `scrollToHref`, `findChapterByHref` |
 | Search | `indexBookForSearch`, `findSearchMatches`, `renderSearchResults`, `highlightTermsInContent`, `clearContentSearchHighlights` |
 | Highlights | `addHighlight`, `removeHighlight`, `applyHighlightsToChapter`, `wrapHighlight`, `getSelectionOffsets`, `handleSelectionChange`, `renderHighlights`, `saveHighlights`, `loadHighlights` |
 | Chapter scrollbar | `initChapterScrollbar` (segmented bar visualizing book structure) |
@@ -55,6 +55,10 @@ Persisted via `localStorage`:
 ## Rendering model
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
+
+## Multi-book EPUB collections
+
+`findChapterByHref` resolves TOC hrefs to spine chapters. Multi-book collections (e.g. "Hunger Games 4-Book Collection") reuse filenames like `cover.xhtml` across books in different directories. The helper disambiguates via: exact match → suffix match → filename-only (only when unambiguous) → longest common suffix. Used by `scrollToHref`, `resolveHrefTarget` (inside `initChapterScrollbar`), and `initOutlineScrollTracking`.
 
 ## Search
 

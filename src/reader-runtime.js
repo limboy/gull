@@ -33,6 +33,64 @@ const SEARCH_MIN_QUERY_LENGTH = 2;
 const SEARCH_MAX_RESULTS = 120;
 let sidebarSearchTimer = null;
 
+/**
+ * Find the chapter whose href best matches a TOC/navigation href.
+ *
+ * Multi-book EPUB collections often reuse the same filenames (cover.xhtml,
+ * titlepage.xhtml) across books, only differing by directory prefix. A naive
+ * filename-only match with .find() would always return the first book's
+ * chapter. This helper avoids that by:
+ *
+ * 1. Trying an exact match first.
+ * 2. Falling back to suffix matching (href ends with the target) which
+ *    handles varying path prefixes.
+ * 3. Only using filename-only matching when there is exactly one candidate
+ *    (no ambiguity).
+ */
+function findChapterByHref(chapters, baseHref) {
+  if (!baseHref || !chapters) return null;
+
+  // 1. Exact match
+  const exact = chapters.find(c => c.href === baseHref);
+  if (exact) return exact;
+
+  // 2. Suffix match — handles varying path prefixes between TOC and spine.
+  //    e.g. TOC href "book4/cover.xhtml" should match chapter href
+  //    "OEBPS/book4/cover.xhtml" but NOT "OEBPS/book1/cover.xhtml".
+  const suffixMatches = chapters.filter(c =>
+    c.href.endsWith('/' + baseHref) || baseHref.endsWith('/' + c.href)
+  );
+  if (suffixMatches.length === 1) return suffixMatches[0];
+
+  // 3. Filename-only fallback — safe only when unambiguous.
+  const tocFile = baseHref.split('/').pop();
+  const filenameMatches = chapters.filter(c =>
+    c.href.split('/').pop() === tocFile
+  );
+  if (filenameMatches.length === 1) return filenameMatches[0];
+
+  // 4. If multiple suffix matches exist, pick the one whose full href
+  //    is most similar (longest common suffix) to the target.
+  const candidates = suffixMatches.length > 0 ? suffixMatches : filenameMatches;
+  if (candidates.length > 1) {
+    let best = candidates[0];
+    let bestLen = 0;
+    for (const c of candidates) {
+      const a = c.href;
+      const b = baseHref;
+      let len = 0;
+      for (let i = 1; i <= Math.min(a.length, b.length); i++) {
+        if (a[a.length - i] === b[b.length - i]) len++;
+        else break;
+      }
+      if (len > bestLen) { bestLen = len; best = c; }
+    }
+    return best;
+  }
+
+  return candidates[0] || null;
+}
+
 // --- Book Tab Management ---
 function openBook(filePath, title) {
   const existing = state.openBooks.find(b => b.filePath === filePath);
@@ -384,15 +442,10 @@ function scrollToHref(href, chapters, fallbackChapterId = null) {
   const baseHref = targetHref.split('#')[0];
   const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
 
-  const matchChapter = (chapters || []).find(ch => {
-    if (baseHref) {
-      if (ch.href === baseHref) return true;
-      const chFile = ch.href.split('/').pop();
-      const tocFile = baseHref.split('/').pop();
-      return chFile === tocFile;
-    }
-    return fallbackChapterId && ch.id === fallbackChapterId;
-  });
+  let matchChapter = baseHref ? findChapterByHref(chapters, baseHref) : null;
+  if (!matchChapter && fallbackChapterId) {
+    matchChapter = (chapters || []).find(ch => ch.id === fallbackChapterId);
+  }
 
   let scrolled = false;
   if (matchChapter) {
@@ -898,11 +951,7 @@ function initChapterScrollbar(chapters, toc) {
     const baseHref = targetHref.split('#')[0];
     const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
 
-    const ch = chapters.find(c => {
-      if (!baseHref) return false;
-      if (c.href === baseHref) return true;
-      return c.href.split('/').pop() === baseHref.split('/').pop();
-    });
+    const ch = findChapterByHref(chapters, baseHref);
     if (!ch) return null;
 
     const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
@@ -986,6 +1035,11 @@ function initChapterScrollbar(chapters, toc) {
     }
     if (measures.length === 0) return [];
 
+    // Sort by document position so heights are computed correctly even when
+    // the TOC order doesn't match the physical chapter order (common in
+    // multi-book EPUB collections).
+    measures.sort((a, b) => a.top - b.top);
+
     for (let i = 0; i < measures.length; i++) {
       const start = measures[i].top;
       const end = i < measures.length - 1
@@ -1007,6 +1061,8 @@ function initChapterScrollbar(chapters, toc) {
   contentArea.addEventListener('force-update-scrollbar', invalidateScrollbar);
 
   let updating = false;
+  const MIN_SEGMENT_PX = 2;
+
   function update() {
     if (updating) return;
     updating = true;
@@ -1027,12 +1083,35 @@ function initChapterScrollbar(chapters, toc) {
       if (measures.length === 0) return;
   
       const totalH = measures.reduce((sum, m) => sum + m.height, 0);
-  
+
+      // First pass: compute proportional heights and identify segments
+      // that need to be bumped up to the minimum visible size.
+      const rawHeights = measures.map(m => (m.height / totalH) * barH);
+      let deficit = 0;
+      let flexTotal = 0;
+      for (let i = 0; i < rawHeights.length; i++) {
+        if (rawHeights[i] < MIN_SEGMENT_PX) {
+          deficit += MIN_SEGMENT_PX - rawHeights[i];
+          rawHeights[i] = MIN_SEGMENT_PX;
+        } else {
+          flexTotal += rawHeights[i];
+        }
+      }
+      // Shrink larger segments proportionally to pay for the deficit.
+      if (deficit > 0 && flexTotal > 0) {
+        const scale = (flexTotal - deficit) / flexTotal;
+        for (let i = 0; i < rawHeights.length; i++) {
+          if (rawHeights[i] > MIN_SEGMENT_PX) {
+            rawHeights[i] *= scale;
+          }
+        }
+      }
+
       const viewportEnd = scrollTop + viewportH;
-      for (const m of measures) {
-        // Pure mathematical proportionality (no minH pixel stealing)
-        const rawRatio = m.height / totalH;
-        m.seg.style.height = (rawRatio * barH) + 'px';
+      for (let i = 0; i < measures.length; i++) {
+        const m = measures[i];
+        const segH = rawHeights[i];
+        m.seg.style.height = segH + 'px';
   
         let fillRatio = 0;
         if (viewportEnd >= m.top + m.height) {
@@ -1042,7 +1121,9 @@ function initChapterScrollbar(chapters, toc) {
         }
   
         fillRatio = Math.max(0, Math.min(1, fillRatio));
-        m.fill.style.height = (fillRatio * 100) + '%';
+        // Use pixel height instead of percentage to avoid sub-pixel
+        // rounding artifacts when the segment is very small.
+        m.fill.style.height = (fillRatio * segH) + 'px';
       }
     });
   }
@@ -1122,11 +1203,7 @@ function initOutlineScrollTracking(chapters) {
       const fragment = href.includes('#') ? href.split('#')[1] : null;
 
       // Find matching chapter
-      const ch = chapters.find(c => {
-        if (!baseHref) return false;
-        if (c.href === baseHref) return true;
-        return c.href.split('/').pop() === baseHref.split('/').pop();
-      });
+      const ch = findChapterByHref(chapters, baseHref);
 
       if (ch) {
         const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
