@@ -132,7 +132,7 @@
 }
 
 .outline-item.active {
-  color: var(--accent) !important;
+  color: var(--text-primary) !important;
   background: rgba(0, 122, 204, 0.10);
 }
 
