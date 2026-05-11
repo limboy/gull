@@ -1737,11 +1737,21 @@ window.settings.onThemeChanged((theme) => {
 });
 
 function setChapterScrollbar(enabled) {
-  appLayout.classList.toggle('native-scrollbar', !enabled);
+  const isEnabled = enabled !== false;
+  const layout = document.getElementById('app-layout');
+  if (layout) {
+    layout.classList.toggle('native-scrollbar', !isEnabled);
+  }
 }
 
 window.settings.onChapterScrollbarChanged((enabled) => {
   setChapterScrollbar(enabled);
+});
+
+window.settings.onSettingsChanged((settings) => {
+  if (settings && typeof settings.chapterScrollbar !== 'undefined') {
+    setChapterScrollbar(settings.chapterScrollbar);
+  }
 });
 
 function initUpdatePill() {

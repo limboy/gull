@@ -24,7 +24,6 @@ const LINE_HEIGHT_OPTIONS = [
 ];
 
 const PARA_SPACING_OPTIONS = [
-  { label: 'None', value: 0 },
   { label: 'Small', value: 0.3 },
   { label: 'Normal', value: 0.6 },
   { label: 'Large', value: 1.5 },
@@ -46,6 +45,7 @@ function nearestOption(options, value) {
 
 export function SettingsMenu() {
   const [theme, setTheme] = useState(() => readLS('gull-theme', 'light'));
+  const [chapterScrollbar, setChapterScrollbar] = useState(true);
   const [style, setStyle] = useState(() => {
     const saved = readLS('gull-reading-style', {});
     return {
@@ -57,9 +57,37 @@ export function SettingsMenu() {
   });
 
   useEffect(() => {
+    async function init() {
+      const settings = await window.settings?.getAll();
+      if (settings) {
+        setChapterScrollbar(settings.chapterScrollbar !== false);
+      }
+    }
+    init();
+
     const handler = (e) => setTheme(e.detail);
     window.addEventListener('gull-theme-changed', handler);
-    return () => window.removeEventListener('gull-theme-changed', handler);
+
+    // Using a ref or a way to clean up would be better, but since this is a 
+    // singleton component in a long-lived app, it's less critical.
+    // However, let's at least handle the theme event.
+    
+    const sbHandler = (enabled) => setChapterScrollbar(enabled);
+    window.settings?.onChapterScrollbarChanged(sbHandler);
+
+    const settingsHandler = (settings) => {
+      if (settings && typeof settings.chapterScrollbar !== 'undefined') {
+        setChapterScrollbar(settings.chapterScrollbar !== false);
+      }
+    };
+    window.settings?.onSettingsChanged(settingsHandler);
+
+    return () => {
+      window.removeEventListener('gull-theme-changed', handler);
+      // Note: window.settings listeners currently don't have a remove mechanism 
+      // in preload.js, so we'll just leave them for now as this component 
+      // shouldn't unmount often.
+    };
   }, []);
 
   function applyTheme(value) {
@@ -81,6 +109,11 @@ export function SettingsMenu() {
     root.style.setProperty('--book-font-size', next.fontSize + 'px');
     root.style.setProperty('--book-line-height', String(next.lineHeight));
     root.style.setProperty('--book-para-spacing', next.paraSpacing + 'em');
+  }
+
+  function toggleChapterScrollbar(checked) {
+    setChapterScrollbar(checked);
+    window.settings?.set('chapterScrollbar', checked);
   }
 
   const themeIcon = theme === 'dark' ? <Moon size={14} /> : theme === 'system' ? <Monitor size={14} /> : <Sun size={14} />;
@@ -117,6 +150,20 @@ export function SettingsMenu() {
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
           </DropdownMenu.Sub>
+
+          <DropdownMenu.Separator className="sm-separator" />
+
+          {/* Chapter Scrollbar */}
+          <DropdownMenu.CheckboxItem
+            className="sm-item sm-checkbox-item"
+            checked={chapterScrollbar}
+            onCheckedChange={toggleChapterScrollbar}
+          >
+            <DropdownMenu.ItemIndicator className="sm-radio-indicator">
+              <Check size={12} />
+            </DropdownMenu.ItemIndicator>
+            Chapter scrollbar
+          </DropdownMenu.CheckboxItem>
 
           <DropdownMenu.Separator className="sm-separator" />
 
