@@ -3,6 +3,36 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.13](https://github.com/limboy/gull/compare/v1.2.12...v1.2.13) - 2026-05-12
+
+### Build
+
+- explicitly install emnapi@1.10.0 to fix CI mismatch ([7db4650](https://github.com/limboy/gull/commit/7db46507b190e4df17a785c05fcccdd0d754e0c0))
+
+## [v1.2.12](https://github.com/limboy/gull/compare/v1.2.11...v1.2.12) - 2026-05-12
+
+### Build
+
+- sync package-lock.json to resolve CI dependency error ([abd8554](https://github.com/limboy/gull/commit/abd8554e2c0b3653cbfc4e9a3d0f9187584288d1))
+
+## [v1.2.11](https://github.com/limboy/gull/compare/v1.2.10...v1.2.11) - 2026-05-12
+
+### Features
+
+- integrate Chapter Scrollbar toggle and refine Settings menu ([c1cc98b](https://github.com/limboy/gull/commit/c1cc98b2b7c55aadea68b50306a8161adcbef43d))
+- migrate theme and reading style to unified Settings menu ([c58f7cf](https://github.com/limboy/gull/commit/c58f7cf2694e0c3135fafd07863a2d93c91358a8))
+
+### Documentation
+
+- update CHANGELOG for v1.2.9 ([0844bcb](https://github.com/limboy/gull/commit/0844bcb2820439b0e69c0f7311660a841713b0bf))
+
+## [v1.2.10](https://github.com/limboy/gull/compare/v1.2.9...v1.2.10) - 2026-05-12
+
+### Features
+
+- integrate Chapter Scrollbar toggle and refine Settings menu ([f8d2b7b](https://github.com/limboy/gull/commit/f8d2b7b9b28faf92e9448b995cc002bb95801422))
+- migrate theme and reading style to unified Settings menu ([b1c32f5](https://github.com/limboy/gull/commit/b1c32f56b9e7e2e1bb61f66a545dcc31f6b4802f))
+
 ## [v1.2.9](https://github.com/limboy/gull/compare/v1.2.8...v1.2.9) - 2026-05-11
 
 ### Features
