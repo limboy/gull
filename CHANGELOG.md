@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.9](https://github.com/limboy/gull/compare/v1.2.8...v1.2.9) - 2026-05-11
+
+### Features
+
+- **epub:** show footnote popover on noteref click ([2693f92](https://github.com/limboy/gull/commit/2693f92b199da18cc873fb745526d80bbeb64c9b))
+
+### Documentation
+
+- update CHANGELOG for v1.2.8 ([5ed4af9](https://github.com/limboy/gull/commit/5ed4af90ceeae710ca63460470c135d9518a45b8))
+
 ## [v1.2.8](https://github.com/limboy/gull/compare/v1.2.7...v1.2.8) - 2026-04-29
 
 ### Bug Fixes
