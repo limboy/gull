@@ -39,7 +39,8 @@
   background: var(--hover);
 }
 
-.sm-radio-item {
+.sm-radio-item,
+.sm-checkbox-item {
   padding-left: 28px;
   position: relative;
 }

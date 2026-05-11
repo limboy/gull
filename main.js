@@ -496,9 +496,6 @@ async function showOpenDialog() {
 
 
 function createAppMenu() {
-  const settings = readSettings();
-  const chapterScrollbar = settings.chapterScrollbar !== false; // default on
-
   const template = [
     {
       label: app.name,
@@ -535,19 +532,6 @@ function createAppMenu() {
         { role: 'resetZoom' },
         { role: 'zoomIn' },
         { role: 'zoomOut' },
-        { type: 'separator' },
-        {
-          label: 'Chapter Scrollbar',
-          type: 'checkbox',
-          checked: chapterScrollbar,
-          click: (menuItem) => {
-            const value = menuItem.checked;
-            const s = readSettings();
-            s.chapterScrollbar = value;
-            writeSettings(s);
-            broadcastToAllWindows('chapter-scrollbar-changed', value);
-          },
-        },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
@@ -604,9 +588,12 @@ app.whenReady().then(() => {
     const settings = readSettings();
     settings[key] = value;
     writeSettings(settings);
-    broadcastSettings(settings);
+    broadcastToAllWindows('settings-changed', settings);
     if (key === 'theme') {
       broadcastToAllWindows('theme-changed', value);
+    }
+    if (key === 'chapterScrollbar') {
+      broadcastToAllWindows('chapter-scrollbar-changed', value);
     }
     return settings;
   });
