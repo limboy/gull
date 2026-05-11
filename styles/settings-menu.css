@@ -1,0 +1,89 @@
+/* Settings dropdown menu */
+
+.sm-content {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-width: 190px;
+  color: var(--text-primary);
+  font-size: 13px;
+  z-index: 500;
+  -webkit-app-region: no-drag;
+  outline: none;
+}
+
+[data-theme="dark"] .sm-content {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: default;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 1;
+}
+
+.sm-item[data-highlighted] {
+  background: var(--hover);
+}
+
+.sm-sub-trigger[data-state="open"] {
+  background: var(--hover);
+}
+
+.sm-radio-item {
+  padding-left: 28px;
+  position: relative;
+}
+
+.sm-radio-indicator {
+  position: absolute;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-primary);
+}
+
+.sm-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 0;
+}
+
+.sm-arrow {
+  margin-left: auto;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.sm-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.sm-aa {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
