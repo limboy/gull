@@ -135,6 +135,8 @@ function ReaderApp() {
         Highlight
       </button>
 
+      <div id="footnote-popover" className="footnote-popover" hidden />
+
       <div id="style-popover" role="dialog" aria-label="Reading Style">
         <div className="style-row">
           <label htmlFor="style-font">Font</label>

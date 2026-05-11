@@ -52,3 +52,12 @@ Cheerio's `xmlMode` preserves self-closing tags like `<div/>`. When such markup 
 ```
 
 Renderer-side consumers: `renderContent` (inject HTML), `initOutlineScrollTracking`, `indexBookForSearch`, `initChapterScrollbar`.
+
+## Footnote popovers (duokan / EPUB 3 noteref)
+
+Some EPUBs (e.g. Duokan-produced Chinese books) embed footnotes as `<aside epub:type="footnote">` blocks placed inline before the referencing paragraph, with `<a epub:type="noteref">` links pointing at them. The `<img class="epub-footnote">` inside each noteref link carries the footnote text in its `zy-footnote` and `alt` attributes.
+
+Renderer handling (all in `reader-runtime.js`):
+- `hideFootnoteAsides(section)` — called after each chapter is injected; sets `display:none` on any `aside` whose `epub:type` attribute is `footnote`, `rearnote`, or `endnote`, so they don't appear as block content.
+- The content-area click handler detects `epub:type="noteref"` links and, instead of scrolling to the aside, calls `showFootnotePopover(text, anchorEl)`.
+- `showFootnotePopover` reads the text from `zy-footnote` (or `alt` as fallback, or the aside element as last resort), then positions and shows `#footnote-popover` near the anchor element. Clicking outside dismisses it.

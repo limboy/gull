@@ -462,3 +462,45 @@ mark.search-match {
 [data-theme="dark"] mark.search-match {
   background-color: rgba(255, 213, 79, 0.35);
 }
+
+/* Hide duokan/epub3 footnote aside blocks from the document flow */
+.book-content aside[epub\:type="footnote"] {
+  display: none;
+}
+
+/* Style the inline "注" footnote image as a small superscript badge */
+.book-content img.epub-footnote {
+  width: 14px;
+  height: 14px;
+  vertical-align: super;
+  cursor: pointer;
+  border-radius: 2px;
+  opacity: 0.75;
+  transition: opacity 0.1s;
+}
+
+.book-content img.epub-footnote:hover {
+  opacity: 1;
+}
+
+/* Footnote popover */
+.footnote-popover {
+  position: fixed;
+  z-index: 500;
+  max-width: 360px;
+  min-width: 200px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.footnote-popover[hidden] {
+  display: none;
+}

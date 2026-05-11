@@ -564,6 +564,7 @@ async function renderContent() {
           section.innerHTML = ch.html;
           stripEpubFonts(section);
           bindImageFallback(section);
+          hideFootnoteAsides(section);
           applyHighlightsToChapter(ch.id, section);
           div.appendChild(section);
           if (chapterIdx < data.chapters.length - 1) {
@@ -875,6 +876,15 @@ function stripEpubFonts(container) {
       if (el.style.fontSize) el.style.fontSize = '';
     }
   });
+}
+
+function hideFootnoteAsides(container) {
+  for (const aside of container.querySelectorAll('aside')) {
+    const t = aside.getAttribute('epub:type');
+    if (t === 'footnote' || t === 'rearnote' || t === 'endnote') {
+      aside.style.display = 'none';
+    }
+  }
 }
 
 function bindImageFallback(container) {
@@ -1603,12 +1613,28 @@ function initBrokenImageHandling() {
 
     const href = link.getAttribute('href');
     if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) {
-      // For external links, we might want to open them in system browser,
-      // but for now let default happen (or block if needed)
       return;
     }
 
     e.preventDefault();
+
+    // For epub:type="noteref" links, show footnote popover instead of scrolling
+    const epubType = link.getAttribute('epub:type') || link.getAttributeNS('http://www.idpf.org/2007/ops', 'type');
+    if (epubType === 'noteref') {
+      const img = link.querySelector('img.epub-footnote');
+      const footnoteText = img
+        ? (img.getAttribute('zy-footnote') || img.getAttribute('alt') || '').trim()
+        : '';
+      const targetId = href.startsWith('#') ? href.slice(1) : null;
+      const asideEl = targetId ? contentArea.querySelector(`#${CSS.escape(targetId)}`) : null;
+      const asideText = asideEl ? asideEl.textContent.trim() : '';
+      const text = footnoteText || asideText;
+      if (text) {
+        showFootnotePopover(text, link.closest('sup') || link);
+        return;
+      }
+    }
+
     const data = state.bookContent[state.activeBookPath];
     if (data) {
       const chapterSection = link.closest('section.chapter');
@@ -1617,6 +1643,43 @@ function initBrokenImageHandling() {
     }
   });
 }
+
+// --- Footnote Popover ---
+const footnotePopover = document.getElementById('footnote-popover');
+
+function showFootnotePopover(text, anchorEl) {
+  footnotePopover.textContent = text;
+  footnotePopover.hidden = false;
+
+  const anchorRect = anchorEl.getBoundingClientRect();
+  const popoverWidth = 360;
+  const margin = 8;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // Start: centered above the anchor
+  let left = anchorRect.left + anchorRect.width / 2 - popoverWidth / 2;
+  left = Math.max(margin, Math.min(left, viewportWidth - popoverWidth - margin));
+  footnotePopover.style.left = left + 'px';
+  footnotePopover.style.maxWidth = popoverWidth + 'px';
+
+  // Measure height after layout
+  const popoverHeight = footnotePopover.offsetHeight;
+  let top = anchorRect.top - popoverHeight - 8;
+  if (top < margin) top = anchorRect.bottom + 8;
+  if (top + popoverHeight > viewportHeight - margin) top = viewportHeight - popoverHeight - margin;
+  footnotePopover.style.top = top + 'px';
+}
+
+document.addEventListener('mousedown', (e) => {
+  if (!footnotePopover.hidden && !footnotePopover.contains(e.target)) {
+    footnotePopover.hidden = true;
+  }
+});
+
+contentArea.addEventListener('scroll', () => {
+  if (!footnotePopover.hidden) footnotePopover.hidden = true;
+}, { passive: true });
 
 // --- Style Popover ---
 const stylePopover = document.getElementById('style-popover');
