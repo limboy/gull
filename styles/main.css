@@ -72,93 +72,38 @@ body {
   width: 100vw;
 }
 
-/* Style adjust button */
-#btn-style {
+/* Settings button in left sidebar footer */
+.left-sidebar-footer {
+  flex-shrink: 0;
+  display: block;
+  padding: 8px;
+}
+
+#btn-settings {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-right: 0;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
   border: none;
+  border-radius: 8px;
   background: none;
   color: var(--text-secondary);
   cursor: default;
-  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
   -webkit-app-region: no-drag;
+}
+
+#btn-settings:hover {
+  color: var(--text-primary);
+  background: var(--hover);
+}
+
+#btn-settings svg {
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
-}
-
-#btn-style:hover {
-  color: var(--text-primary);
-}
-
-#btn-style svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* Theme Switcher */
-.theme-switcher {
-  display: flex;
-  align-items: center;
-  background: var(--bg-sidebar);
-  border-radius: 999px;
-  padding: 2px;
-  margin-right: 8px;
-  gap: 4px;
-  -webkit-app-region: no-drag;
-  border: 1px solid var(--border);
-}
-
-[data-theme="light"] .theme-switcher {
-  background: #e2e2e6;
-  border-color: #d1d1d6;
-}
-
-[data-theme="dark"] .theme-switcher {
-  background: #181818;
-  border-color: #333;
-}
-
-.theme-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: default;
-  transition: all 0.2s ease;
-}
-
-.theme-btn:hover:not(.active) {
-  color: var(--text-primary);
-}
-
-.theme-btn.active {
-  background: var(--bg-main);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="light"] .theme-btn.active {
-  background: #ffffff;
-  color: #000000;
-}
-
-[data-theme="dark"] .theme-btn.active {
-  background: #3c3c3c;
-  color: #ffffff;
-}
-
-.theme-btn svg {
-  width: 12px;
-  height: 12px;
-  stroke-width: 2.5;
 }
 
 /* Update pill */
@@ -194,97 +139,6 @@ body {
   stroke-width: 2.25;
 }
 
-/* Style popover */
-#style-popover {
-  display: none;
-  position: fixed;
-  width: 240px;
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  z-index: 200;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  -webkit-app-region: no-drag;
-}
-
-#style-popover.visible {
-  display: block;
-}
-
-.style-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-}
-
-.style-row label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.style-row select {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text-primary);
-  font-size: 12px;
-  padding: 0 8px;
-  cursor: default;
-  outline: none;
-  width: 100px;
-  height: 26px;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px;
-}
-
-.style-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-  width: 100px;
-  height: 26px;
-}
-
-.style-stepper button {
-  width: 28px;
-  height: 100%;
-  border: none;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  font-size: 14px;
-  cursor: default;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.style-stepper button:hover {
-  background: var(--hover);
-}
-
-.style-stepper span {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-primary);
-  padding: 0 4px;
-  user-select: none;
-  -webkit-user-select: none;
-  pointer-events: none;
-}
 
 #toggle-left-sidebar,
 #toggle-right-sidebar {

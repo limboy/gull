@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ALargeSmall, Sun, Moon, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { SettingsMenu } from '@/components/SettingsMenu';
 
 import './reader/fonts.css';
 import './reader/App.css';
@@ -15,6 +16,9 @@ function ReaderApp() {
       <aside id="left-sidebar">
         <div className="left-sidebar-header" aria-hidden="true" />
         <div id="tab-bar-tabs" />
+        <div className="left-sidebar-footer">
+          <SettingsMenu />
+        </div>
       </aside>
 
       <div id="resize-left" className="resize-handle" />
@@ -35,17 +39,6 @@ function ReaderApp() {
           <button id="btn-update" className="update-pill" hidden title="Install update and restart" aria-label="Install update and restart">
             <RefreshCw aria-hidden="true" />
             <span>Update</span>
-          </button>
-          <div className="theme-switcher">
-            <button id="btn-theme-light" className="theme-btn" title="Light Theme" aria-label="Light Theme">
-              <Sun aria-hidden="true" />
-            </button>
-            <button id="btn-theme-dark" className="theme-btn" title="Dark Theme" aria-label="Dark Theme">
-              <Moon aria-hidden="true" />
-            </button>
-          </div>
-          <button id="btn-style" title="Reading Style" aria-label="Reading Style">
-            <ALargeSmall aria-hidden="true" />
           </button>
           <button id="toggle-right-sidebar" title="Toggle Sidebar" aria-label="Toggle Sidebar">
             <svg className="sidebar-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,45 +130,6 @@ function ReaderApp() {
 
       <div id="footnote-popover" className="footnote-popover" hidden />
 
-      <div id="style-popover" role="dialog" aria-label="Reading Style">
-        <div className="style-row">
-          <label htmlFor="style-font">Font</label>
-          <select id="style-font" defaultValue="'Inter', -apple-system, BlinkMacSystemFont, sans-serif">
-            <option value="'Inter', -apple-system, BlinkMacSystemFont, sans-serif">Inter</option>
-            <option value="'Charter', serif">Charter</option>
-            <option value="'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace">Monospace</option>
-            <option value="-apple-system, BlinkMacSystemFont, sans-serif">System Sans</option>
-            <option value="'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif">Open Sans</option>
-          </select>
-        </div>
-
-        <div className="style-row">
-          <label>Font Size</label>
-          <div className="style-stepper">
-            <button type="button" data-step="font-size" data-dir="-1" aria-label="Decrease font size">-</button>
-            <span id="style-font-size-val">16px</span>
-            <button type="button" data-step="font-size" data-dir="1" aria-label="Increase font size">+</button>
-          </div>
-        </div>
-
-        <div className="style-row">
-          <label>Line Height</label>
-          <div className="style-stepper">
-            <button type="button" data-step="line-height" data-dir="-1" aria-label="Decrease line height">-</button>
-            <span id="style-line-height-val">1.8</span>
-            <button type="button" data-step="line-height" data-dir="1" aria-label="Increase line height">+</button>
-          </div>
-        </div>
-
-        <div className="style-row">
-          <label>Paragraphs</label>
-          <div className="style-stepper">
-            <button type="button" data-step="para-spacing" data-dir="-1" aria-label="Decrease paragraph spacing">-</button>
-            <span id="style-para-spacing-val">0.6em</span>
-            <button type="button" data-step="para-spacing" data-dir="1" aria-label="Increase paragraph spacing">+</button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

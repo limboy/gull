@@ -7,8 +7,11 @@
 #resize-left,
 #resize-right {
   background:
-    linear-gradient(to bottom, transparent 37px, var(--border) 37px, var(--border) 38px, transparent 38px),
-    var(--bg-sidebar);
+    linear-gradient(to bottom, 
+      var(--bg-tab-bar) 37px, 
+      var(--border) 37px, 
+      var(--border) 38px, 
+      var(--bg-main) 38px);
 }
 
 .resize-handle::after {
@@ -22,13 +25,13 @@
 }
 
 #resize-left::after {
-  left: auto;
-  right: 0;
+  left: 0;
+  right: auto;
 }
 
 #resize-right::after {
-  left: 0;
-  right: auto;
+  left: auto;
+  right: 0;
 }
 
 .resize-handle:hover::after,
