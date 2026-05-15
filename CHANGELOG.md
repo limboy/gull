@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.17](https://github.com/limboy/gull/compare/v1.2.16...v1.2.17) - 2026-05-15
+
+### Features
+
+- **mac:** enable glass effect for app icon ([a24a6c5](https://github.com/limboy/gull/commit/a24a6c5bd213d9e60fff5afa18460f2d416c89e8))
+
+### Documentation
+
+- update CHANGELOG for v1.2.16 ([d756b39](https://github.com/limboy/gull/commit/d756b3968a2feb1edf07e66ac325bc04e3793d15))
+
 ## [v1.2.16](https://github.com/limboy/gull/compare/v1.2.15...v1.2.16) - 2026-05-15
 
 ### Documentation
