@@ -1,6 +1,6 @@
 {
   "name": "gull",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "A pure EPUB reader",
   "main": "main.js",
   "scripts": {
