@@ -10,6 +10,7 @@
     "build:renderer": "vite build",
     "build": "npm run build:renderer && dotenv -- electron-builder --mac",
     "preview": "vite preview",
+    "build:icon": "node scripts/build-icon.js",
     "changelog": "node scripts/generate-changelog.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
