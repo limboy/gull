@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.14](https://github.com/limboy/gull/compare/v1.2.13...v1.2.14) - 2026-05-15
+
+### Documentation
+
+- update CHANGELOG for v1.2.13 ([0333605](https://github.com/limboy/gull/commit/0333605b4cceed0df58ba871a956854ebc768249))
+
+### Build
+
+- **mac:** use Icon Composer .icon for macOS Tahoe app icon ([6d0f82a](https://github.com/limboy/gull/commit/6d0f82a68f5b1f352229ab0f4b53b0aaffb9c15e))
+
 ## [v1.2.13](https://github.com/limboy/gull/compare/v1.2.12...v1.2.13) - 2026-05-12
 
 ### Build
