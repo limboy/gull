@@ -3,6 +3,19 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.15](https://github.com/limboy/gull/compare/v1.2.14...v1.2.15) - 2026-05-15
+
+### Documentation
+
+- update CHANGELOG for v1.2.14 ([a2ff895](https://github.com/limboy/gull/commit/a2ff8951480c21adfdda0ea06fb877f76dcf2fac))
+
+### Build
+
+- **mac:** add npm run build:icon to regenerate icon assets ([54db060](https://github.com/limboy/gull/commit/54db0607ad33dd72fa25ce2432c9ed0724b13a2a))
+- **mac:** auto-regenerate icon assets when actool 26 is available ([d35344b](https://github.com/limboy/gull/commit/d35344b0d96213a1970e075d965c09e72d2a696d))
+- **mac:** inject pre-built Tahoe icon assets via afterPack hook ([eaa3b5b](https://github.com/limboy/gull/commit/eaa3b5b5552854ed000ac3e54619ba925775db40))
+- **mac:** fall back to assets/icon.png until Xcode 26 runners available ([b044c1a](https://github.com/limboy/gull/commit/b044c1a95ba5d9aa05b6d4610582f3f50174e0af))
+
 ## [v1.2.14](https://github.com/limboy/gull/compare/v1.2.13...v1.2.14) - 2026-05-15
 
 ### Documentation
