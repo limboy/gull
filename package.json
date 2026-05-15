@@ -31,7 +31,7 @@
     ],
     "mac": {
       "category": "public.app-category.books",
-      "icon": "assets/icon.png",
+      "icon": "assets/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
@@ -49,6 +49,7 @@
       ],
       "notarize": true
     },
+    "afterPack": "scripts/afterPack.js",
     "files": [
       "main.js",
       "preload.js",
