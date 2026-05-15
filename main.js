@@ -574,8 +574,6 @@ app.on('open-file', (event, filePath) => {
 });
 
 app.whenReady().then(() => {
-  setMacDockIcon();
-
   createAppMenu();
 
 
