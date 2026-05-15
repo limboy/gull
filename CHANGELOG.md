@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.16](https://github.com/limboy/gull/compare/v1.2.15...v1.2.16) - 2026-05-15
+
+### Documentation
+
+- update CHANGELOG for v1.2.15 ([04c138e](https://github.com/limboy/gull/commit/04c138e2881d5f151b6acb43ccbbe59bd13df3f9))
+
+### Build
+
+- **mac:** fix icon regeneration by correcting deployment target ([bc22f04](https://github.com/limboy/gull/commit/bc22f0490f3113b1653a5ba6d6e0e13235c3d553))
+
 ## [v1.2.15](https://github.com/limboy/gull/compare/v1.2.14...v1.2.15) - 2026-05-15
 
 ### Documentation
