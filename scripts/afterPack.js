@@ -43,9 +43,9 @@ function generateFromIconPackage() {
       "--enable-on-demand-resources", "NO",
       "--development-region", "en",
       "--target-device", "mac",
-      "--minimum-deployment-target", "26.0",
+      "--minimum-deployment-target", "12.0",
       "--platform", "macosx",
-    ], { stdio: "ignore" });
+    ], { stdio: "inherit" });
     return {
       icns: fs.readFileSync(path.join(tmp, "Icon.icns")),
       car: fs.readFileSync(path.join(tmp, "Assets.car")),
@@ -66,10 +66,21 @@ exports.default = async function afterPack({ appOutDir, packager }) {
 
   if (fs.existsSync(ICON_PACKAGE) && hasActool26()) {
     console.log("  • actool 26+ found — regenerating icon assets from assets/icon.icon");
-    ({ icns, car } = generateFromIconPackage());
-    // Keep committed files in sync so CI always has up-to-date assets.
-    fs.writeFileSync(COMMITTED_ICNS, icns);
-    fs.writeFileSync(COMMITTED_CAR, car);
+    try {
+      ({ icns, car } = generateFromIconPackage());
+      // Keep committed files in sync so CI always has up-to-date assets.
+      fs.writeFileSync(COMMITTED_ICNS, icns);
+      fs.writeFileSync(COMMITTED_CAR, car);
+    } catch (e) {
+      console.error(`  • actool regeneration failed: ${e.message}`);
+      if (fs.existsSync(COMMITTED_ICNS) && fs.existsSync(COMMITTED_CAR)) {
+        console.log("  • falling back to pre-built icon assets");
+        icns = fs.readFileSync(COMMITTED_ICNS);
+        car = fs.readFileSync(COMMITTED_CAR);
+      } else {
+        throw e;
+      }
+    }
   } else {
     if (!fs.existsSync(COMMITTED_CAR)) return;
     console.log("  • actool 26 not available — using pre-built icon assets");

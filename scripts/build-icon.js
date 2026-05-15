@@ -29,7 +29,7 @@ try {
     "--enable-on-demand-resources", "NO",
     "--development-region", "en",
     "--target-device", "mac",
-    "--minimum-deployment-target", "26.0",
+    "--minimum-deployment-target", "12.0",
     "--platform", "macosx",
   ], { stdio: "inherit" });
   fs.copyFileSync(path.join(tmp, "Icon.icns"), COMMITTED_ICNS);
