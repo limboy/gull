@@ -31,7 +31,7 @@
     ],
     "mac": {
       "category": "public.app-category.books",
-      "icon": "logo.png",
+      "icon": "assets/icon.icon",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
