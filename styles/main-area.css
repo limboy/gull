@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transition: opacity 200ms ease, visibility 0s linear 0s;
 }
 
 .left-sidebar-header {
@@ -25,7 +26,7 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    padding-left: 6px;
+    padding-left: 38px;
     padding-right: 6px;
     background: var(--bg-tab-bar);
     min-height: 38px;
@@ -33,6 +34,7 @@
     border-bottom: 1px solid var(--border);
     -webkit-app-region: drag;
     position: relative;
+    transition: padding-left 200ms ease;
 }
 
 .tab-bar-drag {
@@ -41,15 +43,11 @@
 }
 
 #app-layout.left-sidebar-hidden #tab-bar {
-    padding-left: 6px;
+    padding-left: 114px;
 }
 
 #app-layout.left-sidebar-hidden #toggle-left-sidebar {
-    position: absolute;
-    top: 5px;
     left: 82px;
-    margin: 0;
-    z-index: 20;
 }
 
 #tab-bar-tabs {
