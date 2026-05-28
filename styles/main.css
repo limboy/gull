@@ -229,6 +229,11 @@ body {
   transition: opacity 200ms ease, visibility 0s linear 200ms;
 }
 
+/* Disable grid transition while dragging resize handles */
+#app-layout.resizing {
+  transition: none;
+}
+
 /* Both sidebars collapsed */
 #app-layout.left-sidebar-hidden.right-sidebar-hidden {
   grid-template-columns: 0px 0px 1fr 0px 0px;

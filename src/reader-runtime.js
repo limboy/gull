@@ -1319,6 +1319,7 @@ function setupHandle(handleId, cssVar, side) {
 
     handle.classList.add('active');
     document.body.classList.add('no-select');
+    appLayout.classList.add('resizing');
 
     // Lock onto the visible chapter to prevent scroll jumping
     const scrollTop = contentArea.scrollTop;
@@ -1363,6 +1364,7 @@ function setupHandle(handleId, cssVar, side) {
     const onMouseUp = () => {
       handle.classList.remove('active');
       document.body.classList.remove('no-select');
+      appLayout.classList.remove('resizing');
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       saveSidebarWidths();
