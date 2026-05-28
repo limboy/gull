@@ -1,297 +1,304 @@
 #left-sidebar {
-  background: var(--bg-sidebar);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .left-sidebar-header {
-  display: flex;
-  align-items: center;
-  height: 38px;
-  padding: 0 8px;
-  border-bottom: 1px solid var(--border);
-  -webkit-app-region: drag;
+    display: flex;
+    align-items: center;
+    height: 38px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
 }
 
 #main-area {
-  background: var(--bg-main);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+    background: var(--bg-main);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 #tab-bar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding-left: 6px;
-  padding-right: 6px;
-  background: var(--bg-tab-bar);
-  min-height: 38px;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
-  -webkit-app-region: drag;
-  position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background: var(--bg-tab-bar);
+    min-height: 38px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+    position: relative;
 }
 
 .tab-bar-drag {
-  flex: 1;
-  min-width: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 #app-layout.left-sidebar-hidden #tab-bar {
-  padding-left: 6px;
+    padding-left: 6px;
 }
 
 #app-layout.left-sidebar-hidden #toggle-left-sidebar {
-  position: absolute;
-  top: 6px;
-  left: 74px;
-  margin: 0;
-  z-index: 20;
+    position: absolute;
+    top: 5px;
+    left: 82px;
+    margin: 0;
+    z-index: 20;
 }
 
 #tab-bar-tabs {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  flex: 1;
-  overflow-y: auto;
-  gap: 2px;
-  padding: 8px;
-  min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1;
+    overflow-y: auto;
+    gap: 2px;
+    padding: 8px;
+    min-width: 0;
 }
 
 .tab-item {
-  display: flex;
-  align-items: center;
-  padding: 3px 8px;
-  border-radius: 8px;
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: default;
-  white-space: nowrap;
-  opacity: 0.8;
-  transition: background 120ms, color 120ms, opacity 120ms;
-  -webkit-app-region: no-drag;
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: default;
+    white-space: nowrap;
+    opacity: 0.8;
+    transition:
+        background 120ms,
+        color 120ms,
+        opacity 120ms;
+    -webkit-app-region: no-drag;
 }
 
 .tab-item:hover {
-  background: rgba(0, 0, 0, 0.08);
-  opacity: 1;
+    background: rgba(0, 0, 0, 0.08);
+    opacity: 1;
 }
 
 .tab-item.active {
-  color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.14);
-  opacity: 1;
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.14);
+    opacity: 1;
 }
 
 [data-theme="light"] .tab-item:hover {
-  background: #e8e8ec;
+    background: #e8e8ec;
 }
 
 [data-theme="light"] .tab-item.active {
-  background: #e2e2e6;
+    background: #e2e2e6;
 }
 
 [data-theme="dark"] .tab-item:hover,
 [data-theme="dark"] .tab-item.active {
-  background: #111;
+    background: #111;
 }
 
 .tab-item .tab-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 8px;
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 100ms, background 100ms;
-  color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    border-radius: 4px;
+    opacity: 0;
+    transition:
+        opacity 100ms,
+        background 100ms;
+    color: var(--text-secondary);
 }
 
 .tab-item .tab-label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
 }
 
 .tab-item:hover .tab-close {
-  opacity: 1;
+    opacity: 1;
 }
 
 .tab-item .tab-close:hover {
-  background: var(--tab-close-hover);
+    background: var(--tab-close-hover);
 }
 
 .tab-item .tab-close svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
 #content-wrapper {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-  position: relative;
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
 }
 
 #content-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px 60px;
-  scrollbar-width: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px 60px;
+    scrollbar-width: none;
 }
 
 #content-area::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* When chapter scrollbar is off, show the native scrollbar */
 .native-scrollbar #content-area {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .native-scrollbar #content-area::-webkit-scrollbar {
-  display: block;
-  width: 8px;
+    display: block;
+    width: 8px;
 }
 
 .native-scrollbar #content-area::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
 }
 
 .native-scrollbar #content-area::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .native-scrollbar #chapter-scrollbar {
-  display: none !important;
+    display: none !important;
 }
 
 /* Chapter progress scrollbar */
 #chapter-scrollbar {
-  width: 8px;
-  display: flex;
-  flex-direction: column;
-  padding: 8px 0;
-  margin: 0 8px 20px 0;
-  flex-shrink: 0;
-  cursor: default;
-  position: relative;
+    width: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    margin: 0 8px 20px 0;
+    flex-shrink: 0;
+    cursor: default;
+    position: relative;
 }
 
 #chapter-scrollbar:empty {
-  display: none;
+    display: none;
 }
 
 .ch-scroll-segment {
-  flex: none;
-  border-radius: 2px;
-  overflow: hidden;
-  background: var(--scrollbar-thumb);
-  position: relative;
+    flex: none;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--scrollbar-thumb);
+    position: relative;
 }
 
 .ch-scroll-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: var(--accent);
-  border-radius: 2px;
-  transition: height 60ms linear;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: height 60ms linear;
 }
 
 /* Chapter name tooltip */
 .ch-scroll-tooltip {
-  position: fixed;
-  right: 0;
-  padding: 4px 8px;
-  background: var(--bg-tab-bar);
-  color: var(--text-primary);
-  font-size: 12px;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid var(--border);
-  z-index: 100;
-  transform: translateY(-50%);
+    position: fixed;
+    right: 0;
+    padding: 4px 8px;
+    background: var(--bg-tab-bar);
+    color: var(--text-primary);
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    border: 1px solid var(--border);
+    z-index: 100;
+    transform: translateY(-50%);
 }
 
 .empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-secondary);
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 14px;
 }
 
 .empty-state-content {
-  text-align: center;
+    text-align: center;
 }
 
 .empty-icon {
-  width: 64px;
-  height: 64px;
-  fill: var(--text-secondary);
-  opacity: 0.4;
-  margin-bottom: 16px;
+    width: 64px;
+    height: 64px;
+    fill: var(--text-secondary);
+    opacity: 0.4;
+    margin-bottom: 16px;
 }
 
 .empty-hint {
-  margin-top: 6px;
-  font-size: 12px;
-  opacity: 0.6;
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.6;
 }
 
 .book-content {
-  display: none;
-  color: var(--text-primary);
-  font-family: var(--book-font-family, 'Charter', serif);
-  font-size: var(--book-font-size, 16px);
-  line-height: var(--book-line-height, 1.8);
-  max-width: 800px;
-  margin: 0 auto;
-  position: relative;
+    display: none;
+    color: var(--text-primary);
+    font-family: var(--book-font-family, "Charter", serif);
+    font-size: var(--book-font-size, 16px);
+    line-height: var(--book-line-height, 1.8);
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
 }
 
 .book-content.active {
-  display: block;
+    display: block;
 }
 
-.book-content *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
-  font-family: inherit !important;
-  font-size: inherit;
+.book-content
+    *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
+    font-family: inherit !important;
+    font-size: inherit;
 }
 
 .book-content * {
-  color: inherit;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  word-wrap: break-word !important;
+    color: inherit;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
 }
 
 /* Fix for EPUBs with negative margins or extreme offsets */
-.book-content>* {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  left: 0 !important;
+.book-content > * {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    left: 0 !important;
 }
 
 .book-content code,
 .book-content pre {
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace !important;
+    font-family:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
 }
 
 .book-content h1,
@@ -300,207 +307,213 @@
 .book-content h4,
 .book-content h5,
 .book-content h6 {
-  font-weight: bold;
-  margin: 1.2em 0 0.6em;
-  line-height: 1.3;
+    font-weight: bold;
+    margin: 1.2em 0 0.6em;
+    line-height: 1.3;
 }
 
 .book-content h1 {
-  font-size: 1.6em !important;
+    font-size: 1.6em !important;
 }
 
 .book-content h2 {
-  font-size: 1.4em !important;
+    font-size: 1.4em !important;
 }
 
 .book-content h3 {
-  font-size: 1.25em !important;
+    font-size: 1.25em !important;
 }
 
 .book-content h4 {
-  font-size: 1.1em !important;
+    font-size: 1.1em !important;
 }
 
 .book-content h5 {
-  font-size: 1.05em !important;
+    font-size: 1.05em !important;
 }
 
 .book-content h6 {
-  font-size: 1em !important;
+    font-size: 1em !important;
 }
 
 .book-content p {
-  margin-top: var(--book-para-spacing, 0.6em) !important;
-  margin-bottom: var(--book-para-spacing, 0.6em) !important;
+    margin-top: var(--book-para-spacing, 0.6em) !important;
+    margin-bottom: var(--book-para-spacing, 0.6em) !important;
 }
 
 .book-content img,
 .book-content svg {
-  max-width: 100%;
-  height: auto;
+    max-width: 100%;
+    height: auto;
 }
 
 .book-content img {
-  opacity: 0 !important;
-  visibility: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
 }
 
 .book-content img.image-loaded {
-  opacity: 1 !important;
-  visibility: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .book-content img.image-missing {
-  display: none !important;
+    display: none !important;
 }
 
 .book-content a {
-  color: inherit;
-  text-decoration: none;
+    color: inherit;
+    text-decoration: none;
 }
 
 .book-content a[href] {
-  color: var(--accent);
+    color: var(--accent);
 }
 
 .book-content a[href]:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .book-content ul,
 .book-content ol {
-  margin: 0.6em 0;
-  padding-left: 1.5em;
+    margin: 0.6em 0;
+    padding-left: 1.5em;
 }
 
 .book-content pre {
-  background: var(--bg-sidebar);
-  padding: 0.8em;
-  border-radius: 4px;
-  overflow-x: auto;
-  font-size: 0.9em !important;
+    background: var(--bg-sidebar);
+    padding: 0.8em;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9em !important;
 }
 
 .book-content code {
-  font-size: 0.9em !important;
+    font-size: 0.9em !important;
 }
 
 .book-content table {
-  border-collapse: collapse;
-  margin: 1em 0;
-  width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
 }
 
 .book-content th,
 .book-content td {
-  border: 1px solid var(--border);
-  padding: 0.4em 0.8em;
-  text-align: left;
+    border: 1px solid var(--border);
+    padding: 0.4em 0.8em;
+    text-align: left;
 }
 
 .book-content hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 2em 0;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2em 0;
 }
 
 .book-content .chapter {
-  margin-bottom: 1em;
+    margin-bottom: 1em;
 }
 
 .book-content small,
 .book-content sup {
-  font-size: smaller !important;
+    font-size: smaller !important;
 }
 
 .selection-popup {
-  position: fixed;
-  z-index: 1000;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  white-space: nowrap;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transform: translateX(-50%);
-  transition: transform 0.1s ease, background-color 0.1s ease;
+    position: fixed;
+    z-index: 1000;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transform: translateX(-50%);
+    transition:
+        transform 0.1s ease,
+        background-color 0.1s ease;
 }
 
 .selection-popup:hover {
-  background: var(--bg-tab-bar);
-  transform: translateX(-50%);
+    background: var(--bg-tab-bar);
+    transform: translateX(-50%);
 }
 
 mark.reader-highlight {
-  background-color: rgba(255, 230, 0, 0.4);
-  color: inherit;
-  cursor: pointer;
-  border-radius: 2px;
+    background-color: rgba(255, 230, 0, 0.4);
+    color: inherit;
+    cursor: pointer;
+    border-radius: 2px;
 }
 
 mark.reader-highlight:hover {
-  background-color: rgba(255, 230, 0, 0.6);
+    background-color: rgba(255, 230, 0, 0.6);
 }
 
 [data-theme="dark"] mark.reader-highlight {
-  background-color: rgba(255, 230, 0, 0.25);
+    background-color: rgba(255, 230, 0, 0.25);
 }
 
 mark.search-match {
-  background-color: rgba(255, 213, 79, 0.55);
-  color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
+    background-color: rgba(255, 213, 79, 0.55);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
 }
 
 [data-theme="dark"] mark.search-match {
-  background-color: rgba(255, 213, 79, 0.35);
+    background-color: rgba(255, 213, 79, 0.35);
 }
 
 /* Hide duokan/epub3 footnote aside blocks from the document flow */
 .book-content aside[epub\:type="footnote"] {
-  display: none;
+    display: none;
 }
 
 /* Style the inline "注" footnote image as a small superscript badge */
 .book-content img.epub-footnote {
-  width: 14px;
-  height: 14px;
-  vertical-align: super;
-  cursor: pointer;
-  border-radius: 2px;
-  opacity: 0.75;
-  transition: opacity 0.1s;
+    width: 14px;
+    height: 14px;
+    vertical-align: super;
+    cursor: pointer;
+    border-radius: 2px;
+    opacity: 0.75;
+    transition: opacity 0.1s;
 }
 
 .book-content img.epub-footnote:hover {
-  opacity: 1;
+    opacity: 1;
 }
 
 /* Footnote popover */
 .footnote-popover {
-  position: fixed;
-  z-index: 500;
-  max-width: 360px;
-  min-width: 200px;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+    position: fixed;
+    z-index: 500;
+    max-width: 360px;
+    min-width: 200px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.15),
+        0 2px 6px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .footnote-popover[hidden] {
-  display: none;
+    display: none;
 }
