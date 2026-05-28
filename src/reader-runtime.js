@@ -1590,13 +1590,22 @@ function initDragAndDrop() {
 
   document.addEventListener('drop', async (e) => {
     e.preventDefault();
+    const epubFiles = [];
     for (const file of e.dataTransfer.files) {
       const filePath = window.epub.getFilePath(file);
       if (filePath && filePath.toLowerCase().endsWith('.epub')) {
-        const title = filePath.split('/').pop().replace(/\.epub$/i, '');
-        openBook(filePath, title);
+        epubFiles.push(filePath);
       }
     }
+    if (epubFiles.length === 0) return;
+
+    for (const filePath of epubFiles) {
+      const title = filePath.split('/').pop().replace(/\.epub$/i, '');
+      if (!state.openBooks.find(b => b.filePath === filePath)) {
+        state.openBooks.push({ filePath, title });
+      }
+    }
+    setActiveBook(epubFiles[epubFiles.length - 1]);
   });
 }
 
@@ -1715,9 +1724,22 @@ document.getElementById('toggle-right-sidebar').addEventListener('click', () => 
 });
 
 // --- File open from main process (Finder double-click, File > Open) ---
+let pendingOpenFiles = [];
+let pendingOpenTimer = null;
+
 window.epub.onOpenFile((filePath) => {
   const title = filePath.split('/').pop().replace(/\.epub$/i, '');
-  openBook(filePath, title);
+  if (!state.openBooks.find(b => b.filePath === filePath)) {
+    state.openBooks.push({ filePath, title });
+  }
+  pendingOpenFiles.push(filePath);
+  if (pendingOpenTimer) clearTimeout(pendingOpenTimer);
+  pendingOpenTimer = setTimeout(() => {
+    const lastFile = pendingOpenFiles[pendingOpenFiles.length - 1];
+    pendingOpenFiles = [];
+    pendingOpenTimer = null;
+    setActiveBook(lastFile);
+  }, 50);
 });
 
 // --- Theme ---
