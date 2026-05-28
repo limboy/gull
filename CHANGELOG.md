@@ -3,6 +3,29 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.18](https://github.com/limboy/gull/compare/v1.2.17...v1.2.18) - 2026-05-28
+
+### Features
+
+- **ui:** animate sidebar hide/show with slide and fade transitions ([73bab5d](https://github.com/limboy/gull/commit/73bab5ddc5f5b9fc8d9ea5df6514a2aeca0f4ae5))
+
+### Bug Fixes
+
+- **ui:** disable sidebar animation during drag resize ([823d362](https://github.com/limboy/gull/commit/823d3629dfc50b3afeef6d9502d292a560965aab))
+- **ui:** prevent right sidebar content reflow during show animation ([5607098](https://github.com/limboy/gull/commit/5607098b1b92f8d0009a1480865ebe6909f47f8a))
+
+### Performance
+
+- batch multiple epub opens to avoid redundant renders ([250a1de](https://github.com/limboy/gull/commit/250a1de497234323caaca2c3644e16d278455682))
+
+### Documentation
+
+- update CHANGELOG for v1.2.17 ([3e0a7a0](https://github.com/limboy/gull/commit/3e0a7a0a6036d345c37704548a040020110c2bae))
+
+### Styles
+
+- reformat CSS with 4-space indentation and adjust toggle button position ([8e83c47](https://github.com/limboy/gull/commit/8e83c47a8bea80df1fc1f3f27903e0cfad11f08f))
+
 ## [v1.2.17](https://github.com/limboy/gull/compare/v1.2.16...v1.2.17) - 2026-05-15
 
 ### Features
