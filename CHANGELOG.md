@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.20](https://github.com/limboy/gull/compare/v1.2.19...v1.2.20) - 2026-07-09
+
+### Bug Fixes
+
+- **ui:** isolate chapter container class to prevent conflicts with book styles ([73f9102](https://github.com/limboy/gull/commit/73f9102560bd6cf95ed7a9ca0a25d0f5602edd65))
+- **epub:** forward book language to renderer to prevent incorrect font fallbacks ([94b5c8b](https://github.com/limboy/gull/commit/94b5c8b08f02b38b2f2218557e1bde6e33b82660))
+
+### Documentation
+
+- update CHANGELOG for v1.2.18 ([43ef0f4](https://github.com/limboy/gull/commit/43ef0f4604357a5f1cb5865f52aefb158598d97c))
+
+## [v1.2.19](https://github.com/limboy/gull/compare/v1.2.18...v1.2.19) - 2026-07-09
+
+### Bug Fixes
+
+- **ui:** isolate chapter container class to prevent conflicts with book styles ([f923e5b](https://github.com/limboy/gull/commit/f923e5bf3d2910296edc8cf1ea1def989d7f27be))
+- **epub:** forward book language to renderer to prevent incorrect font fallbacks ([801e6b2](https://github.com/limboy/gull/commit/801e6b2c34c49fc37809a2e728c1c9279273309f))
+
 ## [v1.2.18](https://github.com/limboy/gull/compare/v1.2.17...v1.2.18) - 2026-05-28
 
 ### Features
