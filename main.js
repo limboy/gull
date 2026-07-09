@@ -279,6 +279,10 @@ function parseEpub(epubPath) {
   const title = $opf('metadata dc\\:title, metadata title').first().text().trim()
     || path.basename(epubPath, '.epub');
 
+  // Extract book language
+  const language = $opf('metadata dc\\:language, metadata language').first().text().trim()
+    || '';
+
   // Process chapters
   const chapters = [];
   for (const idref of spine) {
@@ -372,7 +376,7 @@ function parseEpub(epubPath) {
     chapters.push({ id: idref, href: item.href, html, css: chapterCss });
   }
 
-  return { title, chapters, toc };
+  return { title, language, chapters, toc };
 }
 
 // --- Window Management ---

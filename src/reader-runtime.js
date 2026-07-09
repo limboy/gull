@@ -507,6 +507,9 @@ async function renderContent() {
 
       const div = document.createElement('div');
       div.className = 'book-content active';
+      if (data.language) {
+        div.setAttribute('lang', data.language);
+      }
       div.style.opacity = '0';
       div.style.transition = 'opacity 0.15s ease-in-out';
       isRestoringBook = true;
