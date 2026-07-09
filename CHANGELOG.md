@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.21](https://github.com/limboy/gull/compare/v1.2.20...v1.2.21) - 2026-07-09
+
+### Features
+
+- **epub:** extract and display book cover thumbnails in tabs ([dd10307](https://github.com/limboy/gull/commit/dd10307a74b9735ee533e31e505d05bd2928991b))
+
+### Bug Fixes
+
+- **ui:** resolve laggy sidebar open/collapse for large EPUBs ([ee67e6f](https://github.com/limboy/gull/commit/ee67e6f87acd726327c9939b1c61203c79d101d5))
+
+### Documentation
+
+- update CHANGELOG for v1.2.20 ([d072cd7](https://github.com/limboy/gull/commit/d072cd759004df9dad52746c26b30b92fe7ccf5e))
+
 ## [v1.2.20](https://github.com/limboy/gull/compare/v1.2.19...v1.2.20) - 2026-07-09
 
 ### Bug Fixes
