@@ -70,7 +70,6 @@ body {
   grid-template-rows: 1fr;
   height: 100vh;
   width: 100vw;
-  transition: grid-template-columns 200ms ease;
 }
 
 /* Settings button in left sidebar footer */
@@ -168,7 +167,6 @@ body {
   left: 6px;
   margin: 0;
   z-index: 20;
-  transition: left 200ms ease;
 }
 
 #toggle-right-sidebar {
@@ -212,7 +210,6 @@ body {
   pointer-events: none;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 200ms ease, visibility 0s linear 200ms;
 }
 
 /* Right sidebar collapsed */
@@ -226,7 +223,6 @@ body {
   pointer-events: none;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 200ms ease, visibility 0s linear 200ms;
 }
 
 /* Disable grid transition while dragging resize handles */

@@ -33,6 +33,26 @@ const SEARCH_MIN_QUERY_LENGTH = 2;
 const SEARCH_MAX_RESULTS = 120;
 let sidebarSearchTimer = null;
 
+function throttle(func, limit) {
+  let lastFunc;
+  let lastRan;
+  return function(...args) {
+    const context = this;
+    if (!lastRan) {
+      func.apply(context, args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(function() {
+        if ((Date.now() - lastRan) >= limit) {
+          func.apply(context, args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
+
 /**
  * Find the chapter whose href best matches a TOC/navigation href.
  *
@@ -959,15 +979,26 @@ function initChapterScrollbar(chapters, toc) {
   }
   if (toc) flattenToc(toc);
 
+  const chapterCache = new Map();
+  const sectionCache = new Map();
+
   function resolveHrefTarget(href) {
     const targetHref = href || '';
     const baseHref = targetHref.split('#')[0];
     const fragment = targetHref.includes('#') ? targetHref.split('#')[1] : null;
 
-    const ch = findChapterByHref(chapters, baseHref);
+    let ch = chapterCache.get(baseHref);
+    if (ch === undefined) {
+      ch = findChapterByHref(chapters, baseHref);
+      chapterCache.set(baseHref, ch);
+    }
     if (!ch) return null;
 
-    const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+    let section = sectionCache.get(ch.id);
+    if (section === undefined) {
+      section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+      sectionCache.set(ch.id, section);
+    }
     if (!section) return null;
 
     if (fragment) {
@@ -1034,17 +1065,14 @@ function initChapterScrollbar(chapters, toc) {
   tooltip.style.display = 'none';
   document.body.appendChild(tooltip);
 
-  function getTargetTopInContent(el) {
-    const contentRect = contentArea.getBoundingClientRect();
-    const targetRect = el.getBoundingClientRect();
-    return targetRect.top - contentRect.top + contentArea.scrollTop;
-  }
-
   function computeMeasures() {
     const measures = [];
+    const contentRect = contentArea.getBoundingClientRect();
+    const contentScrollTop = contentArea.scrollTop;
     for (const s of segments) {
       if (!s.target) continue;
-      measures.push({ ...s, top: getTargetTopInContent(s.target) });
+      const targetRect = s.target.getBoundingClientRect();
+      measures.push({ ...s, top: targetRect.top - contentRect.top + contentScrollTop });
     }
     if (measures.length === 0) return [];
 
@@ -1069,7 +1097,8 @@ function initChapterScrollbar(chapters, toc) {
     cachedMeasures = null;
     requestAnimationFrame(update);
   };
-  const ro = new ResizeObserver(invalidateScrollbar);
+  const throttledInvalidateScrollbar = throttle(invalidateScrollbar, 100);
+  const ro = new ResizeObserver(throttledInvalidateScrollbar);
   ro.observe(contentArea);
   contentArea.addEventListener('force-update-scrollbar', invalidateScrollbar);
 
@@ -1189,9 +1218,16 @@ function initChapterScrollbar(chapters, toc) {
   requestAnimationFrame(() => requestAnimationFrame(update));
 }
 
+let activeOutlineItem = null;
 function setActiveOutlineItem(el) {
-  document.querySelectorAll('.outline-item.active').forEach(item => item.classList.remove('active'));
+  if (activeOutlineItem === el) return;
+  if (activeOutlineItem) {
+    activeOutlineItem.classList.remove('active');
+  } else {
+    document.querySelectorAll('.outline-item.active').forEach(item => item.classList.remove('active'));
+  }
   if (el) el.classList.add('active');
+  activeOutlineItem = el;
 }
 
 // Track scroll position to highlight current ToC item
@@ -1210,16 +1246,26 @@ function initOutlineScrollTracking(chapters) {
   function buildTocTargets() {
     const targets = [];
     const items = document.querySelectorAll('.outline-item');
+    const chapterCache = new Map();
+    const sectionCache = new Map();
     for (const item of items) {
       const href = item.dataset.href || '';
       const baseHref = href.split('#')[0];
       const fragment = href.includes('#') ? href.split('#')[1] : null;
 
       // Find matching chapter
-      const ch = findChapterByHref(chapters, baseHref);
+      let ch = chapterCache.get(baseHref);
+      if (ch === undefined) {
+        ch = findChapterByHref(chapters, baseHref);
+        chapterCache.set(baseHref, ch);
+      }
 
       if (ch) {
-        const section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+        let section = sectionCache.get(ch.id);
+        if (section === undefined) {
+          section = contentArea.querySelector('#chapter-' + CSS.escape(ch.id));
+          sectionCache.set(ch.id, section);
+        }
         if (section) {
           let target = section;
           if (fragment) {
@@ -1235,10 +1281,10 @@ function initOutlineScrollTracking(chapters) {
 
   let cachedTargets = null;
   const invalidateOutline = () => {
-    cachedTargets = null;
     requestAnimationFrame(onScroll);
   };
-  const ro = new ResizeObserver(invalidateOutline);
+  const throttledInvalidateOutline = throttle(invalidateOutline, 100);
+  const ro = new ResizeObserver(throttledInvalidateOutline);
   ro.observe(contentArea);
   contentArea.addEventListener('force-update-scrollbar', invalidateOutline);
 
@@ -1278,6 +1324,7 @@ function initOutlineScrollTracking(chapters) {
 
 function renderOutline(toc, chapters) {
   outlinePanel.innerHTML = '';
+  activeOutlineItem = null;
   if (!toc || toc.length === 0) return;
 
   function addItems(items, level) {
