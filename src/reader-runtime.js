@@ -562,7 +562,7 @@ async function renderContent() {
         while (chapterIdx < data.chapters.length && performance.now() - start < 15) {
           const ch = data.chapters[chapterIdx];
           const section = document.createElement('section');
-          section.className = 'chapter';
+          section.className = 'gull-chapter';
           section.id = 'chapter-' + ch.id;
           section.innerHTML = ch.html;
           stripEpubFonts(section);
@@ -747,7 +747,7 @@ function addHighlight() {
   if (!selection.rangeCount || selection.isCollapsed) return;
 
   const range = selection.getRangeAt(0);
-  const chapterSection = range.startContainer.parentElement.closest('section.chapter');
+  const chapterSection = range.startContainer.parentElement.closest('section.gull-chapter');
   if (!chapterSection) return;
 
   const chapterId = chapterSection.id.replace('chapter-', '');
@@ -832,7 +832,7 @@ function handleSelectionChange(targetEl) {
   }
 
   const range = selection.getRangeAt(0);
-  const chapterSection = range.startContainer.parentElement?.closest('section.chapter');
+  const chapterSection = range.startContainer.parentElement?.closest('section.gull-chapter');
   if (!chapterSection) {
     selectionPopup.hidden = true;
     return;
@@ -1326,7 +1326,7 @@ function setupHandle(handleId, cssVar, side) {
 
     // Lock onto the visible chapter to prevent scroll jumping
     const scrollTop = contentArea.scrollTop;
-    const chapters = Array.from(contentArea.querySelectorAll('section.chapter'));
+    const chapters = Array.from(contentArea.querySelectorAll('section.gull-chapter'));
     let targetCh = null;
     let targetRatio = 0;
     
@@ -1651,7 +1651,7 @@ function initBrokenImageHandling() {
 
     const data = state.bookContent[state.activeBookPath];
     if (data) {
-      const chapterSection = link.closest('section.chapter');
+      const chapterSection = link.closest('section.gull-chapter');
       const chapterId = chapterSection ? chapterSection.id.replace('chapter-', '') : null;
       scrollToHref(href, data.chapters, chapterId);
     }
