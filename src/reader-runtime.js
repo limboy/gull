@@ -120,6 +120,7 @@ function openBook(filePath, title) {
   setActiveBook(filePath);
   renderTabs();
   saveReaderState();
+  fetchMissingCovers();
 }
 
 function closeBook(filePath) {
@@ -157,7 +158,13 @@ function renderTabs() {
     tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
     tab.dataset.bookPath = book.filePath;
     const safeTitle = escapeHtml(book.title);
+    const coverHtml = book.cover 
+      ? `<img class="tab-cover" src="${book.cover}" alt="" />`
+      : `<div class="tab-cover tab-cover-placeholder">
+           <svg viewBox="0 0 24 24" class="tab-cover-placeholder-icon"><path d="M19 2H6c-1.2 0-2 .9-2 2v16c0 1.1.8 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H6V4h12v16z"/></svg>
+         </div>`;
     tab.innerHTML = `
+      ${coverHtml}
       <span class="tab-label">${safeTitle}</span>
       <span class="tab-close" data-close-book="${book.filePath}">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -519,10 +526,19 @@ async function renderContent() {
       }
 
       const data = state.bookContent[book.filePath];
+      let needsTabsRefresh = false;
       // Update title from metadata if available
       if (data.title && book.title !== data.title) {
         book.title = data.title;
+        needsTabsRefresh = true;
+      }
+      if (data.cover && book.cover !== data.cover) {
+        book.cover = data.cover;
+        needsTabsRefresh = true;
+      }
+      if (needsTabsRefresh) {
         renderTabs();
+        saveReaderState();
       }
 
       const div = document.createElement('div');
@@ -1449,7 +1465,8 @@ function saveReaderState() {
       ...state.openBooks.map(b => ({
         filePath: b.filePath,
         title: b.title,
-        position: b.position
+        position: b.position,
+        cover: b.cover
       })),
       ...state.offlineBooks
     ],
@@ -1499,9 +1516,34 @@ async function loadReaderState() {
     if (state.activeBookPath) {
       setActiveBook(state.activeBookPath); // Persists all offline books via saveReaderState()
     }
+    fetchMissingCovers();
   } catch (e) {
     console.warn('Failed to load reader state', e);
     isStateLoaded = true;
+  }
+}
+
+async function fetchMissingCovers() {
+  let changed = false;
+  // Clone to avoid concurrent modification issues if user acts while loop runs
+  const booksToCheck = [...state.openBooks];
+  for (const book of booksToCheck) {
+    if (!book.cover) {
+      try {
+        const cover = await window.epub.getCover(book.filePath);
+        const stillOpen = state.openBooks.find(b => b.filePath === book.filePath);
+        if (stillOpen && cover) {
+          stillOpen.cover = cover;
+          changed = true;
+          renderTabs();
+        }
+      } catch (err) {
+        console.warn('Failed to fetch cover in background for ' + book.filePath, err);
+      }
+    }
+  }
+  if (changed) {
+    saveReaderState();
   }
 }
 
@@ -1789,6 +1831,7 @@ window.epub.onOpenFile((filePath) => {
     pendingOpenFiles = [];
     pendingOpenTimer = null;
     setActiveBook(lastFile);
+    fetchMissingCovers();
   }, 50);
 });
 

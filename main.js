@@ -244,6 +244,107 @@ function normalizeXhtmlFragment(html) {
   );
 }
 
+function getCoverThumbnail(zip, $opf, opfDir) {
+  // 1. Look for item with property "cover-image"
+  let coverItem = null;
+  $opf('manifest item').each((_, el) => {
+    const $el = $opf(el);
+    const props = $el.attr('properties') || '';
+    if (props.split(/\s+/).includes('cover-image')) {
+      coverItem = {
+        href: $el.attr('href'),
+        mediaType: $el.attr('media-type')
+      };
+    }
+  });
+
+  // 2. Fallback to <meta name="cover" content="..." />
+  if (!coverItem) {
+    const coverMeta = $opf('metadata meta[name="cover"]').attr('content');
+    if (coverMeta) {
+      const item = $opf(`manifest item[id="${coverMeta}"]`);
+      if (item.length) {
+        coverItem = {
+          href: item.attr('href'),
+          mediaType: item.attr('media-type')
+        };
+      }
+    }
+  }
+
+  // 3. Fallback: search manifest for items containing "cover" in their id or href
+  if (!coverItem) {
+    $opf('manifest item').each((_, el) => {
+      const $el = $opf(el);
+      const id = $el.attr('id') || '';
+      const href = $el.attr('href') || '';
+      const mediaType = $el.attr('media-type') || '';
+      if (mediaType.startsWith('image/')) {
+        if (id.toLowerCase().includes('cover') || href.toLowerCase().includes('cover')) {
+          coverItem = { href, mediaType };
+        }
+      }
+    });
+  }
+
+  if (coverItem) {
+    const imgPath = path.posix.normalize(opfDir + coverItem.href);
+    try {
+      const imgData = zip.readFile(imgPath);
+      if (imgData) {
+        const ext = path.extname(coverItem.href).toLowerCase().replace('.', '');
+        const mime = coverItem.mediaType || (ext === 'svg' ? 'image/svg+xml'
+          : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+          : ext === 'png' ? 'image/png'
+          : ext === 'gif' ? 'image/gif'
+          : ext === 'webp' ? 'image/webp'
+          : 'image/png');
+
+        if (mime === 'image/svg+xml') {
+          const b64 = imgData.toString('base64');
+          return `data:${mime};base64,${b64}`;
+        }
+
+        try {
+          const img = nativeImage.createFromBuffer(imgData);
+          if (!img.isEmpty()) {
+            // Resize to height 60px to keep it extremely small for localStorage.
+            const resized = img.resize({ height: 60, quality: 'better' });
+            const jpegBuf = resized.toJPEG(80);
+            return `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
+          }
+        } catch (resizeErr) {
+          console.error('Failed to resize cover image', resizeErr);
+        }
+
+        const b64 = imgData.toString('base64');
+        return `data:${mime};base64,${b64}`;
+      }
+    } catch (e) {
+      console.error('Failed to read cover image', e);
+    }
+  }
+  return null;
+}
+
+function getBookCover(epubPath) {
+  try {
+    const zip = new AdmZip(epubPath);
+    const containerXml = zip.readAsText('META-INF/container.xml');
+    const $container = cheerio.load(containerXml, { xmlMode: true });
+    const opfPath = $container('rootfile').attr('full-path');
+    const opfDir = path.dirname(opfPath) === '.' ? '' : path.dirname(opfPath) + '/';
+
+    const opfXml = zip.readAsText(opfPath);
+    const $opf = cheerio.load(opfXml, { xmlMode: true });
+
+    return getCoverThumbnail(zip, $opf, opfDir);
+  } catch (e) {
+    console.error('Failed to get book cover', e);
+    return null;
+  }
+}
+
 function parseEpub(epubPath) {
   const zip = new AdmZip(epubPath);
 
@@ -376,7 +477,9 @@ function parseEpub(epubPath) {
     chapters.push({ id: idref, href: item.href, html, css: chapterCss });
   }
 
-  return { title, language, chapters, toc };
+  const cover = getCoverThumbnail(zip, $opf, opfDir);
+
+  return { title, language, chapters, toc, cover };
 }
 
 // --- Window Management ---
@@ -603,6 +706,11 @@ app.whenReady().then(() => {
   // IPC: parse an EPUB file by its path
   ipcMain.handle('parse-epub', (_event, filePath) => {
     return parseEpub(filePath);
+  });
+
+  // IPC: get a book's cover image by its path
+  ipcMain.handle('get-book-cover', (_event, filePath) => {
+    return getBookCover(filePath);
   });
 
   ipcMain.handle('apply-update', () => {

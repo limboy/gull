@@ -62,7 +62,7 @@
 .tab-item {
     display: flex;
     align-items: center;
-    padding: 3px 8px;
+    padding: 4px 8px;
     border-radius: 8px;
     font-weight: 500;
     color: var(--text-primary);
@@ -121,6 +121,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
+}
+
+.tab-cover {
+    width: 20px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 2px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    background: var(--border);
+}
+
+.tab-cover-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--border);
+}
+
+.tab-cover-placeholder-icon {
+    width: 14px;
+    height: 14px;
+    fill: var(--text-secondary);
 }
 
 .tab-item:hover .tab-close {

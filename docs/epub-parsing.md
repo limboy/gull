@@ -47,7 +47,8 @@ Cheerio's `xmlMode` preserves self-closing tags like `<div/>`. When such markup 
 {
   title: string,
   chapters: [{ id, href, html, css }],  // spine order
-  toc:      [{ title, href, children }] // nested
+  toc:      [{ title, href, children }], // nested
+  cover:    string // optional base64 JPEG data URI thumbnail
 }
 ```
 

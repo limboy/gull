@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('epub', {
   parse: (filePath) => ipcRenderer.invoke('parse-epub', filePath),
+  getCover: (filePath) => ipcRenderer.invoke('get-book-cover', filePath),
   getFilePath: (file) => webUtils.getPathForFile(file),
   onOpenFile: (cb) => {
     ipcRenderer.on('open-file', (_e, filePath) => cb(filePath));

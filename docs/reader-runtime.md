@@ -13,7 +13,7 @@ title: "Renderer Runtime Module"
 
 ```js
 const state = {
-  openBooks,        // [{ filePath, title, position: { scrollTop, progress } }]
+  openBooks,        // [{ filePath, title, cover, position: { scrollTop, progress } }]
   activeBookPath,
   bookContent,      // filePath -> { chapters, toc }
   bookSearchIndex,  // filePath -> [{ id, href, title, text, textLower }]
