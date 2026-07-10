@@ -382,7 +382,7 @@ async function getBookCover(filePath) {
         catch { book = await initKf8File(filePath, tempDir); }
       }
 
-      const coverPath = book.getCoverImage();
+      const coverPath = getMobiCover(book, tempDir);
       let coverDataUri = null;
       if (coverPath && fs.existsSync(coverPath)) {
         const coverData = fs.readFileSync(coverPath);
@@ -562,6 +562,41 @@ async function getMobiParser() {
   return mobiParserModule;
 }
 
+function getMobiCover(book, tempDir) {
+  try {
+    const coverPath = book.getCoverImage();
+    if (coverPath && fs.existsSync(coverPath)) {
+      return coverPath;
+    }
+  } catch (e) {
+    console.error('Standard getCoverImage failed:', e);
+  }
+  try {
+    const innerMobi = book.mobiFile;
+    if (innerMobi && innerMobi.exth) {
+      const exth = innerMobi.exth;
+      const coverOffset = exth.coverOffset !== undefined && exth.coverOffset !== null ? Number(exth.coverOffset) : 4294967295;
+      const thumbnailOffset = exth.thumbnailOffset !== undefined && exth.thumbnailOffset !== null ? Number(exth.thumbnailOffset) : 4294967295;
+      
+      const offset = coverOffset < 4294967295 ? coverOffset : thumbnailOffset < 4294967295 ? thumbnailOffset : undefined;
+      
+      if (offset !== undefined && offset !== null) {
+        const res = innerMobi.loadResource(offset);
+        if (res && res.raw) {
+          const ext = res.type ? res.type.split('/').pop() : 'jpg';
+          const coverFilename = `cover_fallback.${ext}`;
+          const coverPath = path.join(tempDir, coverFilename);
+          fs.writeFileSync(coverPath, res.raw);
+          return coverPath;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Fallback cover extraction failed:', e);
+  }
+  return null;
+}
+
 function getMimeFromPath(filePath) {
   const ext = path.extname(filePath).toLowerCase().replace('.', '');
   return ext === 'svg' ? 'image/svg+xml'
@@ -717,7 +752,7 @@ async function parseMobiOrAzw3(filePath) {
     }
     
     let cover = null;
-    const coverPath = book.getCoverImage();
+    const coverPath = getMobiCover(book, tempDir);
     if (coverPath && fs.existsSync(coverPath)) {
       try {
         const coverData = fs.readFileSync(coverPath);
