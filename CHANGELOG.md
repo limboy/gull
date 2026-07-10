@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.22](https://github.com/limboy/gull/compare/v1.2.21...v1.2.22) - 2026-07-10
+
+### Features
+
+- **main:** support DRM-free MOBI and AZW3 eBook formats ([72d8ab5](https://github.com/limboy/gull/commit/72d8ab538b2aec5eea64bb570596b150ed8b457e))
+
+### Bug Fixes
+
+- **main:** work around mobi-parser 0-falsy bug to restore MOBI/AZW3 covers ([38d7f34](https://github.com/limboy/gull/commit/38d7f34ccbda535d073794e724757aecf8a44ab4))
+- **ui:** support dragging and dropping MOBI and AZW3 eBook formats ([af63eb8](https://github.com/limboy/gull/commit/af63eb833e26000db7724f5dbce20cb25334075f))
+
+### Documentation
+
+- update CHANGELOG for v1.2.21 ([6adf007](https://github.com/limboy/gull/commit/6adf00766f6d2dcdf1e315b039f836f7880d542a))
+
 ## [v1.2.21](https://github.com/limboy/gull/compare/v1.2.20...v1.2.21) - 2026-07-09
 
 ### Features
