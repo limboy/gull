@@ -28,6 +28,34 @@
         "description": "EPUB e-book file",
         "role": "Viewer",
         "mimeType": "application/epub+zip"
+      },
+      {
+        "ext": "mobi",
+        "name": "MOBI Document",
+        "description": "MOBI e-book file",
+        "role": "Viewer",
+        "mimeType": "application/x-mobipocket-ebook"
+      },
+      {
+        "ext": "azw3",
+        "name": "AZW3 Document",
+        "description": "Amazon Kindle KF8 e-book file",
+        "role": "Viewer",
+        "mimeType": "application/vnd.amazon.mobi8-ebook"
+      },
+      {
+        "ext": "azw",
+        "name": "AZW Document",
+        "description": "Amazon Kindle e-book file",
+        "role": "Viewer",
+        "mimeType": "application/vnd.amazon.ebook"
+      },
+      {
+        "ext": "prc",
+        "name": "PRC Document",
+        "description": "Mobipocket e-book file",
+        "role": "Viewer",
+        "mimeType": "application/x-mobipocket-ebook"
       }
     ],
     "mac": {
@@ -99,6 +127,7 @@
     "wait-on": "^9.0.4"
   },
   "dependencies": {
+    "@lingo-reader/mobi-parser": "^0.4.6",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "adm-zip": "^0.5.16",
     "cheerio": "^1.2.0",

@@ -7,6 +7,15 @@ const { autoUpdater } = require('electron-updater');
 
 app.setName('Gull');
 
+const SUPPORTED_EXTENSIONS = ['.epub', '.mobi', '.azw3', '.azw', '.prc'];
+
+function isSupportedFile(filePath) {
+  if (!filePath) return false;
+  const ext = path.extname(filePath).toLowerCase();
+  return SUPPORTED_EXTENSIONS.includes(ext);
+}
+
+
 // --- Single Instance Lock ---
 const isPrimaryInstance = app.requestSingleInstanceLock();
 if (!isPrimaryInstance) {
@@ -23,7 +32,7 @@ if (!isPrimaryInstance) {
     // Process command line arguments for the second instance (Windows/Linux)
     const args = commandLine.slice(app.isPackaged ? 1 : 2);
     for (const arg of args) {
-      if (arg.toLowerCase().endsWith('.epub')) {
+      if (isSupportedFile(arg)) {
         const resolved = path.resolve(arg);
         if (fs.existsSync(resolved)) {
           openFileInApp(resolved);
@@ -327,22 +336,85 @@ function getCoverThumbnail(zip, $opf, opfDir) {
   return null;
 }
 
-function getBookCover(epubPath) {
-  try {
-    const zip = new AdmZip(epubPath);
-    const containerXml = zip.readAsText('META-INF/container.xml');
-    const $container = cheerio.load(containerXml, { xmlMode: true });
-    const opfPath = $container('rootfile').attr('full-path');
-    const opfDir = path.dirname(opfPath) === '.' ? '' : path.dirname(opfPath) + '/';
+async function getBookCover(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.epub') {
+    try {
+      const zip = new AdmZip(filePath);
+      const containerXml = zip.readAsText('META-INF/container.xml');
+      const $container = cheerio.load(containerXml, { xmlMode: true });
+      const opfPath = $container('rootfile').attr('full-path');
+      const opfDir = path.dirname(opfPath) === '.' ? '' : path.dirname(opfPath) + '/';
 
-    const opfXml = zip.readAsText(opfPath);
-    const $opf = cheerio.load(opfXml, { xmlMode: true });
+      const opfXml = zip.readAsText(opfPath);
+      const $opf = cheerio.load(opfXml, { xmlMode: true });
 
-    return getCoverThumbnail(zip, $opf, opfDir);
-  } catch (e) {
-    console.error('Failed to get book cover', e);
-    return null;
+      return getCoverThumbnail(zip, $opf, opfDir);
+    } catch (e) {
+      console.error('Failed to get book cover', e);
+      return null;
+    }
+  } else if (['.mobi', '.azw3', '.azw', '.prc'].includes(ext)) {
+    const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-cover-'));
+    let book = null;
+    try {
+      const { initMobiFile, initKf8File } = await getMobiParser();
+      let isKf = false;
+      try {
+        const fd = fs.openSync(filePath, 'r');
+        const buf = Buffer.alloc(120);
+        fs.readSync(fd, buf, 0, 120, 0);
+        const off = buf.readUInt32BE(78);
+        const vBuf = Buffer.alloc(4);
+        fs.readSync(fd, vBuf, 0, 4, off + 20);
+        const version = vBuf.readUInt32BE(0);
+        fs.closeSync(fd);
+        isKf = version === 8 || version === 264 || version >= 8;
+      } catch (e) {
+        isKf = ext === '.azw3' || ext === '.azw';
+      }
+
+      if (isKf) {
+        try { book = await initKf8File(filePath, tempDir); }
+        catch { book = await initMobiFile(filePath, tempDir); }
+      } else {
+        try { book = await initMobiFile(filePath, tempDir); }
+        catch { book = await initKf8File(filePath, tempDir); }
+      }
+
+      const coverPath = book.getCoverImage();
+      let coverDataUri = null;
+      if (coverPath && fs.existsSync(coverPath)) {
+        const coverData = fs.readFileSync(coverPath);
+        const mime = getMimeFromPath(coverPath);
+        
+        try {
+          const img = nativeImage.createFromBuffer(coverData);
+          if (!img.isEmpty()) {
+            const resized = img.resize({ height: 60, quality: 'better' });
+            const jpegBuf = resized.toJPEG(80);
+            coverDataUri = `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
+          }
+        } catch (resizeErr) {
+          console.error('Failed to resize MOBI cover image', resizeErr);
+        }
+        
+        if (!coverDataUri) {
+          coverDataUri = `data:${mime};base64,${coverData.toString('base64')}`;
+        }
+      }
+      return coverDataUri;
+    } catch (e) {
+      console.error('Failed to get MOBI book cover', e);
+      return null;
+    } finally {
+      if (book) {
+        try { book.destroy(); } catch {}
+      }
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+    }
   }
+  return null;
 }
 
 function parseEpub(epubPath) {
@@ -482,6 +554,206 @@ function parseEpub(epubPath) {
   return { title, language, chapters, toc, cover };
 }
 
+let mobiParserModule = null;
+async function getMobiParser() {
+  if (!mobiParserModule) {
+    mobiParserModule = await import('@lingo-reader/mobi-parser');
+  }
+  return mobiParserModule;
+}
+
+function getMimeFromPath(filePath) {
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  return ext === 'svg' ? 'image/svg+xml'
+    : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+    : ext === 'png' ? 'image/png'
+    : ext === 'gif' ? 'image/gif'
+    : ext === 'webp' ? 'image/webp'
+    : 'image/png';
+}
+
+function extractIdFromSelector(selector) {
+  if (!selector) return null;
+  const match = selector.match(/\[id=["']?(.*?)["']?\]/);
+  if (match) return match[1];
+  if (selector.startsWith('#')) return selector.substring(1);
+  return null;
+}
+
+function mapToc(tocItems, book) {
+  if (!tocItems) return [];
+  return tocItems.map(item => {
+    let href = '';
+    if (item.href) {
+      const resolved = book.resolveHref(item.href);
+      if (resolved) {
+        const anchorId = extractIdFromSelector(resolved.selector);
+        href = anchorId ? `${resolved.id}#${anchorId}` : resolved.id;
+      } else {
+        href = item.href;
+      }
+    }
+    return {
+      title: item.label || '',
+      href: href,
+      children: mapToc(item.children, book)
+    };
+  });
+}
+
+async function parseMobiOrAzw3(filePath) {
+  const { initMobiFile, initKf8File } = await getMobiParser();
+  const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-mobi-'));
+  
+  let book = null;
+  let isKf = false;
+  
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(120);
+    fs.readSync(fd, buf, 0, 120, 0);
+    const off = buf.readUInt32BE(78);
+    const vBuf = Buffer.alloc(4);
+    fs.readSync(fd, vBuf, 0, 4, off + 20);
+    const version = vBuf.readUInt32BE(0);
+    fs.closeSync(fd);
+    
+    isKf = version === 8 || version === 264 || version >= 8;
+  } catch (e) {
+    const ext = path.extname(filePath).toLowerCase();
+    isKf = ext === '.azw3' || ext === '.azw';
+  }
+  
+  try {
+    if (isKf) {
+      try {
+        book = await initKf8File(filePath, tempDir);
+      } catch (err) {
+        console.warn('initKf8File failed, trying initMobiFile fallback:', err);
+        book = await initMobiFile(filePath, tempDir);
+        isKf = false;
+      }
+    } else {
+      try {
+        book = await initMobiFile(filePath, tempDir);
+      } catch (err) {
+        console.warn('initMobiFile failed, trying initKf8File fallback:', err);
+        book = await initKf8File(filePath, tempDir);
+        isKf = true;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to initialize MOBI/KF8 reader:', err);
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+    throw err;
+  }
+  
+  try {
+    const metadata = book.getMetadata() || {};
+    const title = metadata.title || path.basename(filePath, path.extname(filePath));
+    const language = metadata.language || '';
+    
+    const spine = book.getSpine() || [];
+    const chapters = [];
+    
+    for (const item of spine) {
+      if (!item || !item.id) continue;
+      const chapterData = await book.loadChapter(item.id);
+      if (!chapterData) continue;
+      
+      let html = chapterData.html || '';
+      const $ = cheerio.load(html, { xmlMode: true });
+      
+      $('[style]').each((_, el) => {
+        const $el = $(el);
+        const style = $el.attr('style') || '';
+        const cls = ($el.attr('class') || '').toLowerCase();
+        const isDropCap = cls.includes('dropcap') || cls.includes('drop-cap');
+        const cleaned = filterInlineStyle(style, isDropCap);
+        if (cleaned) {
+          $el.attr('style', cleaned);
+        } else {
+          $el.removeAttr('style');
+        }
+      });
+      
+      $('img, image').each((_, el) => {
+        const $el = $(el);
+        const src = $el.attr('src') || $el.attr('xlink:href') || $el.attr('href');
+        if (!src || src.startsWith('data:')) return;
+        
+        const baseName = path.basename(src);
+        const imgPath = path.join(tempDir, baseName);
+        
+        try {
+          if (fs.existsSync(imgPath)) {
+            const imgData = fs.readFileSync(imgPath);
+            const mime = getMimeFromPath(baseName);
+            const b64 = imgData.toString('base64');
+            const dataUri = `data:${mime};base64,${b64}`;
+            if (el.name === 'img') {
+              $el.attr('src', dataUri);
+            } else {
+              $el.attr('href', dataUri);
+              $el.attr('xlink:href', dataUri);
+              $el.removeAttr('src');
+            }
+          }
+        } catch (e) {
+          console.error('Failed to inline MOBI image:', src, e);
+        }
+      });
+      
+      const body = $('body');
+      const rawHtml = body.length ? body.html() : $.html();
+      const cleanHtml = normalizeXhtmlFragment(rawHtml);
+      
+      chapters.push({
+        id: item.id,
+        href: item.id,
+        html: cleanHtml,
+        css: ''
+      });
+    }
+    
+    let cover = null;
+    const coverPath = book.getCoverImage();
+    if (coverPath && fs.existsSync(coverPath)) {
+      try {
+        const coverData = fs.readFileSync(coverPath);
+        const mime = getMimeFromPath(coverPath);
+        
+        try {
+          const img = nativeImage.createFromBuffer(coverData);
+          if (!img.isEmpty()) {
+            const resized = img.resize({ height: 60, quality: 'better' });
+            const jpegBuf = resized.toJPEG(80);
+            cover = `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
+          }
+        } catch (resizeErr) {
+          console.error('Failed to resize MOBI cover image', resizeErr);
+        }
+        
+        if (!cover) {
+          cover = `data:${mime};base64,${coverData.toString('base64')}`;
+        }
+      } catch (e) {
+        console.error('Failed to read cover image', e);
+      }
+    }
+    
+    const rawToc = book.getToc() || [];
+    const toc = mapToc(rawToc, book);
+    
+    return { title, language, chapters, toc, cover };
+  } finally {
+    if (book) {
+      try { book.destroy(); } catch {}
+    }
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
 // --- Window Management ---
 
 // State to track if the renderer is ready to receive files
@@ -565,7 +837,7 @@ function createWindow() {
 }
 
 function openFileInApp(filePath) {
-  if (!filePath || !filePath.toLowerCase().endsWith('.epub')) return;
+  if (!filePath || !isSupportedFile(filePath)) return;
   if (!fs.existsSync(filePath)) return;
 
   const win = getMainWindow();
@@ -591,7 +863,11 @@ async function showOpenDialog() {
   const win = getMainWindow();
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile', 'multiSelections'],
-    filters: [{ name: 'EPUB Files', extensions: ['epub'] }],
+    filters: [
+      { name: 'E-Books', extensions: ['epub', 'mobi', 'azw3', 'azw', 'prc'] },
+      { name: 'EPUB Files', extensions: ['epub'] },
+      { name: 'Kindle Files', extensions: ['mobi', 'azw3', 'azw', 'prc'] }
+    ],
   });
   if (!result.canceled) {
     for (const filePath of result.filePaths) {
@@ -703,9 +979,16 @@ app.whenReady().then(() => {
     return settings;
   });
 
-  // IPC: parse an EPUB file by its path
-  ipcMain.handle('parse-epub', (_event, filePath) => {
-    return parseEpub(filePath);
+  // IPC: parse a book file by its path (supports epub, mobi, azw3)
+  ipcMain.handle('parse-epub', async (_event, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.epub') {
+      return parseEpub(filePath);
+    } else if (['.mobi', '.azw3', '.azw', '.prc'].includes(ext)) {
+      return parseMobiOrAzw3(filePath);
+    } else {
+      throw new Error('Unsupported book format: ' + ext);
+    }
   });
 
   // IPC: get a book's cover image by its path
@@ -726,7 +1009,7 @@ app.whenReady().then(() => {
   // Handle CLI args (e.g., `gull mybook.epub`)
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   for (const arg of args) {
-    if (arg.toLowerCase().endsWith('.epub')) {
+    if (isSupportedFile(arg)) {
       const resolved = path.resolve(arg);
       if (fs.existsSync(resolved)) {
         pendingFiles.push(resolved);
