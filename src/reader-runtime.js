@@ -1699,19 +1699,42 @@ function initDragAndDrop() {
     leftSidebar.addEventListener('dragover', (e) => {
       if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
         e.preventDefault();
+        e.stopPropagation();
         e.dataTransfer.dropEffect = 'copy';
       }
     });
 
-    leftSidebar.addEventListener('drop', () => {
+    leftSidebar.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       dragCounter = 0;
       leftSidebar.classList.remove('drag-active');
+
+      const bookFiles = [];
+      for (const file of e.dataTransfer.files) {
+        const filePath = window.epub.getFilePath(file);
+        if (filePath) {
+          const ext = filePath.split('.').pop().toLowerCase();
+          if (['epub', 'mobi', 'azw3', 'azw', 'prc'].includes(ext)) {
+            bookFiles.push(filePath);
+          }
+        }
+      }
+      if (bookFiles.length === 0) return;
+
+      for (const filePath of bookFiles) {
+        const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
+        if (!state.openBooks.find(b => b.filePath === filePath)) {
+          state.openBooks.push({ filePath, title });
+        }
+      }
+      setActiveBook(bookFiles[bookFiles.length - 1]);
     });
   }
 
   document.addEventListener('dragover', (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    e.dataTransfer.dropEffect = 'none';
   });
 
   document.addEventListener('dragleave', (e) => {
@@ -1723,31 +1746,12 @@ function initDragAndDrop() {
     }
   });
 
-  document.addEventListener('drop', async (e) => {
+  document.addEventListener('drop', (e) => {
     e.preventDefault();
     dragCounter = 0;
     if (leftSidebar) {
       leftSidebar.classList.remove('drag-active');
     }
-    const bookFiles = [];
-    for (const file of e.dataTransfer.files) {
-      const filePath = window.epub.getFilePath(file);
-      if (filePath) {
-        const ext = filePath.split('.').pop().toLowerCase();
-        if (['epub', 'mobi', 'azw3', 'azw', 'prc'].includes(ext)) {
-          bookFiles.push(filePath);
-        }
-      }
-    }
-    if (bookFiles.length === 0) return;
-
-    for (const filePath of bookFiles) {
-      const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
-      if (!state.openBooks.find(b => b.filePath === filePath)) {
-        state.openBooks.push({ filePath, title });
-      }
-    }
-    setActiveBook(bookFiles[bookFiles.length - 1]);
   });
 }
 
