@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.23](https://github.com/limboy/gull/compare/v1.2.22...v1.2.23) - 2026-07-16
+
+### Features
+
+- **ui:** add extra topbar right margin when right sidebar is collapsed ([406e197](https://github.com/limboy/gull/commit/406e19757f92192b407d1d70d23a9d665a7dc6a7))
+- **ui:** restrict book drops exclusively to left sidebar ([0c3925f](https://github.com/limboy/gull/commit/0c3925f4e402c9e17e7e6821dac956c725820a07))
+- **ui:** update drag overlay label to Drop book here ([aaf3daa](https://github.com/limboy/gull/commit/aaf3daa69d246a313744af5358eb91451ff1c09f))
+- **ui:** make drag-and-drop overlay opaque and add margins ([831f9c9](https://github.com/limboy/gull/commit/831f9c9e8fc6c48f4f584a4189ba3af581b3422d))
+- **ui:** add middle sidebar drag-and-drop overlay with dashed border ([0d65379](https://github.com/limboy/gull/commit/0d65379e5e249f330cecce47527bfe3f9a46cdc3))
+- **ui:** highlight left sidebar when dragging files over it ([6a319d9](https://github.com/limboy/gull/commit/6a319d913ced3ba331329dca4721622e004e07f9))
+- **ui:** add layout settings menu and full width mode ([adc260e](https://github.com/limboy/gull/commit/adc260e44405282496b305bffde13a18acead02b))
+
+### Documentation
+
+- update CHANGELOG for v1.2.22 ([629d963](https://github.com/limboy/gull/commit/629d963f549c7098db7eab50c98e3e383b6e30db))
+
 ## [v1.2.22](https://github.com/limboy/gull/compare/v1.2.21...v1.2.22) - 2026-07-10
 
 ### Features
