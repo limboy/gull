@@ -71,6 +71,10 @@
     padding-left: 114px;
 }
 
+#app-layout.right-sidebar-hidden #tab-bar {
+    padding-right: 12px;
+}
+
 #app-layout.left-sidebar-hidden #toggle-left-sidebar {
     left: 82px;
 }
