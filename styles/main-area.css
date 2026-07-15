@@ -537,3 +537,9 @@ mark.search-match {
 .footnote-popover[hidden] {
     display: none;
 }
+
+/* Full width mode */
+#app-layout.full-width .book-content {
+    max-width: none;
+}
+

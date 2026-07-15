@@ -1864,13 +1864,30 @@ function setChapterScrollbar(enabled) {
   }
 }
 
+function setFullWidth(enabled) {
+  const isEnabled = enabled === true;
+  const layout = document.getElementById('app-layout');
+  if (layout) {
+    layout.classList.toggle('full-width', isEnabled);
+  }
+  const contentArea = document.getElementById('content-area');
+  if (contentArea) {
+    contentArea.dispatchEvent(new Event('force-update-scrollbar'));
+  }
+}
+
 window.settings.onChapterScrollbarChanged((enabled) => {
   setChapterScrollbar(enabled);
 });
 
 window.settings.onSettingsChanged((settings) => {
-  if (settings && typeof settings.chapterScrollbar !== 'undefined') {
-    setChapterScrollbar(settings.chapterScrollbar);
+  if (settings) {
+    if (typeof settings.chapterScrollbar !== 'undefined') {
+      setChapterScrollbar(settings.chapterScrollbar);
+    }
+    if (typeof settings.fullWidth !== 'undefined') {
+      setFullWidth(settings.fullWidth);
+    }
   }
 });
 
@@ -1897,9 +1914,10 @@ async function initApp() {
   initUpdatePill();
   await loadTheme();
 
-  // Load chapter scrollbar preference
+  // Load layout preferences
   const settings = await window.settings.getAll();
   setChapterScrollbar(settings.chapterScrollbar !== false);
+  setFullWidth(settings.fullWidth === true);
 
   window.epub.signalReady();
 }

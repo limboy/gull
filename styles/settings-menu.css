@@ -88,3 +88,8 @@
   width: 16px;
   height: 16px;
 }
+
+.layout-menu-content {
+  min-width: 150px;
+}
+

@@ -32,7 +32,7 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 | `settings-changed` | M→R (broadcast) | Full settings object after any write |
 | `theme-changed` | M→R (broadcast) | Just the new theme value |
 | `update-ready` | M→R (broadcast) | `electron-updater` finished downloading |
-| `chapter-scrollbar-changed` | M→R (broadcast) | View menu toggle: `true` (chapter scrollbar) or `false` (native scrollbar) |
+| `chapter-scrollbar-changed` | M→R (broadcast) | Layout Settings toggle: `true` (chapter scrollbar) or `false` (native scrollbar) |
 
 ## File-open pipeline
 
@@ -49,7 +49,8 @@ Stored at `path.join(app.getPath('userData'), 'settings.json')`. Known keys:
 - `theme` — `light` | `dark`
 - `readerState` — open books, active tab, per-book positions (persisted by the renderer)
 - `highlights`, `readingStyle` — persisted by the renderer via `set-setting`
-- `chapterScrollbar` — `true` (default) | `false`; toggled via View menu
+- `chapterScrollbar` — `true` (default) | `false`; toggled via Layout settings dropdown
+- `fullWidth` — `true` | `false` (default); toggled via Layout settings dropdown
 
 ## Navigation hardening
 

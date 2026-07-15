@@ -7,6 +7,10 @@
   box-sizing: border-box;
 }
 
+button {
+  outline: none;
+}
+
 html,
 body {
   height: 100%;
@@ -141,12 +145,13 @@ body {
 
 
 #toggle-left-sidebar,
-#toggle-right-sidebar {
+#toggle-right-sidebar,
+#btn-layout-settings {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
   background: none;
   color: var(--text-secondary);
@@ -157,13 +162,21 @@ body {
 }
 
 #toggle-left-sidebar:hover,
-#toggle-right-sidebar:hover {
+#toggle-right-sidebar:hover,
+#btn-layout-settings:hover,
+#btn-layout-settings[data-state="open"] {
+  background: var(--hover);
   color: var(--text-primary);
+}
+
+#btn-layout-settings svg {
+  width: 16px;
+  height: 16px;
 }
 
 #toggle-left-sidebar {
   position: absolute;
-  top: 5px;
+  top: 7px;
   left: 6px;
   margin: 0;
   z-index: 20;
