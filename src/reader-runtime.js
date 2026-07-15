@@ -1675,13 +1675,60 @@ searchPanel.addEventListener('click', (e) => {
 
 // --- Drag and Drop (on entire window) ---
 function initDragAndDrop() {
+  const leftSidebar = document.getElementById('left-sidebar');
+  let dragCounter = 0;
+
+  if (leftSidebar) {
+    leftSidebar.addEventListener('dragenter', (e) => {
+      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        dragCounter++;
+        leftSidebar.classList.add('drag-active');
+      }
+    });
+
+    leftSidebar.addEventListener('dragleave', (e) => {
+      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          leftSidebar.classList.remove('drag-active');
+        }
+      }
+    });
+
+    leftSidebar.addEventListener('dragover', (e) => {
+      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    });
+
+    leftSidebar.addEventListener('drop', () => {
+      dragCounter = 0;
+      leftSidebar.classList.remove('drag-active');
+    });
+  }
+
   document.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   });
 
+  document.addEventListener('dragleave', (e) => {
+    if (!e.relatedTarget || e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+      dragCounter = 0;
+      if (leftSidebar) {
+        leftSidebar.classList.remove('drag-active');
+      }
+    }
+  });
+
   document.addEventListener('drop', async (e) => {
     e.preventDefault();
+    dragCounter = 0;
+    if (leftSidebar) {
+      leftSidebar.classList.remove('drag-active');
+    }
     const bookFiles = [];
     for (const file of e.dataTransfer.files) {
       const filePath = window.epub.getFilePath(file);
