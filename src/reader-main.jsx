@@ -18,7 +18,7 @@ function ReaderApp() {
         <div className="left-sidebar-header" aria-hidden="true" />
         <div id="tab-bar-tabs" />
         <div className="sidebar-drag-overlay">
-          <span>Drop EPUB here</span>
+          <span>Drop book here</span>
         </div>
         <div className="left-sidebar-footer">
           <SettingsMenu />
