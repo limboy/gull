@@ -18,7 +18,7 @@ npm run dev        # vite + electron, HMR for the renderer
 
 ## Release
 
-Pushing a `v*` tag triggers `.github/workflows/release.yml`, which regenerates `CHANGELOG.md`, extracts the latest version's notes to `RELEASENOTES.md`, builds, signs, notarizes, and publishes to GitHub Releases (using `RELEASENOTES.md` for the release body):
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which regenerates `CHANGELOG.md`, extracts the latest version's categorized notes to `RELEASENOTES.md`, builds, signs, notarizes, publishes to GitHub Releases, and then applies `RELEASENOTES.md` to the GitHub release body with `gh release edit`:
 
 ```bash
 npm version patch   # or minor / major — bumps package.json and creates a v* tag
@@ -52,6 +52,8 @@ Runtime behavior (`initAutoUpdater` in `main.js`):
 ## CHANGELOG
 
 `npm run changelog` runs `scripts/generate-changelog.js`, which walks `v*` git tags + conventional commits and rewrites `CHANGELOG.md`. Grouped by `feat`, `fix`, `perf`, `refactor`, `docs`, `style`, `test`, `build`, `ci`, `chore`. Use the `type(scope)!: subject` convention — the parser expects it. `!` and `BREAKING CHANGE:` footers trigger a Breaking section.
+
+The same command writes the latest tagged section (without its version heading) to the ignored `RELEASENOTES.md` file. `build.releaseInfo.releaseNotesFile` embeds those notes in the auto-update metadata; the workflow's final `gh release edit` step separately sets the visible GitHub release body.
 
 ## File associations
 
