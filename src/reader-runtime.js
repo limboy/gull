@@ -14,6 +14,7 @@ const STORAGE_KEY_BOOKS = 'gull-open-books';
 
 // DOM refs
 const appLayout = document.getElementById('app-layout');
+const getAppLayout = () => document.getElementById('app-layout') || appLayout;
 const tabBar = document.getElementById('tab-bar-tabs');
 const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
@@ -1385,7 +1386,7 @@ function setupHandle(handleId, cssVar, side) {
 
     handle.classList.add('active');
     document.body.classList.add('no-select');
-    appLayout.classList.add('resizing');
+    getAppLayout()?.classList.add('resizing');
 
     // Lock onto the visible chapter to prevent scroll jumping
     const scrollTop = contentArea.scrollTop;
@@ -1430,7 +1431,7 @@ function setupHandle(handleId, cssVar, side) {
     const onMouseUp = () => {
       handle.classList.remove('active');
       document.body.classList.remove('no-select');
-      appLayout.classList.remove('resizing');
+      getAppLayout()?.classList.remove('resizing');
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       saveSidebarWidths();
@@ -1456,8 +1457,10 @@ function loadSidebarWidths() {
 }
 
 function saveSidebarStates() {
-  const leftHidden = appLayout.classList.contains('left-sidebar-hidden');
-  const rightHidden = appLayout.classList.contains('right-sidebar-hidden');
+  const layout = getAppLayout();
+  if (!layout) return;
+  const leftHidden = layout.classList.contains('left-sidebar-hidden');
+  const rightHidden = layout.classList.contains('right-sidebar-hidden');
   localStorage.setItem('gull-sidebar-states', JSON.stringify({ leftHidden, rightHidden }));
 }
 
@@ -1465,8 +1468,11 @@ function loadSidebarStates() {
   try {
     const saved = JSON.parse(localStorage.getItem('gull-sidebar-states'));
     if (saved) {
-      appLayout.classList.toggle('left-sidebar-hidden', !!saved.leftHidden);
-      appLayout.classList.toggle('right-sidebar-hidden', !!saved.rightHidden);
+      const layout = getAppLayout();
+      if (layout) {
+        layout.classList.toggle('left-sidebar-hidden', !!saved.leftHidden);
+        layout.classList.toggle('right-sidebar-hidden', !!saved.rightHidden);
+      }
     }
   } catch {}
 }
@@ -1586,7 +1592,7 @@ contentArea.addEventListener('scroll', () => {
 });
 
 // --- Event Delegation ---
-appLayout.addEventListener('click', (e) => {
+getAppLayout()?.addEventListener('click', (e) => {
   const closeBtn = e.target.closest('[data-close-book]');
   if (closeBtn) {
     closeBook(closeBtn.dataset.closeBook);
@@ -1601,8 +1607,11 @@ appLayout.addEventListener('click', (e) => {
 });
 
 document.getElementById('toggle-left-sidebar').addEventListener('click', () => {
-  appLayout.classList.toggle('left-sidebar-hidden');
-  saveSidebarStates();
+  const layout = getAppLayout();
+  if (layout) {
+    layout.classList.toggle('left-sidebar-hidden');
+    saveSidebarStates();
+  }
 });
 
 sidebarTabToc.addEventListener('click', () => {
@@ -1883,8 +1892,11 @@ applyReadingStyle();
 
 // --- Right Sidebar Toggle ---
 document.getElementById('toggle-right-sidebar').addEventListener('click', () => {
-  appLayout.classList.toggle('right-sidebar-hidden');
-  saveSidebarStates();
+  const layout = getAppLayout();
+  if (layout) {
+    layout.classList.toggle('right-sidebar-hidden');
+    saveSidebarStates();
+  }
 });
 
 // --- File open from main process (Finder double-click, File > Open) ---
