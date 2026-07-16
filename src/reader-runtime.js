@@ -1931,6 +1931,8 @@ function setChapterScrollbar(enabled) {
   if (layout) {
     layout.classList.toggle('native-scrollbar', !isEnabled);
   }
+  document.documentElement.classList.toggle('native-scrollbar', !isEnabled);
+  localStorage.setItem('gull-chapter-scrollbar', String(isEnabled));
 }
 
 function setFullWidth(enabled) {

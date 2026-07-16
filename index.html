@@ -14,6 +14,11 @@
         const saved = localStorage.getItem('gull-theme');
         const theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
+
+        const sbSaved = localStorage.getItem('gull-chapter-scrollbar');
+        if (sbSaved === 'false') {
+          document.documentElement.classList.add('native-scrollbar');
+        }
       })();
     </script>
   </head>
