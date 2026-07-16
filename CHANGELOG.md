@@ -3,6 +3,29 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.24](https://github.com/limboy/gull/compare/v1.2.23...v1.2.24) - 2026-07-16
+
+### Features
+
+- **ui:** remember sidebar open/close state on restart ([142b3d6](https://github.com/limboy/gull/commit/142b3d60bd5dea3e03ee945d3717f3bccb6c15f8))
+- **main:** set minimum window dimensions to 500x530 ([0e084eb](https://github.com/limboy/gull/commit/0e084eb1a7862add56993bc7404aa6d46bac5da9))
+
+### Bug Fixes
+
+- **reader:** show loading state while restoring saved books ([d865d25](https://github.com/limboy/gull/commit/d865d250da4adc095cd3e25e8df4c40fc843ff82))
+- **ui:** persist sidebar visibility via main settings to prevent startup desync ([b3f7ac7](https://github.com/limboy/gull/commit/b3f7ac7a3cd85c5a6538be6c666b92d82a7b82a6))
+- **ui:** resolve stale app-layout reference for sidebar states ([cb8ba3a](https://github.com/limboy/gull/commit/cb8ba3a63fb2060e1b23431f341e3d566ec0b7f2))
+- **ui:** prevent sidebar visual flash on startup when hidden ([159aa10](https://github.com/limboy/gull/commit/159aa102dd7f9d9a3335ce8c454ff13e4d0f7af6))
+- **ui:** prevent chapter scrollbar visual flash on startup when disabled ([6e70498](https://github.com/limboy/gull/commit/6e70498636bb6e2e137e754941ba24f34804ece9))
+
+### Documentation
+
+- update CHANGELOG for v1.2.23 ([cfccb8b](https://github.com/limboy/gull/commit/cfccb8b840f62f63889ab4e1a110287b6c5ea744))
+
+### Styles
+
+- **ui:** make sidebar scrollbars smaller and only show while scrolling ([4b79f9b](https://github.com/limboy/gull/commit/4b79f9b6eb88df754ab190a003136fbabc0e0416))
+
 ## [v1.2.23](https://github.com/limboy/gull/compare/v1.2.22...v1.2.23) - 2026-07-16
 
 ### Features
