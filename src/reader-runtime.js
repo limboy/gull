@@ -1899,6 +1899,27 @@ function applyReadingStyle() {
   root.style.setProperty('--book-para-spacing', readingStyle.paraSpacing + 'em');
 }
 
+async function ensureReadingFontsLoaded() {
+  if (!document.fonts?.load) return;
+
+  const sizeAndFamily = `${readingStyle.fontSize}px ${readingStyle.fontFamily}`;
+  const variants = [
+    sizeAndFamily,
+    `italic ${sizeAndFamily}`,
+    `600 ${sizeAndFamily}`,
+    `italic 600 ${sizeAndFamily}`,
+    `700 ${sizeAndFamily}`,
+    `italic 700 ${sizeAndFamily}`,
+  ];
+
+  try {
+    await Promise.all(variants.map(font => document.fonts.load(font)));
+    await document.fonts.ready;
+  } catch (error) {
+    console.warn('Failed to preload reading fonts', error);
+  }
+}
+
 loadReadingStyle();
 applyReadingStyle();
 
@@ -2033,6 +2054,7 @@ async function initApp() {
   initUpdatePill();
   initSidebarScrollbars();
 
+  await ensureReadingFontsLoaded();
   await loadReaderState();
 
   if (!state.activeBookPath) await renderContent();

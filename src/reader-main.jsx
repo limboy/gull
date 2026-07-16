@@ -18,6 +18,26 @@ function hasSavedBooksToRestore() {
   }
 }
 
+function applyInitialReadingStyle() {
+  const defaults = {
+    fontFamily: "'Charter', serif",
+    fontSize: 16,
+    lineHeight: 1.8,
+    paraSpacing: 0.6,
+  };
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('gull-reading-style')) || {};
+    Object.assign(defaults, saved);
+  } catch {}
+
+  const root = document.documentElement;
+  root.style.setProperty('--book-font-family', defaults.fontFamily);
+  root.style.setProperty('--book-font-size', `${defaults.fontSize}px`);
+  root.style.setProperty('--book-line-height', String(defaults.lineHeight));
+  root.style.setProperty('--book-para-spacing', `${defaults.paraSpacing}em`);
+}
+
 function applyInitialSidebarWidths() {
   try {
     const saved = JSON.parse(localStorage.getItem('gull-sidebar-widths')) || {};
@@ -31,6 +51,7 @@ function applyInitialSidebarWidths() {
 }
 
 // Set persistent dimensions before React creates the grid so its first layout is final.
+applyInitialReadingStyle();
 applyInitialSidebarWidths();
 const isRestoringSavedBook = hasSavedBooksToRestore();
 

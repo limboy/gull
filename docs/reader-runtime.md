@@ -48,7 +48,7 @@ Persisted via `localStorage`:
 | Highlights | `addHighlight`, `removeHighlight`, `applyHighlightsToChapter`, `wrapHighlight`, `getSelectionOffsets`, `handleSelectionChange`, `renderHighlights`, `saveHighlights`, `loadHighlights` |
 | Chapter scrollbar | `initChapterScrollbar` (segmented bar visualizing book structure) |
 | Resize | `initResize`, `setupHandle`, `saveSidebarWidths`, `loadSidebarWidths` |
-| Reading style | `loadReadingStyle`, `applyReadingStyle`, `updateStyleDisplay`, `stepValue`, `FONT_SIZE_STEPS`, `LINE_HEIGHT_STEPS`, `PARA_SPACING_STEPS` |
+| Reading style | `loadReadingStyle`, `applyReadingStyle`, `ensureReadingFontsLoaded`, `updateStyleDisplay`, `stepValue`, `FONT_SIZE_STEPS`, `LINE_HEIGHT_STEPS`, `PARA_SPACING_STEPS` |
 | Theme | `applyTheme` |
 | Update pill | `initUpdatePill` |
 | Drag & drop / broken images | `initDragAndDrop`, `initBrokenImageHandling` |
@@ -58,7 +58,7 @@ Persisted via `localStorage`:
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
 
-At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, and full-width mode before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the drag-and-drop empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot before restoring the active book, so its scroll position is measured against the final viewport. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
+At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, full-width mode, and the saved reading-style CSS variables before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the drag-and-drop empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot and awaits the selected reading-font faces before restoring the active book, so its scroll position is measured against the final viewport and final font metrics. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
 
 ## Multi-book EPUB collections
 

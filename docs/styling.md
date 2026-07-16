@@ -32,7 +32,7 @@ const LINE_HEIGHT_STEPS = [1.2,1.4,1.6,1.8,2.0,2.2,2.4];
 const PARA_SPACING_STEPS= [0,0.3,0.6,1.0,1.5,2.0];
 ```
 
-`applyReadingStyle` writes CSS variables on `#content-area`; `saveReadingStyle` persists via `window.settings.set('readingStyle', …)`. The stepper UI in `reader-main.jsx` dispatches via `data-step` and `data-dir` attributes handled at the module level.
+The saved style is synchronously written to root CSS variables by `reader-main.jsx`, then mirrored by `applyReadingStyle` in the runtime. Before restoring a book, `ensureReadingFontsLoaded` awaits the selected regular, semibold, bold, and italic font faces so the first visible layout uses final font metrics. `SettingsMenu.jsx` owns subsequent updates and persists them in `gull-reading-style` local storage.
 
 ## Why so much book CSS is stripped
 
