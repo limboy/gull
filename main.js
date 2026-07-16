@@ -810,6 +810,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: hasSavedBounds ? savedBounds.width : DEFAULT_MAIN_WINDOW_BOUNDS.width,
     height: hasSavedBounds ? savedBounds.height : DEFAULT_MAIN_WINDOW_BOUNDS.height,
+    minWidth: 500,
+    minHeight: 530,
     x: hasSavedBounds ? savedBounds.x : undefined,
     y: hasSavedBounds ? savedBounds.y : undefined,
     titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
