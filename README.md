@@ -1,83 +1,80 @@
-# Gull — A Pure EPUB Reader
+# Gull
 
-Gull is a minimalist, distraction-free EPUB reader for macOS. Designed with a focus on typography and readability, it provides a premium reading experience inspired by modern e-book aesthetics.
+**A focused, typography-first e-book reader for macOS.**
 
-![Screenshot](assets/screenshot.png)
+Gull is a lightweight desktop reader for DRM-free EPUB and Kindle/Mobipocket books. It reflows each book into a clean, consistent reading layout while keeping navigation, search, highlights, and reading controls close at hand.
 
-## 💻 Requirements
+![Gull showing an open book, the book list, and the table of contents](assets/screenshot.png)
 
-- **macOS 12.0 (Monterey)** or later
-- **Apple Silicon** (M1/M2/M3/M4 chips) only
+## Highlights
 
-## ✨ Features
+- **Read common e-book formats** — EPUB, MOBI, AZW3, AZW, and PRC.
+- **Keep multiple books open** — switch between books from the left sidebar, complete with cover thumbnails. Gull restores open books and reading positions when it restarts.
+- **Navigate long books easily** — use the table of contents or Gull's segmented chapter scrollbar, which maps the structure of the whole book. A standard native scrollbar is also available.
+- **Search and highlight** — search the current book, jump directly to matches, and keep persistent text highlights in a dedicated sidebar.
+- **Tune the page to your taste** — choose from five font families, four text sizes, three line-height settings, and three paragraph-spacing settings.
+- **Choose your layout** — use light, dark, or system appearance; resize or collapse both sidebars; and switch to a full-width reading view.
+- **Work naturally on macOS** — open books from Finder or `File > Open`, drag them into the books sidebar, and receive app updates in place.
+- **Preserve book details** — Gull keeps images, internal chapter links, drop caps, and supported EPUB footnotes while normalizing styles that would override your reading preferences.
 
-- **Pristine Reading Experience**: A clean, distraction-free interface that puts the focus entirely on your content.
-- **Creative Chapter-Based Scrollbar**: A unique, segmented scrollbar that visualizes the entire book's structure.
-- **Customizable Styles**: Personalize your reading experience by adjusting fonts (Inter, Charter, Open Sans, etc.), font sizes, line heights, and paragraph spacing.
-- **Native macOS Experience**: Support for file associations (`.epub`), drag-and-drop, and a refined UI that feels right at home on macOS.
+## Requirements
 
-## 🚀 Installation
+- macOS 12 Monterey or later
+- Apple Silicon Mac
+- DRM-free e-book files
 
-You can download the latest version (`.dmg` or `.zip`) from the [Releases](https://github.com/limboy/gull/releases/latest) page.
+Gull does not remove or bypass DRM.
 
-## 🛠 Development
+## Install
 
-### Prerequisites
+Download the latest `.dmg` or `.zip` from [GitHub Releases](https://github.com/limboy/gull/releases/latest). The `.dmg` is the simplest option: open it and move Gull to Applications.
 
-- [Node.js](https://nodejs.org/) (Latest LTS recommended)
-- [npm](https://www.npmjs.com/)
+Once installed, open books with `Command-O`, use Finder's **Open With** action, or drag files into Gull's left sidebar.
 
-### Setup
+## Development
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/limboy/gull.git
-   cd gull
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Running Locally
-
-Start the development server with Hot Module Replacement (HMR) for the renderer and auto-reloading for the main process:
+Gull uses Node.js 24 in its release workflow.
 
 ```bash
+git clone https://github.com/limboy/gull.git
+cd gull
+npm install
 npm run dev
 ```
 
-### Building for Production
+`npm run dev` starts Vite with renderer hot reloading and launches Electron against the local development server.
 
-To pack the application for macOS (`.dmg`):
+Useful commands:
 
-```bash
-npm run build
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Run Vite and Electron in development mode |
+| `npm run build:renderer` | Create the production renderer bundle |
+| `npm run build` | Build the signed and notarized macOS `.dmg` and `.zip` |
+| `npm run changelog` | Regenerate `CHANGELOG.md` from tags and conventional commits |
+
+The full macOS build requires a Developer ID Application certificate in Keychain and these values in a local `.env` file:
+
+```dotenv
+APPLE_ID=you@example.com
+APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
+APPLE_TEAM_ID=XXXXXXXXXX
 ```
 
-The output will be available in the `dist` directory.
+Build artifacts are written to `dist/`. See [Development, Build & Release](docs/build-and-release.md) for signing, notarization, and release details.
 
-> [!TIP]
-> **Notarization**: If you want to use an Apple Developer account for notarization, make sure to set the following environment variables in your `.env` file (see `.env.example`):
-> - `APPLE_ID`: Your Apple ID email.
-> - `APPLE_APP_SPECIFIC_PASSWORD`: An app-specific password created at [appleid.apple.com](https://appleid.apple.com).
-> - `APPLE_TEAM_ID`: Your Apple Team ID.
->
-> You also need to have a valid **Developer ID Application** certificate in your macOS Keychain.
+## How it is built
 
-## 🛠 Tech Stack
+- **Desktop shell:** Electron
+- **Renderer:** React + Vite
+- **UI and styling:** Tailwind CSS, Radix UI, and hand-written CSS
+- **Book parsing:** `adm-zip` and Cheerio for EPUB; `@lingo-reader/mobi-parser` for MOBI/KF8 formats
+- **Distribution:** electron-builder and electron-updater via GitHub Releases
 
-- **Core**: [Electron](https://www.electronjs.org/)
-- **Frontend**: [React](https://reactjs.org/) + [Vite](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)
-- **EPUB Parsing**: [cheerio](https://cheerio.js.org/) & [adm-zip](https://github.com/cthackers/adm-zip)
-- **Icons**: [Lucide React](https://lucide.dev/)
+The Electron main process owns files, parsing, settings, and updates. A context-isolated preload bridge exposes those operations to the renderer. React provides the application shell, while `src/reader-runtime.js` manages the reader's tabs, content, navigation, search, highlights, and saved state.
 
-## 📄 License
+Start with the [project overview](docs/overview.md), then see the focused guides in [`docs/`](docs/) for architecture, parsing, styling, reader behavior, and releases.
 
-This project is licensed under the **ISC License**. 
+## License
 
----
-
-Made with ❤️ for readers.
+Gull is licensed under the ISC License.
