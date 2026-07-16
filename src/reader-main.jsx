@@ -197,8 +197,12 @@ function ReaderApp() {
         <div id="highlights-panel" className="outline-panel-content" hidden />
       </aside>
 
-      <button id="selection-popup" className="selection-popup" hidden>
-        Highlight
+      <button id="selection-popup" className="selection-popup" type="button" aria-label="Highlight" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m9 11-6 6v3h9l3-3" />
+          <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0L7.4 9.4a2 2 0 0 1 0-2.8L12 2" />
+        </svg>
+        <span className="selection-popup-label">Highlight</span>
       </button>
 
       <div id="footnote-popover" className="footnote-popover" hidden />

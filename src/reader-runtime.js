@@ -818,7 +818,7 @@ function addHighlight() {
 
   wrapHighlight(chapterSection, highlight.start, highlight.end, highlight.id);
   selection.removeAllRanges();
-  selectionPopup.hidden = true;
+  hideSelectionPopup();
   saveHighlights();
   if (state.sidebarMode === 'highlights') renderHighlights();
 }
@@ -842,7 +842,7 @@ function removeHighlight(id) {
   });
 
   if (state.sidebarMode === 'highlights') renderHighlights();
-  selectionPopup.hidden = true;
+  hideSelectionPopup();
 }
 
 function saveHighlights() {
@@ -856,6 +856,55 @@ function loadHighlights() {
   } catch (e) {
     console.warn('Failed to load highlights', e);
   }
+}
+
+let selectionPopupAnchor = null;
+let selectionPopupPositionFrame = null;
+
+function hideSelectionPopup() {
+  selectionPopup.hidden = true;
+  selectionPopupAnchor = null;
+  if (selectionPopupPositionFrame !== null) {
+    cancelAnimationFrame(selectionPopupPositionFrame);
+    selectionPopupPositionFrame = null;
+  }
+}
+
+function getSelectionPopupAnchorRect() {
+  if (!selectionPopupAnchor) return null;
+
+  if (selectionPopupAnchor.type === 'element') {
+    const { element } = selectionPopupAnchor;
+    return element.isConnected ? element.getBoundingClientRect() : null;
+  }
+
+  const { range } = selectionPopupAnchor;
+  const container = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+    ? range.commonAncestorContainer
+    : range.commonAncestorContainer.parentElement;
+  return container?.isConnected ? range.getBoundingClientRect() : null;
+}
+
+function positionSelectionPopup() {
+  if (selectionPopup.hidden) return;
+
+  const targetRect = getSelectionPopupAnchorRect();
+  if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
+    hideSelectionPopup();
+    return;
+  }
+
+  selectionPopup.style.top = (targetRect.top - selectionPopup.offsetHeight - 8) + 'px';
+  selectionPopup.style.left = (targetRect.left + targetRect.width / 2) + 'px';
+}
+
+function scheduleSelectionPopupPosition() {
+  if (selectionPopup.hidden || selectionPopupPositionFrame !== null) return;
+
+  selectionPopupPositionFrame = requestAnimationFrame(() => {
+    selectionPopupPositionFrame = null;
+    positionSelectionPopup();
+  });
 }
 
 document.addEventListener('mouseup', (e) => {
@@ -874,47 +923,56 @@ function handleSelectionChange(targetEl) {
   const markEl = targetEl?.closest?.('mark.reader-highlight');
 
   if (isCollapsed && !markEl) {
-    selectionPopup.hidden = true;
+    hideSelectionPopup();
     return;
   }
 
   const range = selection.getRangeAt(0);
   const chapterSection = range.startContainer.parentElement?.closest('section.gull-chapter');
   if (!chapterSection) {
-    selectionPopup.hidden = true;
+    hideSelectionPopup();
     return;
   }
 
   let existing = null;
-  let targetRect = null;
 
   if (markEl) {
     const id = markEl.dataset.highlightId;
     existing = (state.highlights[state.activeBookPath] || []).find(h => h.id === id);
-    targetRect = markEl.getBoundingClientRect();
+    selectionPopupAnchor = { type: 'element', element: markEl };
   } else {
     // Check if selection is already a highlight
     const offsets = getSelectionOffsets(chapterSection);
+    if (!offsets) {
+      hideSelectionPopup();
+      return;
+    }
     existing = (state.highlights[state.activeBookPath] || []).find(h => 
       h.chapterId === chapterSection.id.replace('chapter-', '') &&
       Math.abs(h.start - offsets.start) < 2 &&
       Math.abs(h.end - offsets.end) < 2
     );
-    targetRect = selection.getRangeAt(0).getBoundingClientRect();
+    selectionPopupAnchor = { type: 'range', range: range.cloneRange() };
   }
 
+  const selectionPopupLabel = selectionPopup.querySelector('.selection-popup-label');
   if (existing) {
-    selectionPopup.textContent = 'Remove Highlight';
+    selectionPopupLabel.textContent = 'Remove Highlight';
+    selectionPopup.setAttribute('aria-label', 'Remove Highlight');
     selectionPopup.onclick = () => removeHighlight(existing.id);
   } else {
-    selectionPopup.textContent = 'Highlight';
+    selectionPopupLabel.textContent = 'Highlight';
+    selectionPopup.setAttribute('aria-label', 'Highlight');
     selectionPopup.onclick = () => addHighlight();
   }
 
-  selectionPopup.style.top = (targetRect.top + window.scrollY - 40) + 'px';
-  selectionPopup.style.left = (targetRect.left + targetRect.width / 2 + window.scrollX) + 'px';
   selectionPopup.hidden = false;
+  positionSelectionPopup();
 }
+
+contentArea.addEventListener('scroll', scheduleSelectionPopupPosition, { passive: true });
+window.addEventListener('resize', scheduleSelectionPopupPosition);
+new ResizeObserver(scheduleSelectionPopupPosition).observe(contentArea);
 
 function stripEpubFonts(container) {
   // CSS is already filtered in main process; just ensure no font-family leaks through

@@ -72,7 +72,9 @@ Built on a flat text index per book (chapter id, href, title, normalized text). 
 
 ## Highlights
 
-Selection offsets are captured relative to the chapter container (`getSelectionOffsets`) so they survive re-renders. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<span class="gull-highlight">`. Persisted through `saveHighlights` → `window.settings.set('highlights', …)`.
+Selection offsets are captured relative to the chapter container (`getSelectionOffsets`) so they survive re-renders. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<mark class="reader-highlight">`. Highlights are persisted by `saveHighlights` in the `gull-highlights` local-storage entry.
+
+The selection action popup keeps a live anchor to either the selected `Range` or an existing highlight element. Its fixed viewport position is recalculated when the content area scrolls or resizes, so the action follows the selected text instead of remaining at its original screen coordinates.
 
 ## Why imperative?
 
