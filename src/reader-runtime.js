@@ -1954,6 +1954,27 @@ function initUpdatePill() {
   });
 }
 
+function initSidebarScrollbars() {
+  const scrollableElements = [
+    tabBar,
+    outlinePanel,
+    searchPanel,
+    highlightsPanel
+  ];
+
+  scrollableElements.forEach(el => {
+    if (!el) return;
+    let timeoutId;
+    el.addEventListener('scroll', () => {
+      el.classList.add('is-scrolling');
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        el.classList.remove('is-scrolling');
+      }, 800);
+    }, { passive: true });
+  });
+}
+
 // Init
 async function initApp() {
   await loadReaderState();
@@ -1963,6 +1984,7 @@ async function initApp() {
   initDragAndDrop();
   initBrokenImageHandling();
   initUpdatePill();
+  initSidebarScrollbars();
   await loadTheme();
 
   // Load layout preferences

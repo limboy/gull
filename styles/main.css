@@ -266,6 +266,29 @@ body {
   background: var(--scrollbar-thumb-hover);
 }
 
+/* Sidebar scrollbars: smaller and only show while scrolling */
+#tab-bar-tabs::-webkit-scrollbar,
+.outline-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+#tab-bar-tabs::-webkit-scrollbar-thumb,
+.outline-panel-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+#tab-bar-tabs.is-scrolling::-webkit-scrollbar-thumb,
+.outline-panel-content.is-scrolling::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+#tab-bar-tabs::-webkit-scrollbar-thumb:hover,
+.outline-panel-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
 /* Utility: no text selection during resize */
 .no-select {
   user-select: none;
