@@ -39,7 +39,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  background: var(--accent);
+  background: var(--gutter-highlight);
 }
 
 /* Expand the clickable area */

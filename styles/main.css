@@ -41,6 +41,7 @@ body {
   --text-secondary: #717171;
   --accent: #007acc;
   --border: #d5d5d5;
+  --gutter-highlight: #e0e0e0;
   --hover: rgba(0, 0, 0, 0.04);
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
@@ -60,6 +61,7 @@ body {
   --text-secondary: #888888;
   --accent: #0a4d7a;
   --border: #3c3c3c;
+  --gutter-highlight: #3a3a3a;
   --hover: rgba(255, 255, 255, 0.05);
   --scrollbar-thumb: rgba(255, 255, 255, 0.15);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
