@@ -37,6 +37,8 @@ Persisted via `localStorage`:
 
 `loadReaderState` filters out books whose files no longer exist for the current session but never re-writes the pruned list back to `gull-open-books`. Reason: a transient miss (iCloud-evicted files, unmounted drives) would otherwise permanently erase the user's tabs.
 
+On startup, the saved `activeBookPath` is restored when that book is still available. If it is missing, the first available book in the saved tab order becomes active instead.
+
 ## Feature map (by function)
 
 | Concern | Key functions |

@@ -1536,12 +1536,15 @@ async function loadReaderState() {
       }
     }
 
-    if (!state.activeBookPath) {
-      if (validSavedBooks.some(b => b.filePath === saved.activeBookPath)) {
-        state.activeBookPath = saved.activeBookPath;
-      } else if (state.openBooks.length > 0) {
-        state.activeBookPath = state.openBooks[0].filePath;
-      }
+    const hasCurrentActiveBook = state.openBooks.some(
+      book => book.filePath === state.activeBookPath
+    );
+    if (!hasCurrentActiveBook) {
+      const lastOpenedBook = validSavedBooks.find(
+        book => book.filePath === saved.activeBookPath
+      );
+      const firstAvailableBook = validSavedBooks[0] || state.openBooks[0];
+      state.activeBookPath = (lastOpenedBook || firstAvailableBook)?.filePath || null;
     }
 
     isStateLoaded = true;
