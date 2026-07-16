@@ -9,6 +9,15 @@ import './reader/App.css';
 
 const initialSettings = window.initialSettings || {};
 
+function hasSavedBooksToRestore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('gull-open-books'));
+    return Array.isArray(saved?.openBooks) && saved.openBooks.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 function applyInitialSidebarWidths() {
   try {
     const saved = JSON.parse(localStorage.getItem('gull-sidebar-widths')) || {};
@@ -23,6 +32,7 @@ function applyInitialSidebarWidths() {
 
 // Set persistent dimensions before React creates the grid so its first layout is final.
 applyInitialSidebarWidths();
+const isRestoringSavedBook = hasSavedBooksToRestore();
 
 function ReaderApp() {
   useEffect(() => {
@@ -91,7 +101,11 @@ function ReaderApp() {
 
         <div id="content-wrapper">
           <div id="content-area">
-            <div id="empty-state" className="empty-state">
+            <div
+              id="empty-state"
+              className="empty-state"
+              style={isRestoringSavedBook ? { display: 'none' } : undefined}
+            >
               <div className="empty-state-content">
                 <svg className="empty-icon" viewBox="0 0 24 24">
                   <path d="M4 3h13l3 3v15H4z" />
@@ -101,6 +115,7 @@ function ReaderApp() {
                 <div className="empty-hint">Supports drag-and-drop and Finder open-in actions.</div>
               </div>
             </div>
+            {isRestoringSavedBook && <div className="book-content active">Loading…</div>}
           </div>
           <div id="chapter-scrollbar" />
         </div>

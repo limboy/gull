@@ -58,7 +58,7 @@ Persisted via `localStorage`:
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
 
-At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, and full-width mode before creating the layout. `initApp` applies the same snapshot before restoring the active book, so its scroll position is measured against the final viewport. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
+At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, and full-width mode before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the drag-and-drop empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot before restoring the active book, so its scroll position is measured against the final viewport. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
 
 ## Multi-book EPUB collections
 

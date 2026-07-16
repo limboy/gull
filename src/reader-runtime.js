@@ -2035,7 +2035,7 @@ async function initApp() {
 
   await loadReaderState();
 
-  if (!state.activeBookPath) finishAppStartup();
+  if (!state.activeBookPath) await renderContent();
 
   window.epub.signalReady();
 }
