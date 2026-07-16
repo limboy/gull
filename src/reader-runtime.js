@@ -1461,12 +1461,12 @@ function saveSidebarStates() {
   if (!layout) return;
   const leftHidden = layout.classList.contains('left-sidebar-hidden');
   const rightHidden = layout.classList.contains('right-sidebar-hidden');
-  localStorage.setItem('gull-sidebar-states', JSON.stringify({ leftHidden, rightHidden }));
+  window.settings?.set('sidebarStates', { leftHidden, rightHidden });
 }
 
 function loadSidebarStates() {
   try {
-    const saved = JSON.parse(localStorage.getItem('gull-sidebar-states'));
+    const saved = window.initialSettings?.sidebarStates;
     if (saved) {
       const layout = getAppLayout();
       if (layout) {
@@ -1474,7 +1474,9 @@ function loadSidebarStates() {
         layout.classList.toggle('right-sidebar-hidden', !!saved.rightHidden);
       }
     }
-  } catch {}
+  } catch (e) {
+    console.error("JS loadSidebarStates Error:", e);
+  }
 }
 
 // --- Reader State Persistence ---
@@ -1944,7 +1946,6 @@ function setChapterScrollbar(enabled) {
     layout.classList.toggle('native-scrollbar', !isEnabled);
   }
   document.documentElement.classList.toggle('native-scrollbar', !isEnabled);
-  localStorage.setItem('gull-chapter-scrollbar', String(isEnabled));
 }
 
 function setFullWidth(enabled) {

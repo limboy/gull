@@ -11,12 +11,11 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <script>
       (function() {
-        const saved = localStorage.getItem('gull-theme');
-        const theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        const settings = window.initialSettings || {};
+        const theme = settings.theme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
 
-        const sbSaved = localStorage.getItem('gull-chapter-scrollbar');
-        if (sbSaved === 'false') {
+        if (settings.chapterScrollbar === false) {
           document.documentElement.classList.add('native-scrollbar');
         }
       })();

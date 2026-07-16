@@ -12,21 +12,12 @@ function ReaderApp() {
     import('./reader-runtime.js');
   }, []);
 
-  // Read sidebar and scrollbar states synchronously from localStorage to prevent visual layout flash
-  let leftHidden = false;
-  let rightHidden = false;
-  let nativeScrollbar = false;
-  try {
-    const saved = JSON.parse(localStorage.getItem('gull-sidebar-states'));
-    if (saved) {
-      leftHidden = !!saved.leftHidden;
-      rightHidden = !!saved.rightHidden;
-    }
-    const sbSaved = localStorage.getItem('gull-chapter-scrollbar');
-    if (sbSaved === 'false') {
-      nativeScrollbar = true;
-    }
-  } catch {}
+  // Read initial sidebar and scrollbar states synchronously from initialSettings to prevent visual layout flash
+  const settings = window.initialSettings || {};
+  const sidebarStates = settings.sidebarStates || {};
+  const leftHidden = !!sidebarStates.leftHidden;
+  const rightHidden = !!sidebarStates.rightHidden;
+  const nativeScrollbar = settings.chapterScrollbar === false;
 
   const layoutClasses = [
     leftHidden ? 'left-sidebar-hidden' : '',

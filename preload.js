@@ -31,3 +31,5 @@ contextBridge.exposeInMainWorld('settings', {
     ipcRenderer.on('chapter-scrollbar-changed', (_e, enabled) => cb(enabled));
   },
 });
+
+contextBridge.exposeInMainWorld('initialSettings', ipcRenderer.sendSync('get-settings-sync'));

@@ -1002,6 +1002,10 @@ app.whenReady().then(() => {
     return readSettings();
   });
 
+  ipcMain.on('get-settings-sync', (event) => {
+    event.returnValue = readSettings();
+  });
+
   ipcMain.handle('set-setting', (_event, key, value) => {
     const settings = readSettings();
     settings[key] = value;
