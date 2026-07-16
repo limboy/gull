@@ -1455,6 +1455,22 @@ function loadSidebarWidths() {
   }
 }
 
+function saveSidebarStates() {
+  const leftHidden = appLayout.classList.contains('left-sidebar-hidden');
+  const rightHidden = appLayout.classList.contains('right-sidebar-hidden');
+  localStorage.setItem('gull-sidebar-states', JSON.stringify({ leftHidden, rightHidden }));
+}
+
+function loadSidebarStates() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('gull-sidebar-states'));
+    if (saved) {
+      appLayout.classList.toggle('left-sidebar-hidden', !!saved.leftHidden);
+      appLayout.classList.toggle('right-sidebar-hidden', !!saved.rightHidden);
+    }
+  } catch {}
+}
+
 // --- Reader State Persistence ---
 let isStateLoaded = false;
 
@@ -1586,6 +1602,7 @@ appLayout.addEventListener('click', (e) => {
 
 document.getElementById('toggle-left-sidebar').addEventListener('click', () => {
   appLayout.classList.toggle('left-sidebar-hidden');
+  saveSidebarStates();
 });
 
 sidebarTabToc.addEventListener('click', () => {
@@ -1867,6 +1884,7 @@ applyReadingStyle();
 // --- Right Sidebar Toggle ---
 document.getElementById('toggle-right-sidebar').addEventListener('click', () => {
   appLayout.classList.toggle('right-sidebar-hidden');
+  saveSidebarStates();
 });
 
 // --- File open from main process (Finder double-click, File > Open) ---
@@ -1981,6 +1999,7 @@ async function initApp() {
   loadHighlights();
   setSidebarMode('toc');
   initResize();
+  loadSidebarStates();
   initDragAndDrop();
   initBrokenImageHandling();
   initUpdatePill();
