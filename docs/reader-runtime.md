@@ -27,7 +27,9 @@ Persisted via `window.settings.set`:
 - `readerState` — open books + positions + active tab (see `saveReaderState` / `loadReaderState`)
 - `highlights` — per-book highlight lists
 - `readingStyle` — font/size/line-height/paragraph spacing
-- `theme` — via `applyTheme` / `loadTheme`
+- `theme` — via `applyTheme`
+- `sidebarStates` — left/right sidebar visibility
+- `chapterScrollbar`, `fullWidth` — viewport layout preferences
 
 Persisted via `localStorage`:
 - `gull-sidebar-widths` — left/right panel widths (`saveSidebarWidths`)
@@ -47,7 +49,7 @@ Persisted via `localStorage`:
 | Chapter scrollbar | `initChapterScrollbar` (segmented bar visualizing book structure) |
 | Resize | `initResize`, `setupHandle`, `saveSidebarWidths`, `loadSidebarWidths` |
 | Reading style | `loadReadingStyle`, `applyReadingStyle`, `updateStyleDisplay`, `stepValue`, `FONT_SIZE_STEPS`, `LINE_HEIGHT_STEPS`, `PARA_SPACING_STEPS` |
-| Theme | `applyTheme`, `loadTheme` |
+| Theme | `applyTheme` |
 | Update pill | `initUpdatePill` |
 | Drag & drop / broken images | `initDragAndDrop`, `initBrokenImageHandling` |
 | Bootstrap | `initApp` (bottom of file) |
@@ -55,6 +57,8 @@ Persisted via `localStorage`:
 ## Rendering model
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
+
+At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, and full-width mode before creating the layout. `initApp` applies the same snapshot before restoring the active book, so its scroll position is measured against the final viewport. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
 
 ## Multi-book EPUB collections
 

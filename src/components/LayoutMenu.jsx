@@ -3,19 +3,11 @@ import { CaseSensitive, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export function LayoutMenu() {
-  const [chapterScrollbar, setChapterScrollbar] = useState(true);
-  const [fullWidth, setFullWidth] = useState(false);
+  const initialSettings = window.initialSettings || {};
+  const [chapterScrollbar, setChapterScrollbar] = useState(initialSettings.chapterScrollbar !== false);
+  const [fullWidth, setFullWidth] = useState(initialSettings.fullWidth === true);
 
   useEffect(() => {
-    async function init() {
-      const settings = await window.settings?.getAll();
-      if (settings) {
-        setChapterScrollbar(settings.chapterScrollbar !== false);
-        setFullWidth(settings.fullWidth === true);
-      }
-    }
-    init();
-
     const sbHandler = (enabled) => setChapterScrollbar(enabled);
     window.settings?.onChapterScrollbarChanged(sbHandler);
 

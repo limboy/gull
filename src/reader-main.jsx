@@ -7,22 +7,41 @@ import { LayoutMenu } from '@/components/LayoutMenu';
 import './reader/fonts.css';
 import './reader/App.css';
 
+const initialSettings = window.initialSettings || {};
+
+function applyInitialSidebarWidths() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('gull-sidebar-widths')) || {};
+    if (Number.isFinite(saved.left)) {
+      document.documentElement.style.setProperty('--left-sidebar-width', `${saved.left}px`);
+    }
+    if (Number.isFinite(saved.right)) {
+      document.documentElement.style.setProperty('--right-sidebar-width', `${saved.right}px`);
+    }
+  } catch {}
+}
+
+// Set persistent dimensions before React creates the grid so its first layout is final.
+applyInitialSidebarWidths();
+
 function ReaderApp() {
   useEffect(() => {
     import('./reader-runtime.js');
   }, []);
 
   // Read initial sidebar and scrollbar states synchronously from initialSettings to prevent visual layout flash
-  const settings = window.initialSettings || {};
-  const sidebarStates = settings.sidebarStates || {};
+  const sidebarStates = initialSettings.sidebarStates || {};
   const leftHidden = !!sidebarStates.leftHidden;
   const rightHidden = !!sidebarStates.rightHidden;
-  const nativeScrollbar = settings.chapterScrollbar === false;
+  const nativeScrollbar = initialSettings.chapterScrollbar === false;
+  const fullWidth = initialSettings.fullWidth === true;
 
   const layoutClasses = [
+    'app-starting',
     leftHidden ? 'left-sidebar-hidden' : '',
     rightHidden ? 'right-sidebar-hidden' : '',
-    nativeScrollbar ? 'native-scrollbar' : ''
+    nativeScrollbar ? 'native-scrollbar' : '',
+    fullWidth ? 'full-width' : ''
   ].filter(Boolean).join(' ');
 
   return (

@@ -76,6 +76,15 @@ body {
   width: 100vw;
 }
 
+/* The first frame already contains the persisted layout. Keep startup from
+   animating that layout while the restored book is being constructed. */
+#app-layout.app-starting,
+#app-layout.app-starting #right-sidebar,
+#app-layout.app-starting .resize-handle,
+#app-layout.app-starting .book-content {
+  transition: none !important;
+}
+
 /* Settings button in left sidebar footer */
 .left-sidebar-footer {
   flex-shrink: 0;

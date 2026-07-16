@@ -34,6 +34,10 @@ const SEARCH_MIN_QUERY_LENGTH = 2;
 const SEARCH_MAX_RESULTS = 120;
 let sidebarSearchTimer = null;
 
+function finishAppStartup() {
+  getAppLayout()?.classList.remove('app-starting');
+}
+
 function throttle(func, limit) {
   let lastFunc;
   let lastRan;
@@ -506,6 +510,7 @@ function scrollToHref(href, chapters, fallbackChapterId = null) {
 
 async function renderContent() {
   contentArea.querySelectorAll('.book-content').forEach(el => el.remove());
+  const isStartupRender = getAppLayout()?.classList.contains('app-starting');
 
   if (state.activeBookPath) {
     emptyState.style.display = 'none';
@@ -521,6 +526,7 @@ async function renderContent() {
           state.bookContent[book.filePath] = await window.epub.parse(book.filePath);
         } catch (err) {
           div.textContent = 'Failed to load book: ' + err.message;
+          if (isStartupRender) finishAppStartup();
           return;
         }
         div.remove();
@@ -548,7 +554,9 @@ async function renderContent() {
         div.setAttribute('lang', data.language);
       }
       div.style.opacity = '0';
-      div.style.transition = 'opacity 0.15s ease-in-out';
+      if (!isStartupRender) {
+        div.style.transition = 'opacity 0.15s ease-in-out';
+      }
       isRestoringBook = true;
 
       // Collect and deduplicate chapter CSS, scoped to .book-content
@@ -630,6 +638,7 @@ async function renderContent() {
           }
           
           div.style.opacity = '1';
+          if (isStartupRender) finishAppStartup();
           refreshContentSearchHighlights();
           setTimeout(() => { isRestoringBook = false; }, 100);
         }
@@ -644,6 +653,7 @@ async function renderContent() {
     renderSearchResults();
     initChapterScrollbar([]);
     renderHighlights();
+    if (isStartupRender) finishAppStartup();
   }
 }
 
@@ -1930,11 +1940,6 @@ function applyTheme(theme) {
   window.dispatchEvent(new CustomEvent('gull-theme-changed', { detail: t }));
 }
 
-async function loadTheme() {
-  const settings = await window.settings.getAll();
-  applyTheme(settings.theme);
-}
-
 window.settings.onThemeChanged((theme) => {
   applyTheme(theme);
 });
@@ -2010,21 +2015,27 @@ function initSidebarScrollbars() {
 
 // Init
 async function initApp() {
-  await loadReaderState();
+  const settings = window.initialSettings || {};
+
   loadHighlights();
   setSidebarMode('toc');
+
+  // Apply every layout input before restoring a book. renderContent measures
+  // and restores scroll position against this final viewport.
   initResize();
   loadSidebarStates();
+  setChapterScrollbar(settings.chapterScrollbar !== false);
+  setFullWidth(settings.fullWidth === true);
+  applyTheme(settings.theme);
+
   initDragAndDrop();
   initBrokenImageHandling();
   initUpdatePill();
   initSidebarScrollbars();
-  await loadTheme();
 
-  // Load layout preferences
-  const settings = await window.settings.getAll();
-  setChapterScrollbar(settings.chapterScrollbar !== false);
-  setFullWidth(settings.fullWidth === true);
+  await loadReaderState();
+
+  if (!state.activeBookPath) finishAppStartup();
 
   window.epub.signalReady();
 }

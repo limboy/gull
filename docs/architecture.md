@@ -49,6 +49,7 @@ Stored at `path.join(app.getPath('userData'), 'settings.json')`. Known keys:
 - `theme` — `light` | `dark`
 - `readerState` — open books, active tab, per-book positions (persisted by the renderer)
 - `highlights`, `readingStyle` — persisted by the renderer via `set-setting`
+- `sidebarStates` — persisted left/right sidebar visibility
 - `chapterScrollbar` — `true` (default) | `false`; toggled via Layout settings dropdown
 - `fullWidth` — `true` | `false` (default); toggled via Layout settings dropdown
 
