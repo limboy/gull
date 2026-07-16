@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.25](https://github.com/limboy/gull/compare/v1.2.24...v1.2.25) - 2026-07-16
+
+### Documentation
+
+- update CHANGELOG for v1.2.24 ([bcb48f7](https://github.com/limboy/gull/commit/bcb48f761b3256590ce39394b2470cc8aea4716d))
+
 ## [v1.2.24](https://github.com/limboy/gull/compare/v1.2.23...v1.2.24) - 2026-07-16
 
 ### Features
