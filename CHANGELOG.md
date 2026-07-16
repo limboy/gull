@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.27](https://github.com/limboy/gull/compare/v1.2.26...v1.2.27) - 2026-07-16
+
+### Features
+
+- **ui:** update gutter highlight color ([b5c3318](https://github.com/limboy/gull/commit/b5c331802febdc7eb9c2049e75b1da5866883ecd))
+
+### Documentation
+
+- refresh README for current app positioning and workflow ([7d63e84](https://github.com/limboy/gull/commit/7d63e84f5ce38a2cf39c6178f46bc4d87c52eef4))
+- update CHANGELOG for v1.2.26 ([54b65a6](https://github.com/limboy/gull/commit/54b65a65469d503b2191c887f765d0b93ac56ec5))
+
 ## [v1.2.26](https://github.com/limboy/gull/compare/v1.2.25...v1.2.26) - 2026-07-16
 
 ### Documentation
