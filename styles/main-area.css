@@ -167,10 +167,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
+    flex: 0 0 0;
+    width: 0;
     height: 20px;
     border-radius: 4px;
+    overflow: hidden;
     opacity: 0;
+    pointer-events: none;
     transition:
         opacity 100ms,
         background 100ms;
@@ -181,11 +184,11 @@
 }
 
 .tab-item .tab-pin {
-    margin-left: 4px;
+    margin-left: 0;
 }
 
 .tab-item .tab-close {
-    margin-left: 2px;
+    margin-left: 0;
 }
 
 .tab-item .tab-label {
@@ -224,7 +227,20 @@
 .tab-item:hover .tab-close,
 .tab-item:focus-within .tab-pin,
 .tab-item:focus-within .tab-close {
+    flex-basis: 20px;
+    width: 20px;
     opacity: 1;
+    pointer-events: auto;
+}
+
+.tab-item:hover .tab-pin,
+.tab-item:focus-within .tab-pin {
+    margin-left: 4px;
+}
+
+.tab-item:hover .tab-close,
+.tab-item:focus-within .tab-close {
+    margin-left: 2px;
 }
 
 .tab-item .tab-pin:hover,
