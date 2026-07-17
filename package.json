@@ -1,6 +1,6 @@
 {
   "name": "gull",
-  "version": "1.2.27",
+  "version": "1.2.28",
   "description": "A typography-first e-book reader for macOS",
   "main": "main.js",
   "scripts": {
