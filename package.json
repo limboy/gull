@@ -1,7 +1,7 @@
 {
   "name": "gull",
   "version": "1.2.27",
-  "description": "A pure EPUB reader",
+  "description": "A typography-first e-book reader for macOS",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "build:icon": "node scripts/build-icon.js",
     "changelog": "node scripts/generate-changelog.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check main.js && node --check preload.js && node --check lib/book-content.js && node --check lib/epub-parser.js && node --check lib/epub-parser-worker.js && node --check src/lib/theme.mjs && node --check src/lib/highlight-anchor.mjs",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
@@ -82,9 +83,9 @@
     "files": [
       "main.js",
       "preload.js",
+      "lib/**/*.js",
       "dist/index.html",
-      "dist/assets/**/*",
-      "logo.png"
+      "dist/assets/**/*"
     ],
     "publish": [
       {

@@ -121,9 +121,15 @@
 }
 
 .outline-item {
+  display: block;
+  width: 100%;
   padding: 4px 16px;
+  border: 0;
+  background: transparent;
   color: var(--text-secondary);
   font-size: 12px;
+  font-family: inherit;
+  text-align: left;
   cursor: default;
   transition: color 100ms, background 100ms;
 }
@@ -160,7 +166,14 @@
 }
 
 .search-result-item {
+  display: block;
+  width: 100%;
   padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
   cursor: default;
   border-bottom: 1px solid var(--border);
 }
@@ -170,12 +183,14 @@
 }
 
 .search-result-title {
+  display: block;
   color: var(--text-primary);
   font-size: 12px;
   margin-bottom: 3px;
 }
 
 .search-result-snippet {
+  display: block;
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 1.35;
@@ -204,11 +219,24 @@
   gap: 8px;
 }
 
+.highlight-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
 .highlight-item:hover {
   background: var(--hover);
 }
 
 .highlight-content {
+  display: block;
   flex: 1;
   min-width: 0;
 }
@@ -233,9 +261,11 @@
 }
 
 .highlight-meta {
+  display: block;
   color: var(--text-secondary);
   font-size: 10px;
   flex: 1;
+  margin-top: 4px;
 }
 
 .highlight-delete {
@@ -253,7 +283,8 @@
   transition: opacity 100ms, background 100ms, color 100ms;
 }
 
-.highlight-item:hover .highlight-delete {
+.highlight-item:hover .highlight-delete,
+.highlight-item:focus-within .highlight-delete {
   opacity: 1;
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Sun, Moon, Monitor, Type, AlignJustify, Rows3, ChevronRight, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { applyThemeMode, normalizeThemeMode } from '@/lib/theme.mjs';
 
 const FONT_OPTIONS = [
   { label: 'Inter', value: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" },
@@ -33,6 +34,18 @@ function readLS(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
 }
 
+function readInitialTheme() {
+  const persisted = window.initialSettings?.theme;
+  if (persisted) return normalizeThemeMode(persisted);
+  const local = localStorage.getItem('gull-theme');
+  if (!local) return 'system';
+  try {
+    return normalizeThemeMode(JSON.parse(local));
+  } catch {
+    return normalizeThemeMode(local);
+  }
+}
+
 function nearestOption(options, value) {
   let best = options[0].value;
   let bestDiff = Infinity;
@@ -44,7 +57,7 @@ function nearestOption(options, value) {
 }
 
 export function SettingsMenu() {
-  const [theme, setTheme] = useState(() => readLS('gull-theme', 'light'));
+  const [theme, setTheme] = useState(readInitialTheme);
   const [style, setStyle] = useState(() => {
     const saved = readLS('gull-reading-style', {});
     return {
@@ -65,13 +78,12 @@ export function SettingsMenu() {
   }, []);
 
   function applyTheme(value) {
-    const resolved = value === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : value;
-    setTheme(value);
-    document.documentElement.setAttribute('data-theme', resolved);
-    localStorage.setItem('gull-theme', value);
-    window.settings?.set('theme', resolved);
+    const mode = applyThemeMode(value);
+    setTheme(mode);
+    localStorage.setItem('gull-theme', mode);
+    window.settings?.set('theme', mode).catch((error) => {
+      console.warn('Failed to save theme', error);
+    });
   }
 
   function updateStyle(patch) {

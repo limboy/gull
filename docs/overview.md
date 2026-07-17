@@ -15,14 +15,15 @@ Gull is a minimalist, macOS-first EPUB reader built on Electron. It requires **m
 - **Renderer**: React 19 + Vite 8, entry `src/reader-main.jsx`
 - **Runtime logic**: Vanilla JS module `src/reader-runtime.js` that drives the DOM rendered by React (the React tree is essentially a static skeleton; imperative code attaches behavior by element id).
 - **Styling**: Tailwind CSS v4 + hand-written CSS in `styles/*.css`, imported through `src/reader/App.css`
-- **EPUB parsing**: `adm-zip` (ZIP reads) + `cheerio` (XHTML/XML)
+- **EPUB parsing**: `adm-zip` (ZIP reads) + `cheerio` (XHTML/XML), executed in a Node worker so large books do not block the Electron main thread
 - **Distribution**: `electron-builder` (mac DMG + ZIP), `electron-updater` against GitHub releases
 
 ## Top-level layout
 
 ```
-main.js              Electron main process: windows, IPC, EPUB parsing, auto-update
+main.js              Electron main process: windows, validated IPC, settings, covers, auto-update
 preload.js           contextBridge exposing `window.epub`, `window.settings`, `window.updater`
+lib/                 Publication sanitizing plus the EPUB parser and its worker entry
 src/
   reader-main.jsx    React skeleton (DOM + ids only)
   reader-runtime.js  All renderer behavior: tabs, TOC, search, highlights, scrollbar, styles
@@ -36,7 +37,7 @@ build/               Mac entitlements
 ## Key flows to know
 
 - File open: Finder / drag-drop / CLI → `main.js` `openFileInApp` → IPC `open-file` → renderer opens a tab.
-- Chapter render: renderer calls `window.epub.parse(filePath)` → main parses EPUB → returns `{title, chapters, toc}` with inline base64 images and filtered CSS.
+- Chapter render: renderer calls `window.epub.parse(filePath)` → main validates the request → the EPUB worker returns `{title, chapters, toc}` with sanitized markup, inline base64 images, and filtered CSS.
 - Settings: `window.settings.get/set` persist to `<userData>/settings.json` and broadcast via `settings-changed`.
 
 See `architecture.md`, `epub-parsing.md`, and `reader-runtime.md` for details.

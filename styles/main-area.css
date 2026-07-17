@@ -104,6 +104,19 @@
     -webkit-app-region: no-drag;
 }
 
+.tab-activate {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
 .tab-item:hover {
     background: rgba(0, 0, 0, 0.08);
     opacity: 1;
@@ -141,6 +154,9 @@
         opacity 100ms,
         background 100ms;
     color: var(--text-secondary);
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .tab-item .tab-label {
@@ -175,7 +191,8 @@
     fill: var(--text-secondary);
 }
 
-.tab-item:hover .tab-close {
+.tab-item:hover .tab-close,
+.tab-item:focus-within .tab-close {
     opacity: 1;
 }
 

@@ -49,6 +49,8 @@ Useful commands:
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Run Vite and Electron in development mode |
+| `npm run check` | Syntax-check main, preload, and parser worker modules |
+| `npm test` | Run unit tests and EPUB parser fixtures |
 | `npm run build:renderer` | Create the production renderer bundle |
 | `npm run build` | Build the signed and notarized macOS `.dmg` and `.zip` |
 | `npm run changelog` | Regenerate `CHANGELOG.md` from tags and conventional commits |
@@ -71,7 +73,7 @@ Build artifacts are written to `dist/`. See [Development, Build & Release](docs/
 - **Book parsing:** `adm-zip` and Cheerio for EPUB; `@lingo-reader/mobi-parser` for MOBI/KF8 formats
 - **Distribution:** electron-builder and electron-updater via GitHub Releases
 
-The Electron main process owns files, parsing, settings, and updates. A context-isolated preload bridge exposes those operations to the renderer. React provides the application shell, while `src/reader-runtime.js` manages the reader's tabs, content, navigation, search, highlights, and saved state.
+The Electron main process owns files, validated IPC, settings, and updates, while EPUB parsing runs in a dedicated worker. A context-isolated preload bridge exposes the narrow application API to the renderer. React provides the application shell, while `src/reader-runtime.js` manages the reader's tabs, content, navigation, search, highlights, and saved state.
 
 Start with the [project overview](docs/overview.md), then see the focused guides in [`docs/`](docs/) for architecture, parsing, styling, reader behavior, and releases.
 

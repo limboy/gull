@@ -11,9 +11,10 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 
 ## Processes
 
-- **Main** (`main.js`): window lifecycle, file associations, EPUB parsing, settings persistence, auto-update.
+- **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, cover thumbnails, and auto-update.
+- **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB parsing away from the Electron main thread.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
-  - `window.epub` — `parse`, `getFilePath`, `onOpenFile`, `signalReady`, `checkPathsExistence`
+  - `window.epub` — `parse`, `getCover`, `getFilePath`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `openExternal`
   - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onThemeChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
@@ -23,9 +24,11 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 | Channel | Dir | Purpose |
 |---|---|---|
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
+| `get-book-cover` | R→M (invoke) | Read and resize a cover thumbnail for a validated book path |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
 | `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
 | `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
+| `open-external` | R→M (invoke) | Open a validated `http`, `https`, `mailto`, or `tel` URL after an explicit reader link click |
 | `apply-update` | R→M (invoke) | Calls `autoUpdater.quitAndInstall()` |
 | `renderer-ready` | R→M (send) | Signals the renderer has wired `open-file` listener; main then flushes `pendingFiles` |
 | `open-file` | M→R | Deliver a file path to open as a tab |
@@ -44,15 +47,15 @@ Files can arrive from: macOS `open-file` event, `second-instance` CLI args, firs
 
 ## Settings
 
-Stored at `path.join(app.getPath('userData'), 'settings.json')`. Known keys:
+Stored atomically at `path.join(app.getPath('userData'), 'settings.json')`. Renderer writes are restricted to known keys and validated value shapes. Known keys:
 - `mainWindowBounds`, `mainWindowMaximized` — window state, saved debounced (200ms) on move/resize/close
-- `theme` — `light` | `dark`
-- `readerState` — open books, active tab, per-book positions (persisted by the renderer)
-- `highlights`, `readingStyle` — persisted by the renderer via `set-setting`
+- `theme` — `system` | `light` | `dark`
 - `sidebarStates` — persisted left/right sidebar visibility
 - `chapterScrollbar` — `true` (default) | `false`; toggled via Layout settings dropdown
 - `fullWidth` — `true` | `false` (default); toggled via Layout settings dropdown
 
 ## Navigation hardening
 
-`will-navigate` is cancelled for in-app URLs (prevents SPA white-screen from stray link clicks); `http(s)://` links open via `shell.openExternal`. `setWindowOpenHandler` does the same for window.open.
+Renderer navigation and popup creation are always denied. External links open only through the validated `open-external` IPC channel after an explicit content click.
+
+All renderer IPC must originate from the trusted main frame. Book parsing additionally requires an absolute supported file path, a regular file, and a size under 512 MB.

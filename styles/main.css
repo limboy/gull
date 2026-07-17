@@ -11,6 +11,12 @@ button {
   outline: none;
 }
 
+button:focus-visible,
+[role="separator"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 html,
 body {
   height: 100%;
@@ -304,4 +310,14 @@ body {
 .no-select {
   user-select: none;
   -webkit-user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-layout,
+  #app-layout * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

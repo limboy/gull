@@ -1,3 +1,6 @@
+import { applyThemeMode, normalizeThemeMode } from './lib/theme.mjs';
+import { resolveHighlightOffsets } from './lib/highlight-anchor.mjs';
+
 const state = {
   openBooks: [],       // [{ filePath, title, position: { scrollTop, progress } }]
   offlineBooks: [],    // transient missing books kept across sessions
@@ -32,6 +35,7 @@ const selectionPopup = document.getElementById('selection-popup');
 const SEARCH_DEBOUNCE_MS = 100;
 const SEARCH_MIN_QUERY_LENGTH = 2;
 const SEARCH_MAX_RESULTS = 120;
+const HIGHLIGHT_CONTEXT_LENGTH = 32;
 let sidebarSearchTimer = null;
 
 function finishAppStartup() {
@@ -161,19 +165,26 @@ function renderTabs() {
   state.openBooks.forEach(book => {
     const tab = document.createElement('div');
     tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
-    tab.dataset.bookPath = book.filePath;
+    tab.setAttribute('role', 'presentation');
     const safeTitle = escapeHtml(book.title);
+    const safePath = escapeHtml(book.filePath);
+    const isActive = book.filePath === state.activeBookPath;
     const coverHtml = book.cover 
       ? `<img class="tab-cover" src="${book.cover}" alt="" />`
       : `<div class="tab-cover tab-cover-placeholder">
            <svg viewBox="0 0 24 24" class="tab-cover-placeholder-icon"><path d="M19 2H6c-1.2 0-2 .9-2 2v16c0 1.1.8 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H6V4h12v16z"/></svg>
          </div>`;
     tab.innerHTML = `
-      ${coverHtml}
-      <span class="tab-label">${safeTitle}</span>
-      <span class="tab-close" data-close-book="${book.filePath}">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </span>
+      <button type="button" class="tab-activate" role="tab"
+        aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
+        data-book-path="${safePath}" title="${safeTitle}">
+        ${coverHtml}
+        <span class="tab-label">${safeTitle}</span>
+      </button>
+      <button type="button" class="tab-close" data-close-book="${safePath}"
+        aria-label="Close ${safeTitle}" title="Close ${safeTitle}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
     `;
     tabBar.appendChild(tab);
   });
@@ -193,6 +204,9 @@ function setSidebarMode(mode) {
   sidebarTabToc.setAttribute('aria-selected', String(isToc));
   sidebarTabSearch.setAttribute('aria-selected', String(isSearch));
   sidebarTabHighlights.setAttribute('aria-selected', String(isHighlights));
+  sidebarTabToc.tabIndex = isToc ? 0 : -1;
+  sidebarTabSearch.tabIndex = isSearch ? 0 : -1;
+  sidebarTabHighlights.tabIndex = isHighlights ? 0 : -1;
 
   sidebarSearchWrap.hidden = !isSearch;
   outlinePanel.hidden = !isToc;
@@ -218,6 +232,24 @@ function escapeHtml(str) {
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getHighlightStorageKey(filePath = state.activeBookPath) {
+  const identifier = String(state.bookContent[filePath]?.identifier || '').trim();
+  return identifier ? `publication:${identifier}` : filePath;
+}
+
+function migrateHighlightsToPublicationId(filePath) {
+  const storageKey = getHighlightStorageKey(filePath);
+  if (!filePath || !storageKey || storageKey === filePath || !state.highlights[filePath]) return;
+  const existing = state.highlights[storageKey] || [];
+  const knownIds = new Set(existing.map(highlight => highlight.id));
+  state.highlights[storageKey] = [
+    ...existing,
+    ...state.highlights[filePath].filter(highlight => !knownIds.has(highlight.id)),
+  ];
+  delete state.highlights[filePath];
+  saveHighlights();
 }
 
 function buildTocTitleMap(items, titleMap = {}) {
@@ -388,18 +420,19 @@ function renderSearchResults() {
 
   const terms = normalized.toLowerCase().split(' ').filter(Boolean);
   for (const result of results) {
-    const row = document.createElement('div');
+    const row = document.createElement('button');
+    row.type = 'button';
     row.className = 'search-result-item';
     row.dataset.chapterId = result.chapterId;
     row.dataset.href = result.href || '';
     row.dataset.matchIndex = String(result.matchIndex ?? 0);
     row.dataset.term = result.term || '';
     const titleHtml = result.title
-      ? `<div class="search-result-title">${escapeHtml(result.title)}</div>`
+      ? `<span class="search-result-title">${escapeHtml(result.title)}</span>`
       : '';
     row.innerHTML = `
       ${titleHtml}
-      <div class="search-result-snippet">${buildHighlightedSnippet(result.snippet, terms)}</div>
+      <span class="search-result-snippet">${buildHighlightedSnippet(result.snippet, terms)}</span>
     `;
     searchPanel.appendChild(row);
   }
@@ -524,6 +557,7 @@ async function renderContent() {
         contentArea.appendChild(div);
         try {
           state.bookContent[book.filePath] = await window.epub.parse(book.filePath);
+          migrateHighlightsToPublicationId(book.filePath);
         } catch (err) {
           div.textContent = 'Failed to load book: ' + err.message;
           if (isStartupRender) finishAppStartup();
@@ -680,12 +714,21 @@ function getSelectionOffsets(root) {
 
 function applyHighlightsToChapter(chapterId, container) {
   if (!state.activeBookPath) return;
-  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  const bookHighlights = state.highlights[getHighlightStorageKey()] || [];
   const chapterHighlights = bookHighlights.filter(h => h.chapterId === chapterId);
 
+  let relocated = false;
   chapterHighlights.forEach(h => {
+    const resolved = resolveHighlightOffsets(container.textContent, h);
+    if (!resolved) return;
+    if (resolved.start !== h.start || resolved.end !== h.end) {
+      h.start = resolved.start;
+      h.end = resolved.end;
+      relocated = true;
+    }
     wrapHighlight(container, h.start, h.end, h.id);
   });
+  if (relocated) saveHighlights();
 }
 
 function wrapHighlight(root, startOffset, endOffset, id) {
@@ -733,7 +776,7 @@ function renderHighlights() {
     return;
   }
 
-  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  const bookHighlights = state.highlights[getHighlightStorageKey()] || [];
   if (bookHighlights.length === 0) {
     highlightsPanel.innerHTML = '<div class="search-empty">No highlights yet. Select text to highlight.</div>';
     return;
@@ -745,19 +788,20 @@ function renderHighlights() {
     item.className = 'highlight-item';
     item.dataset.id = h.id;
     item.innerHTML = `
-      <div class="highlight-content">
-        <div class="highlight-text">"${escapeHtml(h.text)}"</div>
-        <div class="highlight-footer">
-          <div class="highlight-meta">${new Date(h.createdAt).toLocaleString()}</div>
-          <button class="highlight-delete" title="Delete Highlight" data-delete-id="${h.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18" />
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <button type="button" class="highlight-open" aria-label="Go to highlighted text">
+        <span class="highlight-content">
+          <span class="highlight-text">"${escapeHtml(h.text)}"</span>
+          <span class="highlight-meta">${new Date(h.createdAt).toLocaleString()}</span>
+        </span>
+      </button>
+      <button type="button" class="highlight-delete" title="Delete Highlight"
+        aria-label="Delete highlight" data-delete-id="${h.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 6h18" />
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        </svg>
+      </button>
     `;
 
     item.querySelector('.highlight-delete').addEventListener('click', (e) => {
@@ -765,7 +809,7 @@ function renderHighlights() {
       removeHighlight(h.id);
     });
 
-    item.addEventListener('click', () => {
+    item.querySelector('.highlight-open').addEventListener('click', () => {
       const data = state.bookContent[state.activeBookPath];
       if (data) {
         const scrolled = scrollToHref('', data.chapters, h.chapterId);
@@ -808,13 +852,22 @@ function addHighlight() {
     start: offsets.start,
     end: offsets.end,
     text: offsets.text,
+    prefix: chapterSection.textContent.slice(
+      Math.max(0, offsets.start - HIGHLIGHT_CONTEXT_LENGTH),
+      offsets.start
+    ),
+    suffix: chapterSection.textContent.slice(
+      offsets.end,
+      offsets.end + HIGHLIGHT_CONTEXT_LENGTH
+    ),
     createdAt: Date.now()
   };
 
-  if (!state.highlights[state.activeBookPath]) {
-    state.highlights[state.activeBookPath] = [];
+  const storageKey = getHighlightStorageKey();
+  if (!state.highlights[storageKey]) {
+    state.highlights[storageKey] = [];
   }
-  state.highlights[state.activeBookPath].push(highlight);
+  state.highlights[storageKey].push(highlight);
 
   wrapHighlight(chapterSection, highlight.start, highlight.end, highlight.id);
   selection.removeAllRanges();
@@ -825,7 +878,7 @@ function addHighlight() {
 
 function removeHighlight(id) {
   if (!state.activeBookPath) return;
-  const bookHighlights = state.highlights[state.activeBookPath] || [];
+  const bookHighlights = state.highlights[getHighlightStorageKey()] || [];
   const idx = bookHighlights.findIndex(h => h.id === id);
   if (idx === -1) return;
 
@@ -938,7 +991,7 @@ function handleSelectionChange(targetEl) {
 
   if (markEl) {
     const id = markEl.dataset.highlightId;
-    existing = (state.highlights[state.activeBookPath] || []).find(h => h.id === id);
+    existing = (state.highlights[getHighlightStorageKey()] || []).find(h => h.id === id);
     selectionPopupAnchor = { type: 'element', element: markEl };
   } else {
     // Check if selection is already a highlight
@@ -947,7 +1000,7 @@ function handleSelectionChange(targetEl) {
       hideSelectionPopup();
       return;
     }
-    existing = (state.highlights[state.activeBookPath] || []).find(h => 
+    existing = (state.highlights[getHighlightStorageKey()] || []).find(h =>
       h.chapterId === chapterSection.id.replace('chapter-', '') &&
       Math.abs(h.start - offsets.start) < 2 &&
       Math.abs(h.end - offsets.end) < 2
@@ -1414,7 +1467,8 @@ function renderOutline(toc, chapters) {
 
   function addItems(items, level) {
     for (const item of items) {
-      const div = document.createElement('div');
+      const div = document.createElement('button');
+      div.type = 'button';
       div.className = 'outline-item level-' + level;
       div.textContent = item.title;
       div.dataset.href = item.href || '';
@@ -1445,6 +1499,36 @@ function initResize() {
 function setupHandle(handleId, cssVar, side) {
   const handle = document.getElementById(handleId);
   let startX, startWidth;
+
+  const applyWidth = (width) => {
+    const nextWidth = Math.max(250, Math.min(500, width));
+    document.documentElement.style.setProperty(cssVar, nextWidth + 'px');
+    handle.setAttribute('aria-valuenow', String(nextWidth));
+    contentArea.dispatchEvent(new CustomEvent('force-update-scrollbar'));
+  };
+
+  const initialWidth = parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue(cssVar),
+    10
+  );
+  handle.setAttribute('aria-valuenow', String(initialWidth));
+
+  handle.addEventListener('keydown', (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const current = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue(cssVar),
+      10
+    );
+    const step = e.shiftKey ? 25 : 10;
+    let next = current;
+    if (e.key === 'Home') next = 250;
+    if (e.key === 'End') next = 500;
+    if (e.key === 'ArrowLeft') next += side === 'right' ? step : -step;
+    if (e.key === 'ArrowRight') next += side === 'right' ? -step : step;
+    applyWidth(next);
+    saveSidebarWidths();
+  });
 
   handle.addEventListener('mousedown', (e) => {
     e.preventDefault();
@@ -1478,14 +1562,12 @@ function setupHandle(handleId, cssVar, side) {
       const delta = side === 'right' ? startX - currentX : currentX - startX;
       const maxWidth = 500;
       const newWidth = Math.max(250, Math.min(maxWidth, startWidth + delta));
-      
-      document.documentElement.style.setProperty(cssVar, newWidth + 'px');
+      applyWidth(newWidth);
       
       if (targetCh) {
         contentArea.scrollTop = targetCh.offsetTop + (targetCh.offsetHeight * targetRatio);
       }
       
-      contentArea.dispatchEvent(new CustomEvent('force-update-scrollbar'));
     };
 
     const onMouseMove = (e) => {
@@ -1672,11 +1754,41 @@ getAppLayout()?.addEventListener('click', (e) => {
     return;
   }
 
-  const tabItem = e.target.closest('.tab-item[data-book-path]');
+  const tabItem = e.target.closest('.tab-activate[data-book-path]');
   if (tabItem) {
     setActiveBook(tabItem.dataset.bookPath);
     return;
   }
+});
+
+tabBar.addEventListener('keydown', (e) => {
+  if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+  const tabs = [...tabBar.querySelectorAll('.tab-activate[data-book-path]')];
+  if (tabs.length === 0) return;
+  e.preventDefault();
+  const current = Math.max(0, tabs.indexOf(document.activeElement));
+  const nextIndex = e.key === 'Home' ? 0
+    : e.key === 'End' ? tabs.length - 1
+    : e.key === 'ArrowUp' ? (current - 1 + tabs.length) % tabs.length
+    : (current + 1) % tabs.length;
+  setActiveBook(tabs[nextIndex].dataset.bookPath);
+  requestAnimationFrame(() => {
+    tabBar.querySelector('.tab-activate[aria-selected="true"]')?.focus();
+  });
+});
+
+document.querySelector('.sidebar-tabs')?.addEventListener('keydown', (e) => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  const tabs = [sidebarTabToc, sidebarTabHighlights, sidebarTabSearch];
+  e.preventDefault();
+  const current = Math.max(0, tabs.indexOf(document.activeElement));
+  const nextIndex = e.key === 'Home' ? 0
+    : e.key === 'End' ? tabs.length - 1
+    : e.key === 'ArrowLeft' ? (current - 1 + tabs.length) % tabs.length
+    : (current + 1) % tabs.length;
+  const modes = ['toc', 'highlights', 'search'];
+  setSidebarMode(modes[nextIndex]);
+  tabs[nextIndex].focus();
 });
 
 document.getElementById('toggle-left-sidebar').addEventListener('click', () => {
@@ -1851,11 +1963,16 @@ function initBrokenImageHandling() {
     if (!link || !state.activeBookPath) return;
 
     const href = link.getAttribute('href');
-    if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) {
-      return;
-    }
+    if (!href) return;
 
     e.preventDefault();
+
+    if (/^(?:https?:|mailto:|tel:)/i.test(href)) {
+      window.epub.openExternal(href).catch((error) => {
+        console.warn('Failed to open external link', error);
+      });
+      return;
+    }
 
     // For epub:type="noteref" links, show footnote popover instead of scrolling
     const epubType = link.getAttribute('epub:type') || link.getAttributeNS('http://www.idpf.org/2007/ops', 'type');
@@ -1997,16 +2114,22 @@ window.epub.onOpenFile((filePath) => {
 });
 
 // --- Theme ---
+const systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+let currentThemeMode = 'system';
+
 function applyTheme(theme) {
-  const t = theme || 'light';
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('gull-theme', t);
+  currentThemeMode = applyThemeMode(theme, document.documentElement, systemThemeQuery.matches);
+  localStorage.setItem('gull-theme', currentThemeMode);
   // Notify React SettingsMenu of externally-driven theme changes (IPC, etc.)
-  window.dispatchEvent(new CustomEvent('gull-theme-changed', { detail: t }));
+  window.dispatchEvent(new CustomEvent('gull-theme-changed', { detail: currentThemeMode }));
 }
 
 window.settings.onThemeChanged((theme) => {
   applyTheme(theme);
+});
+
+systemThemeQuery.addEventListener('change', () => {
+  if (currentThemeMode === 'system') applyTheme('system');
 });
 
 function setChapterScrollbar(enabled) {
@@ -2081,6 +2204,8 @@ function initSidebarScrollbars() {
 // Init
 async function initApp() {
   const settings = window.initialSettings || {};
+  let storedTheme = localStorage.getItem('gull-theme');
+  try { storedTheme = JSON.parse(storedTheme); } catch {}
 
   loadHighlights();
   setSidebarMode('toc');
@@ -2091,7 +2216,7 @@ async function initApp() {
   loadSidebarStates();
   setChapterScrollbar(settings.chapterScrollbar !== false);
   setFullWidth(settings.fullWidth === true);
-  applyTheme(settings.theme);
+  applyTheme(normalizeThemeMode(settings.theme || storedTheme));
 
   initDragAndDrop();
   initBrokenImageHandling();

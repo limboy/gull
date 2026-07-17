@@ -19,7 +19,7 @@ title: "Styling & Theming"
 
 ## Theme
 
-`theme` is one of `light` | `dark`, persisted in `settings.json`. `applyTheme` toggles a class on `document.documentElement` (see `reader-runtime.js`). Main broadcasts `theme-changed` on every `set-setting` with key `theme` so other windows (if any) stay in sync.
+`theme` is one of `system` | `light` | `dark`, persisted in `settings.json`. `applyTheme` resolves system appearance onto `document.documentElement` and listens for operating-system appearance changes while system mode is active. Main broadcasts `theme-changed` on every validated `set-setting` with key `theme` so other windows (if any) stay in sync.
 
 ## Reading style controls
 
@@ -36,4 +36,4 @@ The saved style is synchronously written to root CSS variables by `reader-main.j
 
 ## Why so much book CSS is stripped
 
-See `epub-parsing.md` — `font-family`, sizes, line heights, colors, and positioning are removed from book CSS so the reader's own typography wins. Drop-cap selectors (`.dropcap`, `.drop-cap`) are the only carve-out; they keep their `font-size` and `line-height`. If you need to respect more book styles, adjust `STRIP_CSS_PROPS` in `main.js` — not CSS in this directory.
+See `epub-parsing.md` — `font-family`, sizes, line heights, colors, and positioning are removed from book CSS so the reader's own typography wins. Drop-cap selectors (`.dropcap`, `.drop-cap`) are the only carve-out; they keep their `font-size` and `line-height`. If you need to respect more book styles, adjust `STRIP_CSS_PROPS` in `lib/book-content.js` — not CSS in this directory.

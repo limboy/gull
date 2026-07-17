@@ -12,6 +12,8 @@ title: "Development, Build & Release"
 ```bash
 npm install
 npm run dev        # vite + electron, HMR for the renderer
+npm run check      # syntax-check main/preload/worker modules
+npm test           # Node unit and EPUB fixture tests
 ```
 
 `npm run dev` starts Vite on `127.0.0.1:5173` and launches Electron once the port is up. Electron detects dev mode via the `VITE_DEV_SERVER_URL` env var set by the script.
@@ -33,7 +35,9 @@ Required repo secrets: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SP
 npm run build      # vite build → dist/, then electron-builder --mac
 ```
 
-Outputs `.dmg` and `.zip` (see `build.mac.target`). Only `main.js`, `preload.js`, `dist/index.html`, `dist/assets/**`, and `logo.png` are packaged (`build.files`). Local builds need a Developer ID Application cert in Keychain and the Apple env vars in `.env` (loaded via `dotenv-cli`). Hardened runtime is on; entitlements live at `build/entitlements.mac.plist`.
+Outputs `.dmg` and `.zip` (see `build.mac.target`). Only `main.js`, `preload.js`, `lib/**/*.js`, `dist/index.html`, and `dist/assets/**` are packaged (`build.files`). Local builds need a Developer ID Application cert in Keychain and the Apple env vars in `.env` (loaded via `dotenv-cli`). Hardened runtime is on; entitlements live at `build/entitlements.mac.plist`.
+
+`.github/workflows/ci.yml` runs syntax checks, tests, and the production renderer build for pushes to `main` and pull requests. The release workflow repeats the production build before signing and publishing.
 
 ## Auto-update
 

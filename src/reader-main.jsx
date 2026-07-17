@@ -3,11 +3,27 @@ import { createRoot } from 'react-dom/client';
 import { RefreshCw } from 'lucide-react';
 import { SettingsMenu } from '@/components/SettingsMenu';
 import { LayoutMenu } from '@/components/LayoutMenu';
+import { applyThemeMode } from '@/lib/theme.mjs';
 
 import './reader/fonts.css';
 import './reader/App.css';
 
 const initialSettings = window.initialSettings || {};
+
+function applyInitialAppearance() {
+  let savedTheme = 'system';
+  const rawTheme = localStorage.getItem('gull-theme');
+  try {
+    savedTheme = JSON.parse(rawTheme) || 'system';
+  } catch {
+    savedTheme = rawTheme || 'system';
+  }
+  applyThemeMode(initialSettings.theme || savedTheme);
+  document.documentElement.classList.toggle(
+    'native-scrollbar',
+    initialSettings.chapterScrollbar === false
+  );
+}
 
 function hasSavedBooksToRestore() {
   try {
@@ -51,6 +67,7 @@ function applyInitialSidebarWidths() {
 }
 
 // Set persistent dimensions before React creates the grid so its first layout is final.
+applyInitialAppearance();
 applyInitialReadingStyle();
 applyInitialSidebarWidths();
 const isRestoringSavedBook = hasSavedBooksToRestore();
@@ -79,13 +96,22 @@ function ReaderApp() {
     <div id="app-layout" className={layoutClasses}>
       <aside id="left-sidebar">
         <div className="left-sidebar-header" aria-hidden="true" />
-        <div id="tab-bar-tabs" />
+        <div id="tab-bar-tabs" role="tablist" aria-label="Open books" aria-orientation="vertical" />
         <div className="left-sidebar-footer">
           <SettingsMenu />
         </div>
       </aside>
 
-      <div id="resize-left" className="resize-handle" />
+      <div
+        id="resize-left"
+        className="resize-handle"
+        role="separator"
+        tabIndex={0}
+        aria-label="Resize books sidebar"
+        aria-orientation="vertical"
+        aria-valuemin="250"
+        aria-valuemax="500"
+      />
 
       <div id="main-area">
         <div id="tab-bar">
@@ -118,7 +144,7 @@ function ReaderApp() {
         </div>
 
         <div id="content-wrapper">
-          <div id="content-area">
+          <main id="content-area" aria-label="Book content">
             <div
               id="empty-state"
               className="empty-state"
@@ -129,22 +155,31 @@ function ReaderApp() {
                   <path d="M4 3h13l3 3v15H4z" />
                   <path d="M17 3v3h3" />
                 </svg>
-                <div>Drop an EPUB file here or use File &gt; Open</div>
+                <div>Drop an e-book file here or use File &gt; Open</div>
                 <div className="empty-hint">Supports drag-and-drop and Finder open-in actions.</div>
               </div>
             </div>
             {isRestoringSavedBook && <div className="book-content active">Loading…</div>}
-          </div>
-          <div id="chapter-scrollbar" />
+          </main>
+          <div id="chapter-scrollbar" aria-hidden="true" />
         </div>
       </div>
 
-      <div id="resize-right" className="resize-handle" />
+      <div
+        id="resize-right"
+        className="resize-handle"
+        role="separator"
+        tabIndex={0}
+        aria-label="Resize navigation sidebar"
+        aria-orientation="vertical"
+        aria-valuemin="250"
+        aria-valuemax="500"
+      />
 
       <aside id="right-sidebar">
         <div className="sidebar-header">
           <div className="sidebar-tabs" role="tablist" aria-label="Sidebar Tabs">
-            <button id="sidebar-tab-toc" className="sidebar-tab" role="tab" aria-selected="true" title="Table of Contents">
+            <button id="sidebar-tab-toc" className="sidebar-tab" role="tab" tabIndex={0} aria-selected="true" aria-controls="outline-panel" title="Table of Contents">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6" />
                 <line x1="8" y1="12" x2="21" y2="12" />
@@ -154,7 +189,7 @@ function ReaderApp() {
                 <line x1="3" y1="18" x2="3.01" y2="18" />
               </svg>
             </button>
-            <button id="sidebar-tab-highlights" className="sidebar-tab" role="tab" aria-selected="false" title="Highlights">
+            <button id="sidebar-tab-highlights" className="sidebar-tab" role="tab" tabIndex={-1} aria-selected="false" aria-controls="highlights-panel" title="Highlights">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                 <path d="M5 3v4" />
@@ -163,7 +198,7 @@ function ReaderApp() {
                 <path d="M17 19h4" />
               </svg>
             </button>
-            <button id="sidebar-tab-search" className="sidebar-tab" role="tab" aria-selected="false" title="Search">
+            <button id="sidebar-tab-search" className="sidebar-tab" role="tab" tabIndex={-1} aria-selected="false" aria-controls="search-panel" title="Search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
@@ -172,7 +207,7 @@ function ReaderApp() {
           </div>
 
           <div id="sidebar-search-wrap" className="sidebar-search-wrap" hidden>
-            <input id="sidebar-search-input" type="text" placeholder="Search current book..." />
+            <input id="sidebar-search-input" type="text" aria-label="Search current book" placeholder="Search current book..." />
             <button
               id="sidebar-search-clear"
               type="button"
@@ -189,9 +224,9 @@ function ReaderApp() {
           </div>
         </div>
 
-        <div id="outline-panel" className="outline-panel-content" />
-        <div id="search-panel" className="outline-panel-content" hidden />
-        <div id="highlights-panel" className="outline-panel-content" hidden />
+        <div id="outline-panel" className="outline-panel-content" role="tabpanel" aria-labelledby="sidebar-tab-toc" />
+        <div id="search-panel" className="outline-panel-content" role="tabpanel" aria-labelledby="sidebar-tab-search" hidden />
+        <div id="highlights-panel" className="outline-panel-content" role="tabpanel" aria-labelledby="sidebar-tab-highlights" hidden />
       </aside>
 
       <button id="selection-popup" className="selection-popup" type="button" aria-label="Highlight" hidden>

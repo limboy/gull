@@ -24,9 +24,6 @@ const state = {
 ```
 
 Persisted via `window.settings.set`:
-- `readerState` — open books + positions + active tab (see `saveReaderState` / `loadReaderState`)
-- `highlights` — per-book highlight lists
-- `readingStyle` — font/size/line-height/paragraph spacing
 - `theme` — via `applyTheme`
 - `sidebarStates` — left/right sidebar visibility
 - `chapterScrollbar`, `fullWidth` — viewport layout preferences
@@ -34,6 +31,8 @@ Persisted via `window.settings.set`:
 Persisted via `localStorage`:
 - `gull-sidebar-widths` — left/right panel widths (`saveSidebarWidths`)
 - `gull-open-books` — open books + positions + active tab (`saveReaderState` / `loadReaderState`)
+- `gull-highlights` — per-book highlight lists
+- `gull-reading-style` — font/size/line-height/paragraph spacing
 
 `loadReaderState` filters out books whose files no longer exist for the current session but never re-writes the pruned list back to `gull-open-books`. Reason: a transient miss (iCloud-evicted files, unmounted drives) would otherwise permanently erase the user's tabs.
 
@@ -58,6 +57,8 @@ On startup, the saved `activeBookPath` is restored when that book is still avail
 
 `initDragAndDrop` accepts supported book files dropped anywhere in the application window and shows a window-wide drop indicator while files are being dragged over it.
 
+Book tabs, TOC entries, search results, highlights, sidebar tabs, and resize separators are keyboard accessible. Vertical book tabs use Up/Down, sidebar panels use Left/Right, and resize separators use arrow keys (Shift for larger steps).
+
 ## Rendering model
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
@@ -74,7 +75,7 @@ Built on a flat text index per book (chapter id, href, title, normalized text). 
 
 ## Highlights
 
-Selection offsets are captured relative to the chapter container (`getSelectionOffsets`) so they survive re-renders. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<mark class="reader-highlight">`. Highlights are persisted by `saveHighlights` in the `gull-highlights` local-storage entry.
+Selection offsets are captured relative to the chapter container (`getSelectionOffsets`), together with short prefix/suffix quote context. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<mark class="reader-highlight">`. If later parsing changes invalidate the raw offsets, `resolveHighlightOffsets` relocates the quote using its context and persists the repaired location. Highlights use the publication identifier when the book provides one, falling back to the absolute file path, and are stored in the `gull-highlights` local-storage entry.
 
 The selection action popup keeps a live anchor to either the selected `Range` or an existing highlight element. Its fixed viewport position is recalculated when the content area scrolls or resizes, so the action follows the selected text instead of remaining at its original screen coordinates.
 

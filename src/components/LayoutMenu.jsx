@@ -9,7 +9,7 @@ export function LayoutMenu() {
 
   useEffect(() => {
     const sbHandler = (enabled) => setChapterScrollbar(enabled);
-    window.settings?.onChapterScrollbarChanged(sbHandler);
+    const unsubscribeScrollbar = window.settings?.onChapterScrollbarChanged(sbHandler);
 
     const settingsHandler = (settings) => {
       if (settings) {
@@ -21,7 +21,11 @@ export function LayoutMenu() {
         }
       }
     };
-    window.settings?.onSettingsChanged(settingsHandler);
+    const unsubscribeSettings = window.settings?.onSettingsChanged(settingsHandler);
+    return () => {
+      unsubscribeScrollbar?.();
+      unsubscribeSettings?.();
+    };
   }, []);
 
   function toggleChapterScrollbar(checked) {
