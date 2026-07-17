@@ -161,11 +161,13 @@ function setActiveBook(filePath) {
   saveReaderState();
 }
 
-function pinBook(filePath) {
+function pinBook(filePath, restoreFocus = false) {
   if (toggleBookPin(state.openBooks, filePath) === null) return;
 
   renderTabs();
   saveReaderState();
+  if (!restoreFocus) return;
+
   requestAnimationFrame(() => {
     [...tabBar.querySelectorAll('[data-pin-book]')]
       .find(button => button.dataset.pinBook === filePath)
@@ -1804,7 +1806,9 @@ contentArea.addEventListener('scroll', () => {
 getAppLayout()?.addEventListener('click', (e) => {
   const pinBtn = e.target.closest('[data-pin-book]');
   if (pinBtn) {
-    pinBook(pinBtn.dataset.pinBook);
+    // Keyboard-generated clicks have detail 0. Preserve focus for keyboard
+    // users without leaving hover actions revealed after a pointer click.
+    pinBook(pinBtn.dataset.pinBook, e.detail === 0);
     return;
   }
 
