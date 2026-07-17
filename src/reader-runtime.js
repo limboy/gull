@@ -1774,83 +1774,66 @@ searchPanel.addEventListener('click', (e) => {
 
 // --- Drag and Drop (on entire window) ---
 function initDragAndDrop() {
-  const leftSidebar = document.getElementById('left-sidebar');
+  const layout = getAppLayout();
   let dragCounter = 0;
 
-  if (leftSidebar) {
-    leftSidebar.addEventListener('dragenter', (e) => {
-      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
-        dragCounter++;
-        leftSidebar.classList.add('drag-active');
-      }
-    });
+  const hasFiles = (dataTransfer) =>
+    Array.from(dataTransfer?.types || []).includes('Files');
 
-    leftSidebar.addEventListener('dragleave', (e) => {
-      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
-        dragCounter--;
-        if (dragCounter <= 0) {
-          dragCounter = 0;
-          leftSidebar.classList.remove('drag-active');
-        }
-      }
-    });
+  const clearDragState = () => {
+    dragCounter = 0;
+    layout?.classList.remove('drag-active');
+  };
 
-    leftSidebar.addEventListener('dragover', (e) => {
-      if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    });
+  document.addEventListener('dragenter', (e) => {
+    if (!hasFiles(e.dataTransfer)) return;
 
-    leftSidebar.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCounter = 0;
-      leftSidebar.classList.remove('drag-active');
-
-      const bookFiles = [];
-      for (const file of e.dataTransfer.files) {
-        const filePath = window.epub.getFilePath(file);
-        if (filePath) {
-          const ext = filePath.split('.').pop().toLowerCase();
-          if (['epub', 'mobi', 'azw3', 'azw', 'prc'].includes(ext)) {
-            bookFiles.push(filePath);
-          }
-        }
-      }
-      if (bookFiles.length === 0) return;
-
-      for (const filePath of bookFiles) {
-        const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
-        if (!state.openBooks.find(b => b.filePath === filePath)) {
-          state.openBooks.push({ filePath, title });
-        }
-      }
-      setActiveBook(bookFiles[bookFiles.length - 1]);
-    });
-  }
+    e.preventDefault();
+    dragCounter++;
+    layout?.classList.add('drag-active');
+  });
 
   document.addEventListener('dragover', (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'none';
+    e.dataTransfer.dropEffect = hasFiles(e.dataTransfer) ? 'copy' : 'none';
   });
 
   document.addEventListener('dragleave', (e) => {
-    if (!e.relatedTarget || e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-      dragCounter = 0;
-      if (leftSidebar) {
-        leftSidebar.classList.remove('drag-active');
-      }
+    if (!hasFiles(e.dataTransfer)) return;
+
+    dragCounter = Math.max(0, dragCounter - 1);
+    const leftWindow = !e.relatedTarget || e.clientY <= 0 || e.clientX <= 0 ||
+      e.clientX >= window.innerWidth || e.clientY >= window.innerHeight;
+    if (leftWindow || dragCounter === 0) {
+      clearDragState();
     }
   });
 
-  document.addEventListener('drop', (e) => {
+  document.addEventListener('drop', async (e) => {
     e.preventDefault();
-    dragCounter = 0;
-    if (leftSidebar) {
-      leftSidebar.classList.remove('drag-active');
+    const isFileDrop = hasFiles(e.dataTransfer);
+    clearDragState();
+    if (!isFileDrop) return;
+
+    const bookFiles = [];
+    for (const file of e.dataTransfer.files) {
+      const filePath = window.epub.getFilePath(file);
+      if (!filePath) continue;
+
+      const ext = filePath.split('.').pop().toLowerCase();
+      if (['epub', 'mobi', 'azw3', 'azw', 'prc'].includes(ext)) {
+        bookFiles.push(filePath);
+      }
     }
+    if (bookFiles.length === 0) return;
+
+    for (const filePath of bookFiles) {
+      const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
+      if (!state.openBooks.find(b => b.filePath === filePath)) {
+        state.openBooks.push({ filePath, title });
+      }
+    }
+    setActiveBook(bookFiles[bookFiles.length - 1]);
   });
 }
 

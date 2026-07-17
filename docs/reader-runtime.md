@@ -56,6 +56,8 @@ On startup, the saved `activeBookPath` is restored when that book is still avail
 | Drag & drop / broken images | `initDragAndDrop`, `initBrokenImageHandling` |
 | Bootstrap | `initApp` (bottom of file) |
 
+`initDragAndDrop` accepts supported book files dropped anywhere in the application window and shows a window-wide drop indicator while files are being dragged over it.
+
 ## Rendering model
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.

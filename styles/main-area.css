@@ -6,15 +6,12 @@
     position: relative;
 }
 
-.sidebar-drag-overlay {
-    position: absolute;
-    top: 46px;
-    bottom: 55px;
-    left: 8px;
-    right: 8px;
-    background: color-mix(in srgb, var(--accent) 8%, var(--bg-sidebar));
+.file-drop-overlay {
+    position: fixed;
+    inset: 8px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-main));
     border: 2px dashed var(--accent);
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,10 +21,10 @@
     opacity: 0;
     transform: scale(0.96);
     transition: opacity 150ms ease, transform 150ms ease;
-    z-index: 10;
+    z-index: 1000;
 }
 
-#left-sidebar.drag-active .sidebar-drag-overlay {
+#app-layout.drag-active .file-drop-overlay {
     opacity: 1;
     transform: scale(1);
 }
