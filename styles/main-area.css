@@ -87,6 +87,27 @@
     min-width: 0;
 }
 
+.tab-section {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tab-section + .tab-section {
+    margin-top: 8px;
+}
+
+.tab-section-title {
+    padding: 4px 8px 2px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    user-select: none;
+}
+
 .tab-item {
     display: flex;
     align-items: center;
@@ -141,13 +162,13 @@
     background: #111;
 }
 
+.tab-item .tab-pin,
 .tab-item .tab-close {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 20px;
     height: 20px;
-    margin-left: 8px;
     border-radius: 4px;
     opacity: 0;
     transition:
@@ -157,6 +178,14 @@
     padding: 0;
     border: 0;
     background: transparent;
+}
+
+.tab-item .tab-pin {
+    margin-left: 4px;
+}
+
+.tab-item .tab-close {
+    margin-left: 2px;
 }
 
 .tab-item .tab-label {
@@ -191,18 +220,41 @@
     fill: var(--text-secondary);
 }
 
+.tab-item:hover .tab-pin,
 .tab-item:hover .tab-close,
+.tab-item:focus-within .tab-pin,
 .tab-item:focus-within .tab-close {
     opacity: 1;
 }
 
+.tab-item .tab-pin:hover,
 .tab-item .tab-close:hover {
     background: var(--tab-close-hover);
 }
 
+.tab-item .tab-pin svg,
 .tab-item .tab-close svg {
     width: 16px;
     height: 16px;
+}
+
+.tab-item .tab-pin svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tab-item .tab-pin[aria-pressed="true"] {
+    color: var(--text-primary);
+}
+
+.tab-item .tab-pin[aria-pressed="true"] .tab-pin-head {
+    fill: currentColor;
+}
+
+.tab-item .tab-close svg {
     fill: currentColor;
 }
 

@@ -1,8 +1,9 @@
 import { applyThemeMode, normalizeThemeMode } from './lib/theme.mjs';
 import { resolveHighlightOffsets } from './lib/highlight-anchor.mjs';
+import { groupPinnedBooks, toggleBookPin } from './lib/book-order.mjs';
 
 const state = {
-  openBooks: [],       // [{ filePath, title, position: { scrollTop, progress } }]
+  openBooks: [],       // [{ filePath, title, pinned, position: { scrollTop, progress } }]
   offlineBooks: [],    // transient missing books kept across sessions
   activeBookPath: null,
   bookContent: {},     // filePath -> { chapters, toc }
@@ -160,34 +161,85 @@ function setActiveBook(filePath) {
   saveReaderState();
 }
 
+function pinBook(filePath) {
+  if (toggleBookPin(state.openBooks, filePath) === null) return;
+
+  renderTabs();
+  saveReaderState();
+  requestAnimationFrame(() => {
+    [...tabBar.querySelectorAll('[data-pin-book]')]
+      .find(button => button.dataset.pinBook === filePath)
+      ?.focus();
+  });
+}
+
+function createBookTab(book) {
+  const tab = document.createElement('div');
+  const isPinned = book.pinned === true;
+  tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
+  tab.setAttribute('role', 'presentation');
+  const safeTitle = escapeHtml(book.title);
+  const safePath = escapeHtml(book.filePath);
+  const isActive = book.filePath === state.activeBookPath;
+  const coverHtml = book.cover
+    ? `<img class="tab-cover" src="${book.cover}" alt="" />`
+    : `<div class="tab-cover tab-cover-placeholder">
+         <svg viewBox="0 0 24 24" class="tab-cover-placeholder-icon"><path d="M19 2H6c-1.2 0-2 .9-2 2v16c0 1.1.8 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H6V4h12v16z"/></svg>
+       </div>`;
+  tab.innerHTML = `
+    <button type="button" class="tab-activate" role="tab"
+      aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
+      data-book-path="${safePath}" title="${safeTitle}">
+      ${coverHtml}
+      <span class="tab-label">${safeTitle}</span>
+    </button>
+    <button type="button" class="tab-pin" data-pin-book="${safePath}"
+      aria-label="${isPinned ? 'Unpin' : 'Pin'} ${safeTitle}"
+      aria-pressed="${isPinned}" title="${isPinned ? 'Unpin' : 'Pin'} ${safeTitle}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="tab-pin-head" d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/>
+        <path d="M12 14v7"/>
+      </svg>
+    </button>
+    <button type="button" class="tab-close" data-close-book="${safePath}"
+      aria-label="Close ${safeTitle}" title="Close ${safeTitle}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  `;
+  return tab;
+}
+
+function appendBookSection(title, books) {
+  if (books.length === 0) return;
+
+  const section = document.createElement('div');
+  const titleId = `tab-section-${title.toLowerCase()}-title`;
+  section.className = 'tab-section';
+  section.setAttribute('role', 'group');
+  section.setAttribute('aria-labelledby', titleId);
+  section.innerHTML = `
+    <div id="${titleId}" class="tab-section-title" role="heading" aria-level="2">
+      ${title}
+    </div>
+  `;
+  books.forEach(book => section.appendChild(createBookTab(book)));
+  tabBar.appendChild(section);
+}
+
 function renderTabs() {
   tabBar.innerHTML = '';
-  state.openBooks.forEach(book => {
-    const tab = document.createElement('div');
-    tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
-    tab.setAttribute('role', 'presentation');
-    const safeTitle = escapeHtml(book.title);
-    const safePath = escapeHtml(book.filePath);
-    const isActive = book.filePath === state.activeBookPath;
-    const coverHtml = book.cover 
-      ? `<img class="tab-cover" src="${book.cover}" alt="" />`
-      : `<div class="tab-cover tab-cover-placeholder">
-           <svg viewBox="0 0 24 24" class="tab-cover-placeholder-icon"><path d="M19 2H6c-1.2 0-2 .9-2 2v16c0 1.1.8 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H6V4h12v16z"/></svg>
-         </div>`;
-    tab.innerHTML = `
-      <button type="button" class="tab-activate" role="tab"
-        aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
-        data-book-path="${safePath}" title="${safeTitle}">
-        ${coverHtml}
-        <span class="tab-label">${safeTitle}</span>
-      </button>
-      <button type="button" class="tab-close" data-close-book="${safePath}"
-        aria-label="Close ${safeTitle}" title="Close ${safeTitle}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    `;
-    tabBar.appendChild(tab);
-  });
+  const pinnedBooks = state.openBooks.filter(book => book.pinned === true);
+
+  if (pinnedBooks.length === 0) {
+    state.openBooks.forEach(book => tabBar.appendChild(createBookTab(book)));
+    return;
+  }
+
+  appendBookSection('Pinned', pinnedBooks);
+  appendBookSection(
+    'Books',
+    state.openBooks.filter(book => book.pinned !== true)
+  );
 }
 
 function setSidebarMode(mode) {
@@ -1640,7 +1692,8 @@ function saveReaderState() {
         filePath: b.filePath,
         title: b.title,
         position: b.position,
-        cover: b.cover
+        cover: b.cover,
+        pinned: b.pinned === true
       })),
       ...state.offlineBooks
     ],
@@ -1675,6 +1728,7 @@ async function loadReaderState() {
         state.openBooks.push(b);
       }
     }
+    state.openBooks = groupPinnedBooks(state.openBooks);
 
     const hasCurrentActiveBook = state.openBooks.some(
       book => book.filePath === state.activeBookPath
@@ -1748,6 +1802,12 @@ contentArea.addEventListener('scroll', () => {
 
 // --- Event Delegation ---
 getAppLayout()?.addEventListener('click', (e) => {
+  const pinBtn = e.target.closest('[data-pin-book]');
+  if (pinBtn) {
+    pinBook(pinBtn.dataset.pinBook);
+    return;
+  }
+
   const closeBtn = e.target.closest('[data-close-book]');
   if (closeBtn) {
     closeBook(closeBtn.dataset.closeBook);

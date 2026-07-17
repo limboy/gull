@@ -13,7 +13,7 @@ title: "Renderer Runtime Module"
 
 ```js
 const state = {
-  openBooks,        // [{ filePath, title, cover, position: { scrollTop, progress } }]
+  openBooks,        // [{ filePath, title, cover, pinned, position: { scrollTop, progress } }]
   activeBookPath,
   bookContent,      // filePath -> { chapters, toc }
   bookSearchIndex,  // filePath -> [{ id, href, title, text, textLower }]
@@ -38,11 +38,13 @@ Persisted via `localStorage`:
 
 On startup, the saved `activeBookPath` is restored when that book is still available. If it is missing, the first available book in the saved tab order becomes active instead.
 
+Pinned books are stored in the same `gull-open-books` records. Pinning moves a book to the first sidebar slot; unpinning moves it directly after the remaining pinned group. Startup also groups saved pinned books ahead of unpinned books while preserving the relative order within each group. When any pins exist, `renderTabs` labels the two sidebar groups `Pinned` and `Books`; pinned rows otherwise use the same styling and hover-only actions as regular book rows.
+
 ## Feature map (by function)
 
 | Concern | Key functions |
 |---|---|
-| Tabs | `openBook`, `closeBook`, `setActiveBook`, `renderTabs` |
+| Tabs | `openBook`, `closeBook`, `setActiveBook`, `pinBook`, `renderTabs` |
 | Chapter render | `renderContent`, `stripEpubFonts`, `bindImageFallback` |
 | TOC | `renderOutline`, `initOutlineScrollTracking`, `setActiveOutlineItem`, `scrollToHref`, `findChapterByHref` |
 | Search | `indexBookForSearch`, `findSearchMatches`, `renderSearchResults`, `highlightTermsInContent`, `clearContentSearchHighlights` |
