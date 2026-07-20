@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.31](https://github.com/limboy/gull/compare/v1.2.30...v1.2.31) - 2026-07-20
+
+### Bug Fixes
+
+- **reader:** merge overlapping text highlights and fix popup state ([baf8ba0](https://github.com/limboy/gull/commit/baf8ba038c57267417e4a4a072648ce74992ba04))
+
+### Documentation
+
+- update CHANGELOG for v1.2.30 ([9aa41c2](https://github.com/limboy/gull/commit/9aa41c253c58193d4e73cbebc2c55a8a16dcefa6))
+
 ## [v1.2.30](https://github.com/limboy/gull/compare/v1.2.29...v1.2.30) - 2026-07-17
 
 ### Documentation
