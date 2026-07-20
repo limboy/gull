@@ -1,6 +1,7 @@
 import { applyThemeMode, normalizeThemeMode } from './lib/theme.mjs';
-import { resolveHighlightOffsets } from './lib/highlight-anchor.mjs';
+import { resolveHighlightOffsets, isOverlappingHighlight, mergeOverlappingHighlights } from './lib/highlight-anchor.mjs';
 import { groupPinnedBooks, toggleBookPin } from './lib/book-order.mjs';
+
 
 const state = {
   openBooks: [],       // [{ filePath, title, pinned, position: { scrollTop, progress } }]
@@ -768,11 +769,21 @@ function getSelectionOffsets(root) {
 
 function applyHighlightsToChapter(chapterId, container) {
   if (!state.activeBookPath) return;
-  const bookHighlights = state.highlights[getHighlightStorageKey()] || [];
+  const storageKey = getHighlightStorageKey();
+  const bookHighlights = state.highlights[storageKey] || [];
   const chapterHighlights = bookHighlights.filter(h => h.chapterId === chapterId);
 
+  const mergedChapter = mergeOverlappingHighlights(chapterHighlights, () => container.textContent);
+  if (mergedChapter.length !== chapterHighlights.length) {
+    state.highlights[storageKey] = [
+      ...bookHighlights.filter(h => h.chapterId !== chapterId),
+      ...mergedChapter
+    ];
+    saveHighlights();
+  }
+
   let relocated = false;
-  chapterHighlights.forEach(h => {
+  mergedChapter.forEach(h => {
     const resolved = resolveHighlightOffsets(container.textContent, h);
     if (!resolved) return;
     if (resolved.start !== h.start || resolved.end !== h.end) {
@@ -784,6 +795,7 @@ function applyHighlightsToChapter(chapterId, container) {
   });
   if (relocated) saveHighlights();
 }
+
 
 function wrapHighlight(root, startOffset, endOffset, id) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
@@ -899,25 +911,42 @@ function addHighlight() {
   const offsets = getSelectionOffsets(chapterSection);
   if (!offsets || offsets.start === offsets.end) return;
 
+  const storageKey = getHighlightStorageKey();
+  const bookHighlights = state.highlights[storageKey] || [];
+  const candidate = { chapterId, start: offsets.start, end: offsets.end };
+  const overlapping = bookHighlights.filter(h => isOverlappingHighlight(h, candidate));
+
+  let start = offsets.start;
+  let end = offsets.end;
+  let latestCreatedAt = Date.now();
+
+  overlapping.forEach(h => {
+    if (h.start < start) start = h.start;
+    if (h.end > end) end = h.end;
+    if (h.createdAt > latestCreatedAt) latestCreatedAt = h.createdAt;
+  });
+
+  overlapping.forEach(h => removeHighlight(h.id));
+
+  const text = chapterSection.textContent.slice(start, end);
   const id = crypto.randomUUID();
   const highlight = {
     id,
     chapterId,
-    start: offsets.start,
-    end: offsets.end,
-    text: offsets.text,
+    start,
+    end,
+    text,
     prefix: chapterSection.textContent.slice(
-      Math.max(0, offsets.start - HIGHLIGHT_CONTEXT_LENGTH),
-      offsets.start
+      Math.max(0, start - HIGHLIGHT_CONTEXT_LENGTH),
+      start
     ),
     suffix: chapterSection.textContent.slice(
-      offsets.end,
-      offsets.end + HIGHLIGHT_CONTEXT_LENGTH
+      end,
+      end + HIGHLIGHT_CONTEXT_LENGTH
     ),
-    createdAt: Date.now()
+    createdAt: latestCreatedAt
   };
 
-  const storageKey = getHighlightStorageKey();
   if (!state.highlights[storageKey]) {
     state.highlights[storageKey] = [];
   }
@@ -1043,14 +1072,14 @@ function handleSelectionChange(targetEl) {
 
   let existing = null;
 
-  if (markEl) {
+  if (isCollapsed && markEl) {
     const id = markEl.dataset.highlightId;
     existing = (state.highlights[getHighlightStorageKey()] || []).find(h => h.id === id);
     selectionPopupAnchor = { type: 'element', element: markEl };
   } else {
     // Check if selection is already a highlight
     const offsets = getSelectionOffsets(chapterSection);
-    if (!offsets) {
+    if (!offsets || offsets.start === offsets.end) {
       hideSelectionPopup();
       return;
     }
@@ -1061,6 +1090,7 @@ function handleSelectionChange(targetEl) {
     );
     selectionPopupAnchor = { type: 'range', range: range.cloneRange() };
   }
+
 
   const selectionPopupLabel = selectionPopup.querySelector('.selection-popup-label');
   if (existing) {

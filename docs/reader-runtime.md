@@ -77,7 +77,9 @@ Built on a flat text index per book (chapter id, href, title, normalized text). 
 
 ## Highlights
 
-Selection offsets are captured relative to the chapter container (`getSelectionOffsets`), together with short prefix/suffix quote context. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<mark class="reader-highlight">`. If later parsing changes invalidate the raw offsets, `resolveHighlightOffsets` relocates the quote using its context and persists the repaired location. Highlights use the publication identifier when the book provides one, falling back to the absolute file path, and are stored in the `gull-highlights` local-storage entry.
+Selection offsets are captured relative to the chapter container (`getSelectionOffsets`), together with short prefix/suffix quote context. `wrapHighlight` walks text nodes between `startOffset` and `endOffset` and wraps them in `<mark class="reader-highlight">`. Creating a highlight that overlaps or touches existing highlights merges them into a single continuous highlight (`mergeOverlappingHighlights`), avoiding double-highlighting. If later parsing changes invalidate the raw offsets, `resolveHighlightOffsets` relocates the quote using its context and persists the repaired location. Highlights use the publication identifier when the book provides one, falling back to the absolute file path, and are stored in the `gull-highlights` local-storage entry.
+
+
 
 The selection action popup keeps a live anchor to either the selected `Range` or an existing highlight element. Its fixed viewport position is recalculated when the content area scrolls or resizes, so the action follows the selected text instead of remaining at its original screen coordinates.
 
