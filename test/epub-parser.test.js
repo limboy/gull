@@ -69,6 +69,52 @@ test('parses, sanitizes, and normalizes an EPUB fixture', () => {
   }
 });
 
+test('ignores non-CSS stylesheet links (e.g. Adobe page-template XML)', () => {
+  // Adobe Digital Editions page templates are linked with rel="stylesheet"
+  // but aren't CSS. Their XML can contain a stray "{...}" that, if fed
+  // into the CSS filter, corrupts the selector of whatever rule follows.
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'gull-epub-test-'));
+  const epubPath = path.join(directory, 'fixture.epub');
+  try {
+    const zip = new AdmZip();
+    zip.addFile('mimetype', Buffer.from('application/epub+zip'));
+    zip.addFile('META-INF/container.xml', Buffer.from(`
+      <?xml version="1.0"?>
+      <container><rootfiles><rootfile full-path="OEBPS/content.opf" /></rootfiles></container>
+    `));
+    zip.addFile('OEBPS/content.opf', Buffer.from(`
+      <package xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <metadata><dc:title>Fixture Book</dc:title></metadata>
+        <manifest>
+          <item id="chapter" href="text/chapter.xhtml" media-type="application/xhtml+xml" />
+          <item id="css" href="styles/book.css" media-type="text/css" />
+          <item id="template" href="page-template.xpgt" media-type="application/adobe-page-template+xml" />
+        </manifest>
+        <spine><itemref idref="chapter" /></spine>
+      </package>
+    `));
+    zip.addFile('OEBPS/styles/book.css', Buffer.from('p { color: red; margin: 1em; }'));
+    zip.addFile('OEBPS/page-template.xpgt', Buffer.from(
+      '<ade:template><ade:style><ade:styling-rule selector=".img" condition="{ade:page-width() &gt; 0}" /></ade:style></ade:template>'
+    ));
+    zip.addFile('OEBPS/text/chapter.xhtml', Buffer.from(`
+      <html><head>
+        <link rel="stylesheet" href="../styles/book.css" />
+        <link rel="stylesheet" type="application/adobe-page-template+xml" href="../page-template.xpgt" />
+      </head><body>
+        <p>Hello</p>
+      </body></html>
+    `));
+    zip.writeZip(epubPath);
+
+    const result = parseEpub(epubPath);
+    assert.match(result.chapters[0].css, /^p\s*\{/);
+    assert.doesNotMatch(result.chapters[0].css, /ade:template|ade:style/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('parses EPUB fixtures through the worker protocol', async () => {
   const fixture = createFixtureEpub();
   const worker = new Worker(path.join(__dirname, '..', 'lib', 'epub-parser-worker.js'));

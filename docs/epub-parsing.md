@@ -38,6 +38,8 @@ Applied in two places:
 
 **Drop caps are a deliberate exception.** When a selector or element class contains `dropcap`/`drop-cap`, `font-size` and `line-height` are preserved so the decorative first-letter style survives.
 
+**Only `<link rel="stylesheet">` elements with `type="text/css"` (or no `type`) are collected as CSS.** Some EPUBs link an Adobe Digital Editions page-template file (`type="application/adobe-page-template+xml"`) with `rel="stylesheet"`; it's XML, not CSS. `filterEpubCss` finds rules with a regex, not a real parser, so feeding it non-CSS text can corrupt the selector of whatever real rule follows — e.g. a stray `{...}` inside an XML attribute value shifts where the regex thinks the next rule starts.
+
 ## Images
 
 `<img>` and SVG `<image>` elements have their `src` / `href` / `xlink:href` resolved against the chapter path, loaded from the zip, base64-encoded, and rewritten as a `data:` URI. MIME is inferred from the extension (`jpg/jpeg/png/gif/webp/svg`). Missing images are silently skipped — the renderer attaches a broken-image fallback (`initBrokenImageHandling` in `reader-runtime.js`).
