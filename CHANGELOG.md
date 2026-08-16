@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.2.32](https://github.com/limboy/gull/compare/v1.2.31...v1.2.32) - 2026-08-16
+
+### Bug Fixes
+
+- **epub:** ignore non-CSS stylesheet links when collecting chapter CSS ([a80d21d](https://github.com/limboy/gull/commit/a80d21d0d45a114bf28b5480f2de15da1686944c))
+
+### Documentation
+
+- update CHANGELOG for v1.2.31 ([01e6bff](https://github.com/limboy/gull/commit/01e6bffe8019dc886793e3e5d0e06bc721aaaf72))
+
 ## [v1.2.31](https://github.com/limboy/gull/compare/v1.2.30...v1.2.31) - 2026-07-20
 
 ### Bug Fixes
