@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.3.0](https://github.com/limboy/gull/compare/v1.2.32...v1.3.0) - 2026-08-27
+
+### Features
+
+- **ui:** mark sidebar books as finished ([6673db4](https://github.com/limboy/gull/commit/6673db4cbdda5e8a91d3dc718be9b6937ea55e1a))
+- implement folder-based book organization in sidebar ([571e542](https://github.com/limboy/gull/commit/571e542d751327f4a6d37913918e8888cfe97ec5))
+
+### Documentation
+
+- update CHANGELOG for v1.2.32 ([ef6a5f5](https://github.com/limboy/gull/commit/ef6a5f5bef54cc73698b469589e15de5e91fa707))
+
 ## [v1.2.32](https://github.com/limboy/gull/compare/v1.2.31...v1.2.32) - 2026-08-16
 
 ### Bug Fixes
