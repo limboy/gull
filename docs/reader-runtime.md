@@ -42,7 +42,7 @@ On startup, the saved `activeBookPath` is restored when that book is still avail
 
 ## Sidebar folders
 
-The books sidebar lists folders that exist on disk. The **Add Book Folder** button in the sidebar header (`#btn-new-folder`) calls `window.epub.selectBookFolder()`, and the chosen directory becomes a sidebar folder listing the books main found inside it. Subfolders come back as nested nodes and render as nested, collapsible groups, so a `Author/Title/book.epub` tree keeps its shape. Clicking a folder header collapses or expands it — the icon is an open folder when expanded and a closed one when collapsed — and that state is persisted per folder, including subfolders (`mergeFolderTree` carries collapsed flags across rescans). A folder's count is every book below it, nested folders included. Books opened individually through Finder, the command line, or `File > Open` use standalone windows with the library sidebar hidden and do not become sidebar rows. Those windows also hide the `#toggle-left-sidebar` button — there is no library to toggle back in — and the tab bar reserves only the traffic-light space.
+The books sidebar lists folders that exist on disk. The **Add Book Folder** button in the sidebar header (`#btn-new-folder`) calls `window.epub.selectBookFolder()`, and the chosen directory becomes a sidebar folder listing the books main found inside it. Subfolders come back as nested nodes and render as nested, collapsible groups, so a `Author/Title/book.epub` tree keeps its shape. Clicking a folder header collapses or expands it — the icon is an open folder when expanded and a closed one when collapsed — and that state is persisted per folder, including subfolders (`mergeFolderTree` carries collapsed flags across rescans). Books opened individually through Finder, the command line, or `File > Open` use standalone windows with the library sidebar hidden and do not become sidebar rows. Those windows also hide the `#toggle-left-sidebar` button — there is no library to toggle back in — and the tab bar reserves only the traffic-light space.
 
 Right-clicking opens a native menu built by main (`show-sidebar-menu`): a folder offers **Show in Finder**, **Expand All** / **Collapse All** (which apply to its whole subtree via `setFolderTreeCollapsed`), and **Remove**; a book row offers **Show in Finder** and a checked **Mark as Finished** option. Main reveals the path itself via `shell.showItemInFolder` and returns the chosen action. The renderer handles folder removal and collapse changes plus the book's finished toggle. Removing a folder unlists it and every row beneath it — nothing is deleted from disk. That menu is the only way to remove a folder; folder headers carry no button but the collapse toggle. Neither book rows nor folder headers have a hover tooltip: the row already shows its name.
 
@@ -60,7 +60,7 @@ Pinned and finished states are stored in the same `gull-open-books` records. Pin
 
 | Concern | Key functions |
 |---|---|
-| Tabs | `openBook`, `closeBook`, `setActiveBook`, `pinBook`, `renderTabs` |
+| Tabs | `openBook`, `closeBook`, `setActiveBook`, `pinBook`, `renderTabs`, `renderActiveBookTitle` |
 | Folders | `addFolderFromDisk`, `refreshFolders`, `applyFolderScan`, `removeFolderFromSidebar`, `toggleFolder`, `setFolderTreeCollapsed`, `forgetBooks`, `createSection`, `showSidebarMenu`, `showSortMenu`, `initSidebarFolders` |
 | Chapter render | `renderContent`, `stripEpubFonts`, `bindImageFallback` |
 | TOC | `renderOutline`, `initOutlineScrollTracking`, `setActiveOutlineItem`, `scrollToHref`, `findChapterByHref` |
@@ -75,6 +75,10 @@ Pinned and finished states are stored in the same `gull-open-books` records. Pin
 | Bootstrap | `initApp` (bottom of file) |
 
 Book tabs, folder headers, TOC entries, search results, highlights, sidebar tabs, and resize separators are keyboard accessible. Vertical book tabs use Up/Down, sidebar panels use Left/Right, and resize separators use arrow keys (Shift for larger steps).
+
+## Top bar
+
+The bar above the content (`#tab-bar`) centers the active book's title in `#active-book-title`, inside the draggable region between the sidebar toggles. `renderActiveBookTitle` fills it from `state.openBooks` on every `renderContent`, and again when EPUB metadata replaces a book's title mid-render; it is empty when no book is open. Standalone windows show it too.
 
 ## Rendering model
 

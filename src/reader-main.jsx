@@ -144,7 +144,9 @@ function ReaderApp() {
               <path d="M15 4v16" />
             </svg>
           </button>
-          <div className="tab-bar-drag" />
+          <div className="tab-bar-drag">
+            <div id="active-book-title" className="tab-bar-title" />
+          </div>
           <button id="btn-update" className="update-pill" hidden title="Install update and restart" aria-label="Install update and restart">
             <RefreshCw aria-hidden="true" />
             <span>Update</span>

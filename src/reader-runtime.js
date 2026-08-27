@@ -39,6 +39,7 @@ const getAppLayout = () => document.getElementById('app-layout') || appLayout;
 const tabBar = document.getElementById('tab-bar-tabs');
 const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
+const activeBookTitle = document.getElementById('active-book-title');
 const sidebarTabToc = document.getElementById('sidebar-tab-toc');
 const sidebarTabSearch = document.getElementById('sidebar-tab-search');
 const sidebarTabHighlights = document.getElementById('sidebar-tab-highlights');
@@ -271,7 +272,6 @@ function createSectionHeader(section) {
       aria-expanded="${!section.collapsed}">
       ${section.collapsed ? FOLDER_ICON_CLOSED : FOLDER_ICON_OPEN}
       <span class="tab-section-title">${safeTitle}</span>
-      <span class="tab-section-count">${section.bookCount ?? section.books.length}</span>
     </button>
   `;
   return header;
@@ -813,8 +813,15 @@ function scrollToHref(href, chapters, fallbackChapterId = null) {
   return scrolled;
 }
 
+/** The top bar names the book being read; empty when no book is open. */
+function renderActiveBookTitle() {
+  const book = state.openBooks.find(b => b.filePath === state.activeBookPath);
+  activeBookTitle.textContent = book?.title || '';
+}
+
 async function renderContent() {
   contentArea.querySelectorAll('.book-content').forEach(el => el.remove());
+  renderActiveBookTitle();
   const isStartupRender = getAppLayout()?.classList.contains('app-starting');
 
   if (state.activeBookPath) {
@@ -844,6 +851,7 @@ async function renderContent() {
       if (data.title && book.title !== data.title) {
         book.title = data.title;
         if (isStandaloneReader) document.title = `${data.title} — Gull`;
+        renderActiveBookTitle();
         needsTabsRefresh = true;
       }
       if (needsTabsRefresh) {

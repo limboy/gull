@@ -229,15 +229,7 @@ function buildFolderSection(folder, booksByFolder, sort, depth) {
     // Rows and subfolders share one ordering, so "folders first" can hoist the
     // subfolders out of it the way Finder does.
     items: sortEntries(entries, sort),
-    bookCount: countBooks(folder, booksByFolder),
   };
-}
-
-function countBooks(folder, booksByFolder) {
-  return (booksByFolder.get(folder.path) || []).length
-    + (folder.folders || []).reduce(
-      (total, child) => total + countBooks(child, booksByFolder), 0
-    );
 }
 
 /**

@@ -115,7 +115,7 @@ test('sidebar sections list pinned books above every folder', async () => {
   assert.deepEqual(unfiledBooks.map(book => book.title), ['E']);
 });
 
-test('subfolders nest inside their parent and count toward its total', async () => {
+test('subfolders nest inside their parent', async () => {
   const { buildSidebarSections } = await import('../src/lib/book-order.mjs');
   const folders = [{
     path: '/library', name: 'library', folders: [
@@ -130,7 +130,6 @@ test('subfolders nest inside their parent and count toward its total', async () 
   const { sections } = buildSidebarSections(books, folders);
   const [root] = sections;
 
-  assert.equal(root.bookCount, 2); // includes books nested below
   assert.deepEqual(root.items.map(item => item.type), ['folder', 'book']);
   const nested = root.items[0].section;
   assert.equal(nested.title, 'authors');
