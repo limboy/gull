@@ -10,7 +10,7 @@ title: "Styling & Theming"
 ## Source layout
 
 - `styles/main.css` — base variables, typography defaults, theme tokens
-- `styles/main-area.css` — content area, chapter rendering
+- `styles/main-area.css` — books sidebar (folders, book rows, context menu), content area, chapter rendering
 - `styles/sidebar-right.css` — TOC / search / highlights panel
 - `styles/resize.css` — resize handles
 - `src/reader/App.css` — imports all of the above (single entry)

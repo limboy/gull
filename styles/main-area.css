@@ -6,36 +6,42 @@
     position: relative;
 }
 
-.file-drop-overlay {
-    position: fixed;
-    inset: 8px;
-    background: color-mix(in srgb, var(--accent) 8%, var(--bg-main));
-    border: 2px dashed var(--accent);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    transform: scale(0.96);
-    transition: opacity 150ms ease, transform 150ms ease;
-    z-index: 1000;
-}
-
-#app-layout.drag-active .file-drop-overlay {
-    opacity: 1;
-    transform: scale(1);
-}
-
 .left-sidebar-header {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
     height: 38px;
     padding: 0 8px;
     border-bottom: 1px solid var(--border);
     -webkit-app-region: drag;
+}
+
+#btn-sort-books,
+#btn-new-folder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: default;
+    -webkit-app-region: no-drag;
+}
+
+#btn-sort-books:hover,
+#btn-new-folder:hover {
+    background: var(--hover);
+    color: var(--text-primary);
+}
+
+#btn-sort-books svg,
+#btn-new-folder svg {
+    width: 16px;
+    height: 16px;
 }
 
 #main-area {
@@ -82,7 +88,7 @@
     align-items: stretch;
     flex: 1;
     overflow-y: auto;
-    gap: 2px;
+    gap: 12px;
     padding: 8px;
     min-width: 0;
 }
@@ -96,17 +102,110 @@
 }
 
 .tab-section + .tab-section {
-    margin-top: 8px;
+    margin-top: 2px;
+}
+
+
+.tab-section-header {
+    display: flex;
+    align-items: center;
+    min-width: 0;
 }
 
 .tab-section-title {
     padding: 4px 8px 2px;
     color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     line-height: 18px;
     user-select: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
+.tab-section-toggle {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    padding: 1px 4px 1px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: default;
+    -webkit-app-region: no-drag;
+}
+
+.tab-section-toggle:hover {
+    background: var(--hover);
+}
+
+.tab-section-toggle .tab-section-title {
+    flex: 1;
+    padding-left: 2px;
+}
+
+.tab-section-folder-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    margin-right: 7px;
+    fill: none;
+    stroke: var(--text-secondary);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tab-section-count {
+    padding-right: 6px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+    user-select: none;
+}
+
+.tab-section-books {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tab-section-books[hidden] {
+    display: none;
+}
+
+/* Indent grouped rows so a loose book below a folder reads as outside it. */
+.tab-section-books .tab-item {
+    padding-left: 16px;
+}
+
+.tab-section .tab-section {
+    margin-left: 8px;
+}
+
+.tab-section .tab-section + .tab-item {
+    margin-top: 0;
+}
+
+.tab-section + .tab-item {
+    margin-top: 8px;
+}
+
+.tab-section-empty {
+    padding: 6px 8px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    opacity: 0.6;
+    user-select: none;
+}
+
 
 .tab-item {
     display: flex;
@@ -117,7 +216,7 @@
     color: var(--text-primary);
     cursor: default;
     white-space: nowrap;
-    opacity: 0.8;
+    /*opacity: 0.8;*/
     transition:
         background 120ms,
         color 120ms,
@@ -139,19 +238,19 @@
 }
 
 .tab-item:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--hover);
     opacity: 1;
 }
 
 .tab-item.active {
     color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.14);
+    background: var(--hover);
     opacity: 1;
 }
 
-[data-theme="light"] .tab-item:hover {
+/*[data-theme="light"] .tab-item:hover {
     background: #e8e8ec;
-}
+}*/
 
 [data-theme="light"] .tab-item.active {
     background: #e2e2e6;
@@ -199,28 +298,26 @@
     font-size: 13px;
 }
 
-.tab-cover {
-    width: 20px;
-    height: 24px;
-    object-fit: cover;
-    border-radius: 2px;
-    margin-right: 8px;
-    flex-shrink: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    background: var(--border);
-}
-
-.tab-cover-placeholder {
+.tab-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--border);
+    width: 15px;
+    height: 20px;
+    margin-right: 7px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
 }
 
-.tab-cover-placeholder-icon {
-    width: 14px;
-    height: 14px;
-    fill: var(--text-secondary);
+.tab-icon svg {
+    width: 15px;
+    height: 15px;
+    /*fill: currentColor;*/
+    /*opacity: 0.75;*/
+}
+
+.tab-item.active .tab-icon {
+    color: var(--text-primary);
 }
 
 .tab-item:hover .tab-pin,

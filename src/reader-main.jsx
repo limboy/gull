@@ -95,7 +95,24 @@ function ReaderApp() {
   return (
     <div id="app-layout" className={layoutClasses}>
       <aside id="left-sidebar">
-        <div className="left-sidebar-header" aria-hidden="true" />
+        <div className="left-sidebar-header">
+          <button id="btn-sort-books" type="button" title="Sort Books" aria-label="Sort Books" aria-haspopup="menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3 16 4 4 4-4" />
+              <path d="M7 20V4" />
+              <path d="M11 4h10" />
+              <path d="M11 8h7" />
+              <path d="M11 12h4" />
+            </svg>
+          </button>
+          <button id="btn-new-folder" type="button" title="Add Book Folder" aria-label="Add Book Folder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2z" />
+              <path d="M12 11v6" />
+              <path d="M9 14h6" />
+            </svg>
+          </button>
+        </div>
         <div id="tab-bar-tabs" role="tablist" aria-label="Open books" aria-orientation="vertical" />
         <div className="left-sidebar-footer">
           <SettingsMenu />
@@ -155,8 +172,8 @@ function ReaderApp() {
                   <path d="M4 3h13l3 3v15H4z" />
                   <path d="M17 3v3h3" />
                 </svg>
-                <div>Drop an e-book file here or use File &gt; Open</div>
-                <div className="empty-hint">Supports drag-and-drop and Finder open-in actions.</div>
+                <div>Add a book folder from the sidebar or use File &gt; Open</div>
+                <div className="empty-hint">Folders list the books they hold on disk.</div>
               </div>
             </div>
             {isRestoringSavedBook && <div className="book-content active">Loading…</div>}
@@ -238,10 +255,6 @@ function ReaderApp() {
       </button>
 
       <div id="footnote-popover" className="footnote-popover" hidden />
-
-      <div className="file-drop-overlay" aria-hidden="true">
-        <span>Drop book to open</span>
-      </div>
     </div>
   );
 }

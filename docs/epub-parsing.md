@@ -7,7 +7,7 @@ read_when:
 title: "EPUB Parsing & Content Normalization"
 ---
 
-EPUB parsing lives in `lib/epub-parser.js` and runs through `lib/epub-parser-worker.js`, keeping ZIP/XHTML work off the Electron main thread. The renderer never touches the zip; it receives a self-contained payload with inlined images, sanitized markup, and filtered CSS. Main separately creates the small cover thumbnail.
+EPUB parsing lives in `lib/epub-parser.js` and runs through `lib/epub-parser-worker.js`, keeping ZIP/XHTML work off the Electron main thread. The renderer never touches the zip; it receives a self-contained payload with inlined images, sanitized markup, and filtered CSS.
 
 ## Pipeline
 
@@ -56,7 +56,6 @@ Cheerio's `xmlMode` preserves self-closing tags like `<div/>`. When such markup 
   identifier: string, // publication identifier when present
   chapters: [{ id, href, html, css }],  // spine order
   toc:      [{ title, href, children }], // nested
-  cover:    string // optional base64 JPEG data URI thumbnail
 }
 ```
 

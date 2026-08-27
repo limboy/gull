@@ -9,12 +9,12 @@ Gull is a lightweight desktop reader for DRM-free EPUB and Kindle/Mobipocket boo
 ## Highlights
 
 - **Read common e-book formats** — EPUB, MOBI, AZW3, AZW, and PRC.
-- **Keep multiple books open** — switch between books from the left sidebar, complete with cover thumbnails. Gull restores open books and reading positions when it restarts.
+- **Keep multiple books open** — switch between books from the left sidebar, organized into folders you add from disk. Gull restores open books and reading positions when it restarts.
 - **Navigate long books easily** — use the table of contents or Gull's segmented chapter scrollbar, which maps the structure of the whole book. A standard native scrollbar is also available.
 - **Search and highlight** — search the current book, jump directly to matches, and keep persistent text highlights in a dedicated sidebar.
 - **Tune the page to your taste** — choose from five font families, four text sizes, three line-height settings, and three paragraph-spacing settings.
 - **Choose your layout** — use light, dark, or system appearance; resize or collapse both sidebars; and switch to a full-width reading view.
-- **Work naturally on macOS** — open books from Finder or `File > Open`, drag them into the books sidebar, and receive app updates in place.
+- **Work naturally on macOS** — add a folder of books to the sidebar, open books from Finder or `File > Open`, and receive app updates in place.
 - **Preserve book details** — Gull keeps images, internal chapter links, drop caps, and supported EPUB footnotes while normalizing styles that would override your reading preferences.
 
 ## Requirements
@@ -29,7 +29,7 @@ Gull does not remove or bypass DRM.
 
 Download the latest `.dmg` or `.zip` from [GitHub Releases](https://github.com/limboy/gull/releases/latest). The `.dmg` is the simplest option: open it and move Gull to Applications.
 
-Once installed, open books with `Command-O`, use Finder's **Open With** action, or drag files into Gull's left sidebar.
+Once installed, add a folder of books with the sidebar's **Add Book Folder** button, open books with `Command-O`, or use Finder's **Open With** action.
 
 ## Development
 

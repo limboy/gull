@@ -11,10 +11,10 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 
 ## Processes
 
-- **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, cover thumbnails, and auto-update.
+- **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, book-folder scanning, native sidebar menus, and auto-update.
 - **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB parsing away from the Electron main thread.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
-  - `window.epub` — `parse`, `getCover`, `getFilePath`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `openExternal`
+  - `window.epub` — `parse`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `showSidebarMenu`, `showSortMenu`, `openExternal`
   - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onThemeChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
@@ -24,9 +24,12 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 | Channel | Dir | Purpose |
 |---|---|---|
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
-| `get-book-cover` | R→M (invoke) | Read and resize a cover thumbnail for a validated book path |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
 | `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
+| `select-book-folder` | R→M (invoke) | Show a folder picker, then return `{path, name, books}` for the chosen directory (`null` if canceled) |
+| `scan-book-folder` | R→M (invoke) | Re-read a folder the sidebar already lists; `null` when it is gone or unmounted |
+| `show-sort-menu` | R→M (invoke) | Pop the sidebar's native sort menu (Name / Date Created, Ascending / Descending, Folders First) and return the updated settings, or `null` if dismissed |
+| `show-sidebar-menu` | R→M (invoke) | Pop the native right-click menu for a sidebar folder (Show in Finder / Expand All / Collapse All / Remove) or book row (Show in Finder); reveals the path itself and returns the chosen action |
 | `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
 | `open-external` | R→M (invoke) | Open a validated `http`, `https`, `mailto`, or `tel` URL after an explicit reader link click |
 | `apply-update` | R→M (invoke) | Calls `autoUpdater.quitAndInstall()` |
@@ -39,7 +42,11 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 
 ## File-open pipeline
 
-Files can arrive from: macOS `open-file` event, `second-instance` CLI args, first-launch CLI args, Finder double-click, or renderer drag-drop (which calls `parse` directly on a path obtained via `webUtils.getPathForFile`). Main buffers them in `pendingFiles` until the renderer sends `renderer-ready`, then drains the queue. This avoids the race where a file is requested before listeners are attached.
+Files can arrive from: macOS `open-file` event, `second-instance` CLI args, first-launch CLI args, or Finder double-click. Main buffers them in `pendingFiles` until the renderer sends `renderer-ready`, then drains the queue. This avoids the race where a file is requested before listeners are attached. Dropping files onto the window is not supported — books are added by picking a folder in the sidebar or through `File > Open`.
+
+## Book folders
+
+`select-book-folder` and `scan-book-folder` both answer with `readBookFolder`, which walks the directory into a tree: each node carries `path`, `name`, `createdAt`, its own `books` (`filePath`, `title`, `createdAt`), and its `folders`. `readFolderTree` descends `MAX_FOLDER_SCAN_DEPTH` (4) levels with a shared budget of `MAX_FOLDER_BOOKS` (500) files, so both flat folders and Calibre-style `Author/Title/book.epub` trees list correctly. Branches holding no books at any depth are pruned, dotfiles are skipped, and symlinks are ignored (readdir reports them as neither file nor directory), which also rules out symlink cycles. `createdAt` comes from `birthtimeMs`, falling back to `mtimeMs`, and is what the sidebar's *Date Created* sort orders by. Main only ever reports supported book extensions, and the renderer owns the list of folders — main keeps no library state.
 
 ## Single instance
 

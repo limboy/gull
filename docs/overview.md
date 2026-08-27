@@ -21,7 +21,7 @@ Gull is a minimalist, macOS-first EPUB reader built on Electron. It requires **m
 ## Top-level layout
 
 ```
-main.js              Electron main process: windows, validated IPC, settings, covers, auto-update
+main.js              Electron main process: windows, validated IPC, settings, book folders, auto-update
 preload.js           contextBridge exposing `window.epub`, `window.settings`, `window.updater`
 lib/                 Publication sanitizing plus the EPUB parser and its worker entry
 src/
@@ -36,7 +36,8 @@ build/               Mac entitlements
 
 ## Key flows to know
 
-- File open: Finder / drag-drop / CLI → `main.js` `openFileInApp` → IPC `open-file` → renderer opens a tab.
+- File open: Finder / CLI / `File > Open` → `main.js` `openFileInApp` → IPC `open-file` → renderer opens a tab.
+- Book folders: sidebar **Add Book Folder** → IPC `select-book-folder` → main walks the directory into a book tree → renderer renders it as nested, collapsible sidebar folders.
 - Chapter render: renderer calls `window.epub.parse(filePath)` → main validates the request → the EPUB worker returns `{title, chapters, toc}` with sanitized markup, inline base64 images, and filtered CSS.
 - Settings: `window.settings.get/set` persist to `<userData>/settings.json` and broadcast via `settings-changed`.
 

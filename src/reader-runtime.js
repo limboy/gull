@@ -1,10 +1,24 @@
 import { applyThemeMode, normalizeThemeMode } from './lib/theme.mjs';
 import { resolveHighlightOffsets, isOverlappingHighlight, mergeOverlappingHighlights } from './lib/highlight-anchor.mjs';
-import { groupPinnedBooks, toggleBookPin } from './lib/book-order.mjs';
+import {
+  groupPinnedBooks,
+  toggleBookPin,
+  normalizeFolders,
+  normalizeSort,
+  addFolder,
+  findFolder,
+  flattenScannedBooks,
+  syncFolderBooks,
+  removeFolder,
+  buildSidebarSections,
+  DEFAULT_SORT,
+} from './lib/book-order.mjs';
 
 
 const state = {
-  openBooks: [],       // [{ filePath, title, pinned, position: { scrollTop, progress } }]
+  openBooks: [],       // [{ filePath, title, pinned, folderPath, position: { scrollTop, progress } }]
+  folders: [],         // [{ path, name, createdAt, collapsed, folders }] — disk folder trees
+  sort: { ...DEFAULT_SORT }, // sidebar ordering: key, direction, foldersFirst
   offlineBooks: [],    // transient missing books kept across sessions
   activeBookPath: null,
   bookContent: {},     // filePath -> { chapters, toc }
@@ -131,7 +145,6 @@ function openBook(filePath, title) {
   setActiveBook(filePath);
   renderTabs();
   saveReaderState();
-  fetchMissingCovers();
 }
 
 function closeBook(filePath) {
@@ -181,19 +194,25 @@ function createBookTab(book) {
   const isPinned = book.pinned === true;
   tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
   tab.setAttribute('role', 'presentation');
+  tab.dataset.bookItem = book.filePath;
   const safeTitle = escapeHtml(book.title);
   const safePath = escapeHtml(book.filePath);
   const isActive = book.filePath === state.activeBookPath;
-  const coverHtml = book.cover
-    ? `<img class="tab-cover" src="${book.cover}" alt="" />`
-    : `<div class="tab-cover tab-cover-placeholder">
-         <svg viewBox="0 0 24 24" class="tab-cover-placeholder-icon"><path d="M19 2H6c-1.2 0-2 .9-2 2v16c0 1.1.8 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H6V4h12v16z"/></svg>
-       </div>`;
+
+  // A folder row mirrors a file on disk, so it has nothing to close — the
+  // folder itself is what gets removed. Only ad-hoc opened books close.
+  const closeHtml = book.folderPath ? '' : `
+    <button type="button" class="tab-close" data-close-book="${safePath}"
+      aria-label="Close ${safeTitle}" title="Close ${safeTitle}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>`;
   tab.innerHTML = `
     <button type="button" class="tab-activate" role="tab"
       aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
-      data-book-path="${safePath}" title="${safeTitle}">
-      ${coverHtml}
+      data-book-path="${safePath}">
+      <span class="tab-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>
+      </span>
       <span class="tab-label">${safeTitle}</span>
     </button>
     <button type="button" class="tab-pin" data-pin-book="${safePath}"
@@ -204,45 +223,217 @@ function createBookTab(book) {
         <path d="M12 14v7"/>
       </svg>
     </button>
-    <button type="button" class="tab-close" data-close-book="${safePath}"
-      aria-label="Close ${safeTitle}" title="Close ${safeTitle}">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-    </button>
+    ${closeHtml}
   `;
   return tab;
 }
 
-function appendBookSection(title, books) {
-  if (books.length === 0) return;
+const FOLDER_ICON_CLOSED = `
+  <svg class="tab-section-folder-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+  </svg>`;
+const FOLDER_ICON_OPEN = `
+  <svg class="tab-section-folder-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>
+  </svg>`;
 
-  const section = document.createElement('div');
-  const titleId = `tab-section-${title.toLowerCase()}-title`;
-  section.className = 'tab-section';
-  section.setAttribute('role', 'group');
-  section.setAttribute('aria-labelledby', titleId);
-  section.innerHTML = `
-    <div id="${titleId}" class="tab-section-title" role="heading" aria-level="2">
-      ${title}
-    </div>
+function createSectionHeader(section) {
+  const header = document.createElement('div');
+  header.className = 'tab-section-header';
+  const safeId = escapeHtml(section.id);
+  const safeTitle = escapeHtml(section.title);
+
+  // Pinned books are not a folder: the group is a plain, always-visible heading.
+  if (section.kind === 'pinned') {
+    header.innerHTML = `
+      <div class="tab-section-title" role="heading" aria-level="2">${safeTitle}</div>
+    `;
+    return header;
+  }
+
+  header.innerHTML = `
+    <button type="button" class="tab-section-toggle" data-toggle-section="${safeId}"
+      aria-expanded="${!section.collapsed}">
+      ${section.collapsed ? FOLDER_ICON_CLOSED : FOLDER_ICON_OPEN}
+      <span class="tab-section-title">${safeTitle}</span>
+      <span class="tab-section-count">${section.bookCount ?? section.books.length}</span>
+    </button>
   `;
-  books.forEach(book => section.appendChild(createBookTab(book)));
-  tabBar.appendChild(section);
+  return header;
+}
+
+function createSection(section) {
+  const element = document.createElement('div');
+  element.className = 'tab-section' + (section.collapsed ? ' collapsed' : '');
+  element.setAttribute('role', 'group');
+  element.setAttribute('aria-label', section.title);
+  element.dataset.sectionKind = section.kind;
+  if (section.kind === 'folder') element.dataset.folderPath = section.id;
+  element.appendChild(createSectionHeader(section));
+
+  const list = document.createElement('div');
+  list.className = 'tab-section-books';
+  list.hidden = section.collapsed;
+  if (!section.collapsed) {
+    // Pinned keeps a plain book list; folders interleave rows and subfolders.
+    const items = section.items
+      || section.books.map(book => ({ type: 'book', book }));
+    items.forEach(item => list.appendChild(
+      item.type === 'folder' ? createSection(item.section) : createBookTab(item.book)
+    ));
+    if (items.length === 0) {
+      const hint = document.createElement('div');
+      hint.className = 'tab-section-empty';
+      hint.textContent = 'No books in this folder';
+      list.appendChild(hint);
+    }
+  }
+  element.appendChild(list);
+  return element;
 }
 
 function renderTabs() {
   tabBar.innerHTML = '';
-  const pinnedBooks = state.openBooks.filter(book => book.pinned === true);
-
-  if (pinnedBooks.length === 0) {
-    state.openBooks.forEach(book => tabBar.appendChild(createBookTab(book)));
-    return;
-  }
-
-  appendBookSection('Pinned', pinnedBooks);
-  appendBookSection(
-    'Books',
-    state.openBooks.filter(book => book.pinned !== true)
+  const { sections, unfiledBooks } = buildSidebarSections(
+    state.openBooks, state.folders, state.sort
   );
+
+  sections.forEach(section => tabBar.appendChild(createSection(section)));
+  // Books opened from Finder or File > Open sit loose under the folders.
+  unfiledBooks.forEach(book => tabBar.appendChild(createBookTab(book)));
+}
+
+// --- Sidebar Folders ---
+function setFolderTreeCollapsed(folderPath, collapsed) {
+  const folder = findFolder(state.folders, folderPath);
+  if (!folder) return;
+
+  const apply = (node) => {
+    node.collapsed = collapsed;
+    (node.folders || []).forEach(apply);
+  };
+  apply(folder);
+  renderTabs();
+  saveReaderState();
+}
+
+function toggleFolder(folderPath) {
+  const folder = findFolder(state.folders, folderPath);
+  if (!folder) return;
+
+  folder.collapsed = folder.collapsed !== true;
+  renderTabs();
+  saveReaderState();
+}
+
+/** Forget books that a folder no longer lists. Returns true if the active book went away. */
+function forgetBooks(filePaths) {
+  if (filePaths.length === 0) return false;
+
+  for (const filePath of filePaths) {
+    delete state.bookContent[filePath];
+    delete state.bookSearchIndex[filePath];
+  }
+  if (!filePaths.includes(state.activeBookPath)) return false;
+
+  state.activeBookPath = state.openBooks[0]?.filePath || null;
+  return true;
+}
+
+/** Apply one folder tree from disk. Returns true if the active book went away. */
+function applyFolderScan(scan) {
+  addFolder(state.folders, scan);
+  return forgetBooks(
+    syncFolderBooks(state.openBooks, scan.path, flattenScannedBooks(scan))
+  );
+}
+
+async function addFolderFromDisk() {
+  const scan = await window.epub.selectBookFolder();
+  if (!scan) return;
+
+  const activeLost = applyFolderScan(scan);
+  renderTabs();
+  if (activeLost) await renderContent();
+  saveReaderState();
+}
+
+/** Re-read every folder so the sidebar reflects what is on disk right now. */
+async function refreshFolders() {
+  if (state.folders.length === 0) return;
+
+  let activeLost = false;
+  for (const folder of [...state.folders]) {
+    // A null scan means the folder is gone or its drive is unmounted; keep the
+    // saved listing rather than emptying the sidebar over a transient miss.
+    const scan = await window.epub.scanBookFolder(folder.path);
+    if (scan && applyFolderScan(scan)) activeLost = true;
+  }
+  // Root folders are shown in the order they were added; only their contents sort.
+
+  renderTabs();
+  if (activeLost) await renderContent();
+  saveReaderState();
+}
+
+function removeFolderFromSidebar(folderPath) {
+  const activeLost = forgetBooks(removeFolder(state.folders, state.openBooks, folderPath));
+  renderTabs();
+  if (activeLost) renderContent();
+  saveReaderState();
+}
+
+async function showSortMenu(anchor) {
+  try {
+    const chosen = await window.epub.showSortMenu({ ...state.sort, anchor });
+    if (!chosen) return;
+    state.sort = normalizeSort(chosen);
+    renderTabs();
+    saveReaderState();
+  } catch (err) {
+    console.warn('Sort menu failed', err);
+  }
+}
+
+async function showSidebarMenu(type, targetPath) {
+  try {
+    const action = await window.epub.showSidebarMenu({ type, path: targetPath });
+    if (type !== 'folder') return;
+    if (action === 'remove') removeFolderFromSidebar(targetPath);
+    else if (action === 'expand') setFolderTreeCollapsed(targetPath, false);
+    else if (action === 'collapse') setFolderTreeCollapsed(targetPath, true);
+  } catch (err) {
+    console.warn('Sidebar menu failed for ' + targetPath, err);
+  }
+}
+
+function initSidebarFolders() {
+  document.getElementById('btn-new-folder')?.addEventListener('click', () => {
+    addFolderFromDisk();
+  });
+
+  document.getElementById('btn-sort-books')?.addEventListener('click', (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    showSortMenu({ x: rect.left, y: rect.bottom + 2 });
+  });
+
+  tabBar.addEventListener('click', (e) => {
+    const toggle = e.target.closest('[data-toggle-section]');
+    if (toggle) toggleFolder(toggle.dataset.toggleSection);
+  });
+
+  tabBar.addEventListener('contextmenu', (e) => {
+    const bookRow = e.target.closest('[data-book-item]');
+    const folder = e.target.closest('[data-folder-path]');
+    if (!bookRow && !folder) return;
+
+    e.preventDefault();
+    if (bookRow) {
+      showSidebarMenu('book', bookRow.dataset.bookItem);
+    } else {
+      showSidebarMenu('folder', folder.dataset.folderPath);
+    }
+  });
 }
 
 function setSidebarMode(mode) {
@@ -628,10 +819,6 @@ async function renderContent() {
         book.title = data.title;
         needsTabsRefresh = true;
       }
-      if (data.cover && book.cover !== data.cover) {
-        book.cover = data.cover;
-        needsTabsRefresh = true;
-      }
       if (needsTabsRefresh) {
         renderTabs();
         saveReaderState();
@@ -725,7 +912,7 @@ async function renderContent() {
               contentArea.scrollTop = book.position.scrollTop;
             }
           }
-          
+
           div.style.opacity = '1';
           if (isStartupRender) finishAppStartup();
           refreshContentSearchHighlights();
@@ -1334,18 +1521,18 @@ function initChapterScrollbar(chapters, toc) {
       updating = false;
       const scrollTop = contentArea.scrollTop;
       const viewportH = contentArea.clientHeight;
-      
+
       let gap = 3;
       if (segments.length * 6 + segments.length * gap > bar.clientHeight) gap = 1;
       if (segments.length * 3 + segments.length * gap > bar.clientHeight) gap = 0;
       bar.style.gap = gap + 'px';
-      
+
       const barH = bar.clientHeight - (segments.length - 1) * gap;
-  
+
       if (!cachedMeasures) cachedMeasures = computeMeasures();
       const measures = cachedMeasures;
       if (measures.length === 0) return;
-  
+
       const totalH = measures.reduce((sum, m) => sum + m.height, 0);
 
       // First pass: compute proportional heights and identify segments
@@ -1376,14 +1563,14 @@ function initChapterScrollbar(chapters, toc) {
         const m = measures[i];
         const segH = rawHeights[i];
         m.seg.style.height = segH + 'px';
-  
+
         let fillRatio = 0;
         if (viewportEnd >= m.top + m.height) {
           fillRatio = 1;
         } else if (viewportEnd > m.top) {
           fillRatio = (viewportEnd - m.top) / m.height;
         }
-  
+
         fillRatio = Math.max(0, Math.min(1, fillRatio));
         // Use pixel height instead of percentage to avoid sub-pixel
         // rounding artifacts when the segment is very small.
@@ -1519,10 +1706,10 @@ function initOutlineScrollTracking(chapters) {
       if (!cachedTargets) cachedTargets = buildTocTargets();
       const targets = cachedTargets;
       if (targets.length === 0) return;
-  
+
       const scrollTop = contentArea.scrollTop;
       const offset = 60;
-  
+
       let active = targets[0].el;
       for (const { el, target } of targets) {
         if (target.offsetTop <= scrollTop + offset) {
@@ -1629,7 +1816,7 @@ function setupHandle(handleId, cssVar, side) {
     const chapters = Array.from(contentArea.querySelectorAll('section.gull-chapter'));
     let targetCh = null;
     let targetRatio = 0;
-    
+
     for (const ch of chapters) {
       if (ch.offsetTop + ch.offsetHeight > scrollTop) {
         targetCh = ch;
@@ -1647,11 +1834,11 @@ function setupHandle(handleId, cssVar, side) {
       const maxWidth = 500;
       const newWidth = Math.max(250, Math.min(maxWidth, startWidth + delta));
       applyWidth(newWidth);
-      
+
       if (targetCh) {
         contentArea.scrollTop = targetCh.offsetTop + (targetCh.offsetHeight * targetRatio);
       }
-      
+
     };
 
     const onMouseMove = (e) => {
@@ -1720,39 +1907,65 @@ function saveReaderState() {
   if (!isStateLoaded) return;
   const data = {
     openBooks: [
-      ...state.openBooks.map(b => ({
-        filePath: b.filePath,
-        title: b.title,
-        position: b.position,
-        cover: b.cover,
-        pinned: b.pinned === true
+      ...state.openBooks.map(book => ({
+        filePath: book.filePath,
+        title: book.title,
+        position: book.position,
+        pinned: book.pinned === true,
+        folderPath: book.folderPath || null,
+        createdAt: book.createdAt || 0
       })),
       ...state.offlineBooks
     ],
+    folders: state.folders,
+    sort: state.sort,
     activeBookPath: state.activeBookPath
   };
-  localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(data));
+
+  try {
+    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to save reader state', e);
+  }
 }
 
 async function loadReaderState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKS));
-    if (!saved || !saved.openBooks || saved.openBooks.length === 0) {
+    if (!saved) {
       isStateLoaded = true;
       return;
     }
 
-    // Verify file existence
-    const pathsToCheck = saved.openBooks.map(b => b.filePath);
+    // Folders outlive their books: restore them even when no book is left.
+    state.folders = normalizeFolders(saved.folders);
+    state.sort = normalizeSort(saved.sort);
+
+    if (!saved.openBooks || saved.openBooks.length === 0) {
+      isStateLoaded = true;
+      renderTabs();
+      return;
+    }
+
+    // Folder rows are reconciled against the disk by `refreshFolders`, so only
+    // ad-hoc opened books need the per-file existence check (which is capped).
+    const knownFolderPaths = new Set(state.folders.map(folder => folder.path));
+    const isFolderBook = (book) => !!book.folderPath && knownFolderPaths.has(book.folderPath);
+
+    const pathsToCheck = saved.openBooks.filter(b => !isFolderBook(b)).map(b => b.filePath);
     const existenceResults = await window.epub.checkPathsExistence(pathsToCheck);
     const existingFilePaths = new Set(
       existenceResults.filter(r => r.exists).map(r => r.path)
     );
 
-    const validSavedBooks = saved.openBooks.filter(b => existingFilePaths.has(b.filePath));
-    state.offlineBooks = saved.openBooks.filter(b => !existingFilePaths.has(b.filePath));
+    const validSavedBooks = saved.openBooks.filter(
+      b => isFolderBook(b) || existingFilePaths.has(b.filePath)
+    );
+    state.offlineBooks = saved.openBooks.filter(
+      b => !isFolderBook(b) && !existingFilePaths.has(b.filePath)
+    );
 
-    // Merge saved books into current state to avoid overwriting books 
+    // Merge saved books into current state to avoid overwriting books
     // that might have been opened via IPC before loadReaderState ran.
     const currentPaths = new Set(state.openBooks.map(b => b.filePath));
     for (const b of validSavedBooks) {
@@ -1779,34 +1992,9 @@ async function loadReaderState() {
     if (state.activeBookPath) {
       setActiveBook(state.activeBookPath); // Persists all offline books via saveReaderState()
     }
-    fetchMissingCovers();
-  } catch (e) {
+    } catch (e) {
     console.warn('Failed to load reader state', e);
     isStateLoaded = true;
-  }
-}
-
-async function fetchMissingCovers() {
-  let changed = false;
-  // Clone to avoid concurrent modification issues if user acts while loop runs
-  const booksToCheck = [...state.openBooks];
-  for (const book of booksToCheck) {
-    if (!book.cover) {
-      try {
-        const cover = await window.epub.getCover(book.filePath);
-        const stillOpen = state.openBooks.find(b => b.filePath === book.filePath);
-        if (stillOpen && cover) {
-          stillOpen.cover = cover;
-          changed = true;
-          renderTabs();
-        }
-      } catch (err) {
-        console.warn('Failed to fetch cover in background for ' + book.filePath, err);
-      }
-    }
-  }
-  if (changed) {
-    saveReaderState();
   }
 }
 
@@ -1978,70 +2166,6 @@ searchPanel.addEventListener('click', (e) => {
   }
 });
 
-// --- Drag and Drop (on entire window) ---
-function initDragAndDrop() {
-  const layout = getAppLayout();
-  let dragCounter = 0;
-
-  const hasFiles = (dataTransfer) =>
-    Array.from(dataTransfer?.types || []).includes('Files');
-
-  const clearDragState = () => {
-    dragCounter = 0;
-    layout?.classList.remove('drag-active');
-  };
-
-  document.addEventListener('dragenter', (e) => {
-    if (!hasFiles(e.dataTransfer)) return;
-
-    e.preventDefault();
-    dragCounter++;
-    layout?.classList.add('drag-active');
-  });
-
-  document.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = hasFiles(e.dataTransfer) ? 'copy' : 'none';
-  });
-
-  document.addEventListener('dragleave', (e) => {
-    if (!hasFiles(e.dataTransfer)) return;
-
-    dragCounter = Math.max(0, dragCounter - 1);
-    const leftWindow = !e.relatedTarget || e.clientY <= 0 || e.clientX <= 0 ||
-      e.clientX >= window.innerWidth || e.clientY >= window.innerHeight;
-    if (leftWindow || dragCounter === 0) {
-      clearDragState();
-    }
-  });
-
-  document.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    const isFileDrop = hasFiles(e.dataTransfer);
-    clearDragState();
-    if (!isFileDrop) return;
-
-    const bookFiles = [];
-    for (const file of e.dataTransfer.files) {
-      const filePath = window.epub.getFilePath(file);
-      if (!filePath) continue;
-
-      const ext = filePath.split('.').pop().toLowerCase();
-      if (['epub', 'mobi', 'azw3', 'azw', 'prc'].includes(ext)) {
-        bookFiles.push(filePath);
-      }
-    }
-    if (bookFiles.length === 0) return;
-
-    for (const filePath of bookFiles) {
-      const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
-      if (!state.openBooks.find(b => b.filePath === filePath)) {
-        state.openBooks.push({ filePath, title });
-      }
-    }
-    setActiveBook(bookFiles[bookFiles.length - 1]);
-  });
-}
 
 // --- Broken image handling ---
 function initBrokenImageHandling() {
@@ -2203,8 +2327,7 @@ window.epub.onOpenFile((filePath) => {
     pendingOpenFiles = [];
     pendingOpenTimer = null;
     setActiveBook(lastFile);
-    fetchMissingCovers();
-  }, 50);
+    }, 50);
 });
 
 // --- Theme ---
@@ -2295,6 +2418,8 @@ function initSidebarScrollbars() {
   });
 }
 
+
+
 // Init
 async function initApp() {
   const settings = window.initialSettings || {};
@@ -2312,13 +2437,14 @@ async function initApp() {
   setFullWidth(settings.fullWidth === true);
   applyTheme(normalizeThemeMode(settings.theme || storedTheme));
 
-  initDragAndDrop();
+  initSidebarFolders();
   initBrokenImageHandling();
   initUpdatePill();
   initSidebarScrollbars();
 
   await ensureReadingFontsLoaded();
   await loadReaderState();
+  await refreshFolders();
 
   if (!state.activeBookPath) await renderContent();
 

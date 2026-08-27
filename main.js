@@ -17,6 +17,8 @@ app.setName('Gull');
 const SUPPORTED_EXTENSIONS = ['.epub', '.mobi', '.azw3', '.azw', '.prc'];
 const MAX_BOOK_FILE_SIZE = 512 * 1024 * 1024;
 const MAX_PATH_CHECKS = 500;
+const MAX_FOLDER_BOOKS = 500;
+const MAX_FOLDER_SCAN_DEPTH = 4;
 const RENDERER_SETTING_VALIDATORS = {
   theme: value => ['system', 'light', 'dark'].includes(value),
   chapterScrollbar: value => typeof value === 'boolean',
@@ -44,6 +46,84 @@ function validateBookPath(filePath) {
     throw new Error(`Book exceeds the ${MAX_BOOK_FILE_SIZE / 1024 / 1024} MB size limit`);
   }
   return filePath;
+}
+
+function validateFolderPath(folderPath) {
+  if (typeof folderPath !== 'string' || !folderPath || !path.isAbsolute(folderPath)) {
+    throw new Error('Invalid folder path');
+  }
+  if (!fs.statSync(folderPath).isDirectory()) {
+    throw new Error('Folder path is not a directory');
+  }
+  return folderPath;
+}
+
+/**
+ * Read the folder tree a sidebar folder should show.
+ *
+ * Book folders are organized in wildly different ways — a flat drop of EPUBs,
+ * or a Calibre-style `Author/Title/book.epub` tree — so subfolders are returned
+ * as nested nodes and the renderer decides how to display them. Branches with
+ * no books anywhere below them are pruned, dotfiles are skipped, and symlinks
+ * are ignored (readdir reports them as neither file nor directory), which also
+ * rules out symlink cycles.
+ */
+function readFolderTree(folderPath, depth, budget) {
+  const node = {
+    path: folderPath,
+    name: path.basename(folderPath) || folderPath,
+    createdAt: statCreatedAt(folderPath),
+    books: [],
+    folders: [],
+  };
+
+  let entries;
+  try {
+    entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  } catch (e) {
+    return node;
+  }
+
+  const subdirectories = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    const entryPath = path.join(folderPath, entry.name);
+    if (entry.isDirectory()) {
+      subdirectories.push(entryPath);
+    } else if (entry.isFile() && isSupportedFile(entry.name) && budget.remaining > 0) {
+      budget.remaining--;
+      node.books.push({
+        filePath: entryPath,
+        title: entry.name.replace(/\.[^.]+$/, ''),
+        createdAt: statCreatedAt(entryPath),
+      });
+    }
+  }
+
+  if (depth < MAX_FOLDER_SCAN_DEPTH) {
+    for (const subdirectory of subdirectories) {
+      if (budget.remaining <= 0) break;
+      const child = readFolderTree(subdirectory, depth + 1, budget);
+      // Prune branches that hold no books at any depth.
+      if (child.books.length > 0 || child.folders.length > 0) node.folders.push(child);
+    }
+  }
+
+  return node;
+}
+
+function statCreatedAt(targetPath) {
+  try {
+    const stat = fs.statSync(targetPath);
+    const created = stat.birthtimeMs || stat.mtimeMs;
+    return Number.isFinite(created) ? created : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function readBookFolder(folderPath) {
+  return readFolderTree(folderPath, 0, { remaining: MAX_FOLDER_BOOKS });
 }
 
 function isSafeExternalUrl(value) {
@@ -210,178 +290,6 @@ function broadcastToAllWindows(channel, ...args) {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send(channel, ...args);
   }
-}
-
-function getCoverThumbnail(zip, $opf, opfDir) {
-  // 1. Look for item with property "cover-image"
-  let coverItem = null;
-  $opf('manifest item').each((_, el) => {
-    const $el = $opf(el);
-    const props = $el.attr('properties') || '';
-    if (props.split(/\s+/).includes('cover-image')) {
-      coverItem = {
-        href: $el.attr('href'),
-        mediaType: $el.attr('media-type')
-      };
-    }
-  });
-
-  // 2. Fallback to <meta name="cover" content="..." />
-  if (!coverItem) {
-    const coverMeta = $opf('metadata meta[name="cover"]').attr('content');
-    if (coverMeta) {
-      const item = $opf(`manifest item[id="${coverMeta}"]`);
-      if (item.length) {
-        coverItem = {
-          href: item.attr('href'),
-          mediaType: item.attr('media-type')
-        };
-      }
-    }
-  }
-
-  // 3. Fallback: search manifest for items containing "cover" in their id or href
-  if (!coverItem) {
-    $opf('manifest item').each((_, el) => {
-      const $el = $opf(el);
-      const id = $el.attr('id') || '';
-      const href = $el.attr('href') || '';
-      const mediaType = $el.attr('media-type') || '';
-      if (mediaType.startsWith('image/')) {
-        if (id.toLowerCase().includes('cover') || href.toLowerCase().includes('cover')) {
-          coverItem = { href, mediaType };
-        }
-      }
-    });
-  }
-
-  if (coverItem) {
-    const imgPath = path.posix.normalize(opfDir + coverItem.href);
-    try {
-      const imgData = zip.readFile(imgPath);
-      if (imgData) {
-        const ext = path.extname(coverItem.href).toLowerCase().replace('.', '');
-        const mime = coverItem.mediaType || (ext === 'svg' ? 'image/svg+xml'
-          : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
-          : ext === 'png' ? 'image/png'
-          : ext === 'gif' ? 'image/gif'
-          : ext === 'webp' ? 'image/webp'
-          : 'image/png');
-
-        if (mime === 'image/svg+xml') {
-          const b64 = imgData.toString('base64');
-          return `data:${mime};base64,${b64}`;
-        }
-
-        try {
-          const img = nativeImage.createFromBuffer(imgData);
-          if (!img.isEmpty()) {
-            // Resize to height 60px to keep it extremely small for localStorage.
-            const resized = img.resize({ height: 60, quality: 'better' });
-            const jpegBuf = resized.toJPEG(80);
-            return `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
-          }
-        } catch (resizeErr) {
-          console.error('Failed to resize cover image', resizeErr);
-        }
-
-        const b64 = imgData.toString('base64');
-        return `data:${mime};base64,${b64}`;
-      }
-    } catch (e) {
-      console.error('Failed to read cover image', e);
-    }
-  }
-  return null;
-}
-
-async function getBookCover(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.epub') {
-    try {
-      const zip = new AdmZip(filePath);
-      const containerXml = zip.readAsText('META-INF/container.xml');
-      const $container = cheerio.load(containerXml, { xmlMode: true });
-      const opfPath = $container('rootfile').attr('full-path');
-      const opfDir = path.dirname(opfPath) === '.' ? '' : path.dirname(opfPath) + '/';
-
-      const opfXml = zip.readAsText(opfPath);
-      const $opf = cheerio.load(opfXml, { xmlMode: true });
-
-      return getCoverThumbnail(zip, $opf, opfDir);
-    } catch (e) {
-      console.error('Failed to get book cover', e);
-      return null;
-    }
-  } else if (['.mobi', '.azw3', '.azw', '.prc'].includes(ext)) {
-    const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-cover-'));
-    let book = null;
-    try {
-      const { initMobiFile, initKf8File } = await getMobiParser();
-      let isKf = false;
-      try {
-        const fd = fs.openSync(filePath, 'r');
-        const buf = Buffer.alloc(120);
-        fs.readSync(fd, buf, 0, 120, 0);
-        const off = buf.readUInt32BE(78);
-        const vBuf = Buffer.alloc(4);
-        fs.readSync(fd, vBuf, 0, 4, off + 20);
-        const version = vBuf.readUInt32BE(0);
-        fs.closeSync(fd);
-        isKf = version === 8 || version === 264 || version >= 8;
-      } catch (e) {
-        isKf = ext === '.azw3' || ext === '.azw';
-      }
-
-      if (isKf) {
-        try { book = await initKf8File(filePath, tempDir); }
-        catch { book = await initMobiFile(filePath, tempDir); }
-      } else {
-        try { book = await initMobiFile(filePath, tempDir); }
-        catch { book = await initKf8File(filePath, tempDir); }
-      }
-
-      const coverPath = getMobiCover(book, tempDir);
-      let coverDataUri = null;
-      if (coverPath && fs.existsSync(coverPath)) {
-        const coverData = fs.readFileSync(coverPath);
-        const mime = getMimeFromPath(coverPath);
-        
-        try {
-          const img = nativeImage.createFromBuffer(coverData);
-          if (!img.isEmpty()) {
-            const resized = img.resize({ height: 60, quality: 'better' });
-            const jpegBuf = resized.toJPEG(80);
-            coverDataUri = `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
-          }
-        } catch (resizeErr) {
-          console.error('Failed to resize MOBI cover image', resizeErr);
-        }
-        
-        if (!coverDataUri) {
-          coverDataUri = `data:${mime};base64,${coverData.toString('base64')}`;
-        }
-      }
-      return coverDataUri;
-    } catch (e) {
-      console.error('Failed to get MOBI book cover', e);
-      return null;
-    } finally {
-      if (book) {
-        try { book.destroy(); } catch {}
-      }
-      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-    }
-  }
-  return null;
-}
-
-let mobiParserModule = null;
-async function getMobiParser() {
-  if (!mobiParserModule) {
-    mobiParserModule = await import('@lingo-reader/mobi-parser');
-  }
-  return mobiParserModule;
 }
 
 function getMobiCover(book, tempDir) {
@@ -873,21 +781,12 @@ app.whenReady().then(() => {
     validateBookPath(filePath);
     const ext = path.extname(filePath).toLowerCase();
     if (ext === '.epub') {
-      const parsed = await parseEpubOffMainThread(filePath);
-      parsed.cover = await getBookCover(filePath);
-      return parsed;
+      return parseEpubOffMainThread(filePath);
     } else if (['.mobi', '.azw3', '.azw', '.prc'].includes(ext)) {
       return parseMobiOrAzw3(filePath);
     } else {
       throw new Error('Unsupported book format: ' + ext);
     }
-  });
-
-  // IPC: get a book's cover image by its path
-  ipcMain.handle('get-book-cover', (event, filePath) => {
-    assertTrustedIpc(event);
-    validateBookPath(filePath);
-    return getBookCover(filePath);
   });
 
   ipcMain.handle('open-external', async (event, url) => {
@@ -900,6 +799,108 @@ app.whenReady().then(() => {
     assertTrustedIpc(event);
     if (!app.isPackaged) return;
     autoUpdater.quitAndInstall();
+  });
+
+  // IPC: native right-click menu for a sidebar folder or book row
+  ipcMain.handle('show-sidebar-menu', async (event, payload) => {
+    assertTrustedIpc(event);
+    const targetPath = payload?.path;
+    const isFolder = payload?.type === 'folder';
+    if (typeof targetPath !== 'string' || !path.isAbsolute(targetPath)) {
+      throw new Error('Invalid sidebar menu target');
+    }
+    if (isFolder ? !fs.existsSync(targetPath) : !isSupportedFile(targetPath)) {
+      throw new Error('Invalid sidebar menu target');
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return new Promise((resolve) => {
+      let action = null;
+      const template = [
+        {
+          label: 'Show in Finder',
+          click: () => {
+            action = 'reveal';
+            shell.showItemInFolder(targetPath);
+          },
+        },
+      ];
+      if (isFolder) {
+        template.push(
+          { type: 'separator' },
+          { label: 'Expand All', click: () => { action = 'expand'; } },
+          { label: 'Collapse All', click: () => { action = 'collapse'; } },
+          { type: 'separator' },
+          { label: 'Remove', click: () => { action = 'remove'; } }
+        );
+      }
+
+      Menu.buildFromTemplate(template).popup({
+        window: win,
+        // The item's click handler runs just after the menu reports closing.
+        callback: () => setTimeout(() => resolve(action), 0),
+      });
+    });
+  });
+
+  // IPC: native menu for the sidebar's sort control
+  ipcMain.handle('show-sort-menu', async (event, current) => {
+    assertTrustedIpc(event);
+    const key = current?.key === 'created' ? 'created' : 'name';
+    const direction = current?.direction === 'desc' ? 'desc' : 'asc';
+    const foldersFirst = current?.foldersFirst !== false;
+    const chosen = { key, direction, foldersFirst };
+    let changed = false;
+
+    const template = [
+      { label: 'Name', type: 'radio', checked: key === 'name',
+        click: () => { chosen.key = 'name'; changed = true; } },
+      { label: 'Date Created', type: 'radio', checked: key === 'created',
+        click: () => { chosen.key = 'created'; changed = true; } },
+      { type: 'separator' },
+      { label: 'Ascending', type: 'radio', checked: direction === 'asc',
+        click: () => { chosen.direction = 'asc'; changed = true; } },
+      { label: 'Descending', type: 'radio', checked: direction === 'desc',
+        click: () => { chosen.direction = 'desc'; changed = true; } },
+      { type: 'separator' },
+      { label: 'Folders First', type: 'checkbox', checked: foldersFirst,
+        click: () => { chosen.foldersFirst = !foldersFirst; changed = true; } },
+    ];
+
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const anchor = current?.anchor;
+    return new Promise((resolve) => {
+      Menu.buildFromTemplate(template).popup({
+        window: win,
+        x: Number.isFinite(anchor?.x) ? Math.round(anchor.x) : undefined,
+        y: Number.isFinite(anchor?.y) ? Math.round(anchor.y) : undefined,
+        callback: () => setTimeout(() => resolve(changed ? chosen : null), 0),
+      });
+    });
+  });
+
+  // IPC: pick a folder of books to list in the sidebar
+  ipcMain.handle('select-book-folder', async (event) => {
+    assertTrustedIpc(event);
+    const win = getMainWindow();
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Add Book Folder',
+      buttonLabel: 'Add Folder',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (result.canceled || !result.filePaths[0]) return null;
+    return readBookFolder(validateFolderPath(result.filePaths[0]));
+  });
+
+  // IPC: re-read a folder the user already added, so the sidebar tracks the disk
+  ipcMain.handle('scan-book-folder', (event, folderPath) => {
+    assertTrustedIpc(event);
+    try {
+      validateFolderPath(folderPath);
+    } catch (e) {
+      return null; // unmounted drive or deleted folder: keep the saved listing
+    }
+    return readBookFolder(folderPath);
   });
 
   ipcMain.handle('check-paths-existence', (event, paths) => {

@@ -13,7 +13,9 @@ title: "Renderer Runtime Module"
 
 ```js
 const state = {
-  openBooks,        // [{ filePath, title, cover, pinned, position: { scrollTop, progress } }]
+  openBooks,        // [{ filePath, title, pinned, folderPath, createdAt, position: { scrollTop, progress } }]
+  folders,          // [{ path, name, createdAt, collapsed, folders }] — disk folder trees
+  sort,             // { key: 'name'|'created', direction: 'asc'|'desc', foldersFirst }
   activeBookPath,
   bookContent,      // filePath -> { chapters, toc }
   bookSearchIndex,  // filePath -> [{ id, href, title, text, textLower }]
@@ -30,7 +32,7 @@ Persisted via `window.settings.set`:
 
 Persisted via `localStorage`:
 - `gull-sidebar-widths` — left/right panel widths (`saveSidebarWidths`)
-- `gull-open-books` — open books + positions + active tab (`saveReaderState` / `loadReaderState`)
+- `gull-open-books` — open books + positions + folder trees + sort settings + active tab (`saveReaderState` / `loadReaderState`)
 - `gull-highlights` — per-book highlight lists
 - `gull-reading-style` — font/size/line-height/paragraph spacing
 
@@ -38,13 +40,28 @@ Persisted via `localStorage`:
 
 On startup, the saved `activeBookPath` is restored when that book is still available. If it is missing, the first available book in the saved tab order becomes active instead.
 
-Pinned books are stored in the same `gull-open-books` records. Pinning moves a book to the first sidebar slot; unpinning moves it directly after the remaining pinned group. Startup also groups saved pinned books ahead of unpinned books while preserving the relative order within each group. When any pins exist, `renderTabs` labels the two sidebar groups `Pinned` and `Books`; pinned rows otherwise use the same styling and hover-only actions as regular book rows. Hidden pin and close actions collapse out of the row layout so the title uses the full width, then expand on hover or keyboard focus.
+## Sidebar folders
+
+The books sidebar lists folders that exist on disk. The **Add Book Folder** button in the sidebar header (`#btn-new-folder`) calls `window.epub.selectBookFolder()`, and the chosen directory becomes a sidebar folder listing the books main found inside it. Subfolders come back as nested nodes and render as nested, collapsible groups, so a `Author/Title/book.epub` tree keeps its shape. Clicking a folder header collapses or expands it — the icon is an open folder when expanded and a closed one when collapsed — and that state is persisted per folder, including subfolders (`mergeFolderTree` carries collapsed flags across rescans). A folder's count is every book below it, nested folders included.
+
+Right-clicking opens a native menu built by main (`show-sidebar-menu`): a folder offers **Show in Finder**, **Expand All** / **Collapse All** (which apply to its whole subtree via `setFolderTreeCollapsed`), and **Remove**; a book row offers **Show in Finder**. Main reveals the path itself via `shell.showItemInFolder` and returns the chosen action, so the renderer only has to handle `remove`. Removing a folder unlists it and every row beneath it — nothing is deleted from disk. That menu is the only way to remove a folder; folder headers carry no button but the collapse toggle. Neither book rows nor folder headers have a hover tooltip: the row already shows its name.
+
+`#btn-sort-books` opens the sidebar's native sort menu (`show-sort-menu`): **Name** or **Date Created**, **Ascending** or **Descending**, and a **Folders First** toggle. The setting is global — one ordering for every folder — and is persisted with the reader state. Sorting applies inside each folder and to the loose rows; the order of the root folders themselves is the order they were added. With *Folders First* on, subfolders are hoisted above the books at each level; with it off, subfolders and books share one ordering the way Finder interleaves them. *Date Created* uses the file's creation time from the scan, and rows without one (books opened outside a folder) fall back to their title.
+
+The disk is the source of truth. `initApp` calls `refreshFolders` after `loadReaderState`, re-reading every saved folder so files added or deleted outside Gull show up; `syncFolderBooks` adopts already-open books into the folder, appends new files, and drops rows anywhere under the folder whose file is gone (`forgetBooks` then picks a new active book if that was the one being read). A folder whose scan fails — deleted, or on an unmounted drive — keeps its saved listing instead of emptying. Because folder rows are reconciled this way, `loadReaderState` runs its capped `checkPathsExistence` probe only on ad-hoc opened books.
+
+Groups are derived, never stored: `buildSidebarSections` (in `src/lib/book-order.mjs`) returns a `pinned` section plus one section per root folder — each carrying an `items` list that mixes book rows and nested folder sections in sorted order — and, separately, the books that belong to no folder. Those unfiled books (opened from Finder or `File > Open`) render as loose rows below the folders rather than in a group of their own; grouped rows are indented per nesting level so the boundaries read clearly. Pinned books are lifted out of their folder so they always render above every folder — they keep `folderPath`, so unpinning drops them back where they were.
+
+Folder rows have no close button: a row mirrors a file on disk, so removing the folder is the only way to unlist it. Ad-hoc opened books keep theirs. Rows show a static book icon rather than a cover thumbnail, so a folder of hundreds of books costs no zip reads and nothing image-sized is cached in `localStorage`.
+
+Pinned books are stored in the same `gull-open-books` records. Pinning moves a book to the first sidebar slot; unpinning moves it directly after the remaining pinned group. Startup also groups saved pinned books ahead of unpinned books while preserving the relative order within each group. Pinned rows use the same styling and hover-only actions as regular book rows. Hidden pin and close actions collapse out of the row layout so the title uses the full width, then expand on hover or keyboard focus.
 
 ## Feature map (by function)
 
 | Concern | Key functions |
 |---|---|
 | Tabs | `openBook`, `closeBook`, `setActiveBook`, `pinBook`, `renderTabs` |
+| Folders | `addFolderFromDisk`, `refreshFolders`, `applyFolderScan`, `removeFolderFromSidebar`, `toggleFolder`, `setFolderTreeCollapsed`, `forgetBooks`, `createSection`, `showSidebarMenu`, `showSortMenu`, `initSidebarFolders` |
 | Chapter render | `renderContent`, `stripEpubFonts`, `bindImageFallback` |
 | TOC | `renderOutline`, `initOutlineScrollTracking`, `setActiveOutlineItem`, `scrollToHref`, `findChapterByHref` |
 | Search | `indexBookForSearch`, `findSearchMatches`, `renderSearchResults`, `highlightTermsInContent`, `clearContentSearchHighlights` |
@@ -54,18 +71,16 @@ Pinned books are stored in the same `gull-open-books` records. Pinning moves a b
 | Reading style | `loadReadingStyle`, `applyReadingStyle`, `ensureReadingFontsLoaded`, `updateStyleDisplay`, `stepValue`, `FONT_SIZE_STEPS`, `LINE_HEIGHT_STEPS`, `PARA_SPACING_STEPS` |
 | Theme | `applyTheme` |
 | Update pill | `initUpdatePill` |
-| Drag & drop / broken images | `initDragAndDrop`, `initBrokenImageHandling` |
+| Broken images | `initBrokenImageHandling` |
 | Bootstrap | `initApp` (bottom of file) |
 
-`initDragAndDrop` accepts supported book files dropped anywhere in the application window and shows a window-wide drop indicator while files are being dragged over it.
-
-Book tabs, TOC entries, search results, highlights, sidebar tabs, and resize separators are keyboard accessible. Vertical book tabs use Up/Down, sidebar panels use Left/Right, and resize separators use arrow keys (Shift for larger steps).
+Book tabs, folder headers, TOC entries, search results, highlights, sidebar tabs, and resize separators are keyboard accessible. Vertical book tabs use Up/Down, sidebar panels use Left/Right, and resize separators use arrow keys (Shift for larger steps).
 
 ## Rendering model
 
 Chapters are injected as HTML strings into `#content-area`. Scroll position + progress per book is captured in `state.openBooks[i].position` and restored on tab switch. The chapter scrollbar is redrawn whenever content or viewport changes.
 
-At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, full-width mode, and the saved reading-style CSS variables before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the drag-and-drop empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot and awaits the selected reading-font faces before restoring the active book, so its scroll position is measured against the final viewport and final font metrics. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
+At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, full-width mode, and the saved reading-style CSS variables before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot and awaits the selected reading-font faces before restoring the active book, so its scroll position is measured against the final viewport and final font metrics. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
 
 ## Multi-book EPUB collections
 
