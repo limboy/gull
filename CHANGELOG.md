@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.3.2](https://github.com/limboy/gull/compare/v1.3.1...v1.3.2) - 2026-08-27
+
+### Features
+
+- **ui:** display active book title in top bar ([115ea19](https://github.com/limboy/gull/commit/115ea192eb9bedf326490672f4574751320fc91e))
+
+### Documentation
+
+- update CHANGELOG for v1.3.1 ([c81eec0](https://github.com/limboy/gull/commit/c81eec0c4d3074b20deea4e040b9268bdf6bfe7b))
+
 ## [v1.3.1](https://github.com/limboy/gull/compare/v1.3.0...v1.3.1) - 2026-08-27
 
 ### Bug Fixes
