@@ -52,6 +52,21 @@ test('unpinning moves a book after the remaining pinned group', async () => {
   assert.equal(books[1].pinned, false);
 });
 
+test('finished state toggles without changing sidebar order', async () => {
+  const { toggleBookFinished } = await import('../src/lib/book-order.mjs');
+  const books = [
+    { filePath: '/a.epub', title: 'A' },
+    { filePath: '/b.epub', title: 'B', finished: true }
+  ];
+
+  assert.equal(toggleBookFinished(books, '/a.epub'), true);
+  assert.equal(books[0].finished, true);
+  assert.equal(toggleBookFinished(books, '/a.epub'), false);
+  assert.equal(books[0].finished, false);
+  assert.deepEqual(books.map(book => book.filePath), ['/a.epub', '/b.epub']);
+  assert.equal(toggleBookFinished(books, '/missing.epub'), null);
+});
+
 test('grouping restored books preserves order within pin groups', async () => {
   const { groupPinnedBooks } = await import('../src/lib/book-order.mjs');
   const books = [

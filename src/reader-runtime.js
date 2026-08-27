@@ -3,6 +3,7 @@ import { resolveHighlightOffsets, isOverlappingHighlight, mergeOverlappingHighli
 import {
   groupPinnedBooks,
   toggleBookPin,
+  toggleBookFinished,
   normalizeFolders,
   normalizeSort,
   addFolder,
@@ -16,7 +17,7 @@ import {
 
 
 const state = {
-  openBooks: [],       // [{ filePath, title, pinned, folderPath, position: { scrollTop, progress } }]
+  openBooks: [],       // [{ filePath, title, pinned, finished, folderPath, position: { scrollTop, progress } }]
   folders: [],         // [{ path, name, createdAt, collapsed, folders }] — disk folder trees
   sort: { ...DEFAULT_SORT }, // sidebar ordering: key, direction, foldersFirst
   offlineBooks: [],    // transient missing books kept across sessions
@@ -189,9 +190,22 @@ function pinBook(filePath, restoreFocus = false) {
   });
 }
 
+function toggleFinishedBook(filePath) {
+  if (toggleBookFinished(state.openBooks, filePath) === null) return;
+
+  renderTabs();
+  saveReaderState();
+}
+
+const BOOK_TEXT_ICON = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>`;
+const BOOK_CHECK_ICON = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-check-icon lucide-book-check"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="m9 9.5 2 2 4-4"/></svg>`;
+
 function createBookTab(book) {
   const tab = document.createElement('div');
   const isPinned = book.pinned === true;
+  const isFinished = book.finished === true;
   tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
   tab.setAttribute('role', 'presentation');
   tab.dataset.bookItem = book.filePath;
@@ -211,7 +225,7 @@ function createBookTab(book) {
       aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
       data-book-path="${safePath}">
       <span class="tab-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>
+        ${isFinished ? BOOK_CHECK_ICON : BOOK_TEXT_ICON}
       </span>
       <span class="tab-label">${safeTitle}</span>
     </button>
@@ -395,10 +409,17 @@ async function showSortMenu(anchor) {
   }
 }
 
-async function showSidebarMenu(type, targetPath) {
+async function showSidebarMenu(type, targetPath, finished = false) {
   try {
-    const action = await window.epub.showSidebarMenu({ type, path: targetPath });
-    if (type !== 'folder') return;
+    const action = await window.epub.showSidebarMenu({
+      type,
+      path: targetPath,
+      finished,
+    });
+    if (type === 'book') {
+      if (action === 'toggle-finished') toggleFinishedBook(targetPath);
+      return;
+    }
     if (action === 'remove') removeFolderFromSidebar(targetPath);
     else if (action === 'expand') setFolderTreeCollapsed(targetPath, false);
     else if (action === 'collapse') setFolderTreeCollapsed(targetPath, true);
@@ -429,7 +450,9 @@ function initSidebarFolders() {
 
     e.preventDefault();
     if (bookRow) {
-      showSidebarMenu('book', bookRow.dataset.bookItem);
+      const bookPath = bookRow.dataset.bookItem;
+      const book = state.openBooks.find(candidate => candidate.filePath === bookPath);
+      showSidebarMenu('book', bookPath, book?.finished === true);
     } else {
       showSidebarMenu('folder', folder.dataset.folderPath);
     }
@@ -1912,6 +1935,7 @@ function saveReaderState() {
         title: book.title,
         position: book.position,
         pinned: book.pinned === true,
+        finished: book.finished === true,
         folderPath: book.folderPath || null,
         createdAt: book.createdAt || 0
       })),

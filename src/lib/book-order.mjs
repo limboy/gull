@@ -36,6 +36,14 @@ export function toggleBookPin(books, filePath) {
   return book.pinned;
 }
 
+export function toggleBookFinished(books, filePath) {
+  const book = books.find(candidate => candidate.filePath === filePath);
+  if (!book) return null;
+
+  book.finished = book.finished !== true;
+  return book.finished;
+}
+
 export const DEFAULT_SORT = { key: 'name', direction: 'asc', foldersFirst: true };
 
 export function normalizeSort(rawSort) {

@@ -825,6 +825,17 @@ app.whenReady().then(() => {
           },
         },
       ];
+      if (!isFolder) {
+        template.push(
+          { type: 'separator' },
+          {
+            label: 'Mark as Finished',
+            type: 'checkbox',
+            checked: payload?.finished === true,
+            click: () => { action = 'toggle-finished'; },
+          }
+        );
+      }
       if (isFolder) {
         template.push(
           { type: 'separator' },
