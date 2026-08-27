@@ -9,6 +9,7 @@ import './reader/fonts.css';
 import './reader/App.css';
 
 const initialSettings = window.initialSettings || {};
+const isStandaloneReader = new URLSearchParams(window.location.search).get('standalone') === '1';
 
 function applyInitialAppearance() {
   let savedTheme = 'system';
@@ -70,7 +71,7 @@ function applyInitialSidebarWidths() {
 applyInitialAppearance();
 applyInitialReadingStyle();
 applyInitialSidebarWidths();
-const isRestoringSavedBook = hasSavedBooksToRestore();
+const isRestoringSavedBook = isStandaloneReader || hasSavedBooksToRestore();
 
 function ReaderApp() {
   useEffect(() => {
@@ -79,13 +80,14 @@ function ReaderApp() {
 
   // Read initial sidebar and scrollbar states synchronously from initialSettings to prevent visual layout flash
   const sidebarStates = initialSettings.sidebarStates || {};
-  const leftHidden = !!sidebarStates.leftHidden;
+  const leftHidden = isStandaloneReader || !!sidebarStates.leftHidden;
   const rightHidden = !!sidebarStates.rightHidden;
   const nativeScrollbar = initialSettings.chapterScrollbar === false;
   const fullWidth = initialSettings.fullWidth === true;
 
   const layoutClasses = [
     'app-starting',
+    isStandaloneReader ? 'standalone-reader' : '',
     leftHidden ? 'left-sidebar-hidden' : '',
     rightHidden ? 'right-sidebar-hidden' : '',
     nativeScrollbar ? 'native-scrollbar' : '',

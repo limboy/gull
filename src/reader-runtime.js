@@ -31,6 +31,7 @@ const state = {
 
 const STORAGE_KEY = 'gull-sidebar-widths';
 const STORAGE_KEY_BOOKS = 'gull-open-books';
+const isStandaloneReader = new URLSearchParams(window.location.search).get('standalone') === '1';
 
 // DOM refs
 const appLayout = document.getElementById('app-layout');
@@ -308,6 +309,8 @@ function createSection(section) {
 
 function renderTabs() {
   tabBar.innerHTML = '';
+  if (isStandaloneReader) return;
+
   const { sections, unfiledBooks } = buildSidebarSections(
     state.openBooks, state.folders, state.sort
   );
@@ -840,6 +843,7 @@ async function renderContent() {
       // Update title from metadata if available
       if (data.title && book.title !== data.title) {
         book.title = data.title;
+        if (isStandaloneReader) document.title = `${data.title} — Gull`;
         needsTabsRefresh = true;
       }
       if (needsTabsRefresh) {
@@ -1903,7 +1907,9 @@ function loadSidebarWidths() {
 function saveSidebarStates() {
   const layout = getAppLayout();
   if (!layout) return;
-  const leftHidden = layout.classList.contains('left-sidebar-hidden');
+  const leftHidden = isStandaloneReader
+    ? !!window.initialSettings?.sidebarStates?.leftHidden
+    : layout.classList.contains('left-sidebar-hidden');
   const rightHidden = layout.classList.contains('right-sidebar-hidden');
   window.settings?.set('sidebarStates', { leftHidden, rightHidden });
 }
@@ -1927,7 +1933,7 @@ function loadSidebarStates() {
 let isStateLoaded = false;
 
 function saveReaderState() {
-  if (!isStateLoaded) return;
+  if (!isStateLoaded || isStandaloneReader) return;
   const data = {
     openBooks: [
       ...state.openBooks.map(book => ({
@@ -2341,6 +2347,10 @@ let pendingOpenTimer = null;
 
 window.epub.onOpenFile((filePath) => {
   const title = filePath.split('/').pop().replace(/\.(epub|mobi|azw3|azw|prc)$/i, '');
+  if (isStandaloneReader) {
+    state.openBooks = [{ filePath, title }];
+    document.title = `${title} — Gull`;
+  }
   if (!state.openBooks.find(b => b.filePath === filePath)) {
     state.openBooks.push({ filePath, title });
   }
@@ -2456,7 +2466,7 @@ async function initApp() {
   // Apply every layout input before restoring a book. renderContent measures
   // and restores scroll position against this final viewport.
   initResize();
-  loadSidebarStates();
+  if (!isStandaloneReader) loadSidebarStates();
   setChapterScrollbar(settings.chapterScrollbar !== false);
   setFullWidth(settings.fullWidth === true);
   applyTheme(normalizeThemeMode(settings.theme || storedTheme));
@@ -2467,6 +2477,11 @@ async function initApp() {
   initSidebarScrollbars();
 
   await ensureReadingFontsLoaded();
+  if (isStandaloneReader) {
+    window.epub.signalReady();
+    return;
+  }
+
   await loadReaderState();
   await refreshFolders();
 

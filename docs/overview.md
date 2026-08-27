@@ -36,7 +36,7 @@ build/               Mac entitlements
 
 ## Key flows to know
 
-- File open: Finder / CLI / `File > Open` → `main.js` `openFileInApp` → IPC `open-file` → renderer opens a tab.
+- File open: Finder / CLI / `File > Open` → `main.js` `openFileInApp` → a standalone reader window receives IPC `open-file`; the file is not added to the library sidebar.
 - Book folders: sidebar **Add Book Folder** → IPC `select-book-folder` → main walks the directory into a book tree → renderer renders it as nested, collapsible sidebar folders.
 - Chapter render: renderer calls `window.epub.parse(filePath)` → main validates the request → the EPUB worker returns `{title, chapters, toc}` with sanitized markup, inline base64 images, and filtered CSS.
 - Settings: `window.settings.get/set` persist to `<userData>/settings.json` and broadcast via `settings-changed`.

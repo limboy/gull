@@ -7,7 +7,7 @@ read_when:
 title: "Process Architecture & IPC"
 ---
 
-Gull runs a single main process that owns the filesystem and a single renderer window. The preload script is the only bridge; the renderer has no Node integration.
+Gull runs a single main process that owns the filesystem, one library window, and any standalone book windows. The preload script is the only bridge; renderers have no Node integration.
 
 ## Processes
 
@@ -33,8 +33,8 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 | `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
 | `open-external` | R→M (invoke) | Open a validated `http`, `https`, `mailto`, or `tel` URL after an explicit reader link click |
 | `apply-update` | R→M (invoke) | Calls `autoUpdater.quitAndInstall()` |
-| `renderer-ready` | R→M (send) | Signals the renderer has wired `open-file` listener; main then flushes `pendingFiles` |
-| `open-file` | M→R | Deliver a file path to open as a tab |
+| `renderer-ready` | R→M (send) | Signals a renderer has wired `open-file`; main then flushes that window's pending file queue |
+| `open-file` | M→R | Deliver a file path to its standalone book window |
 | `settings-changed` | M→R (broadcast) | Full settings object after any write |
 | `theme-changed` | M→R (broadcast) | Just the new theme value |
 | `update-ready` | M→R (broadcast) | `electron-updater` finished downloading |
@@ -42,7 +42,7 @@ Gull runs a single main process that owns the filesystem and a single renderer w
 
 ## File-open pipeline
 
-Files can arrive from: macOS `open-file` event, `second-instance` CLI args, first-launch CLI args, or Finder double-click. Main buffers them in `pendingFiles` until the renderer sends `renderer-ready`, then drains the queue. This avoids the race where a file is requested before listeners are attached. Dropping files onto the window is not supported — books are added by picking a folder in the sidebar or through `File > Open`.
+Files can arrive from: macOS `open-file` event, `second-instance` CLI args, first-launch CLI args, Finder double-click, or `File > Open`. Each file opens in its own standalone reader window and is not added to the library sidebar. Main keeps a pending-file queue per window until that renderer sends `renderer-ready`, which avoids the race where a file is requested before listeners are attached. Opening the same file again focuses its existing standalone window. Dropping files onto a window is not supported; persistent library rows come from folders added in the sidebar.
 
 ## Book folders
 
@@ -50,7 +50,7 @@ Files can arrive from: macOS `open-file` event, `second-instance` CLI args, firs
 
 ## Single instance
 
-`app.requestSingleInstanceLock()` ensures one Gull. A second launch fires `second-instance` with the CLI args of the new invocation; main focuses the existing window and opens any `.epub` args in it.
+`app.requestSingleInstanceLock()` ensures one Gull process. A second launch fires `second-instance` with the CLI args of the new invocation; main opens supported book arguments in standalone windows, or focuses the library window when no book was supplied.
 
 ## Settings
 

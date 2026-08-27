@@ -143,21 +143,24 @@ if (!isPrimaryInstance) {
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine) => {
-    // Someone tried to run a second instance, we should focus our window.
-    const win = getMainWindow();
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
-    
     // Process command line arguments for the second instance (Windows/Linux)
     const args = commandLine.slice(app.isPackaged ? 1 : 2);
+    let openedBook = false;
     for (const arg of args) {
       if (isSupportedFile(arg)) {
         const resolved = path.resolve(arg);
         if (fs.existsSync(resolved)) {
           openFileInApp(resolved);
+          openedBook = true;
         }
+      }
+    }
+
+    if (!openedBook) {
+      const win = getMainWindow() || createWindow();
+      if (win) {
+        if (win.isMinimized()) win.restore();
+        win.focus();
       }
     }
   });
@@ -523,12 +526,13 @@ async function parseMobiOrAzw3(filePath) {
 
 // --- Window Management ---
 
-// State to track if the renderer is ready to receive files
-let rendererReady = false;
-let pendingFiles = [];
+let mainWindow = null;
+let startupFiles = [];
+const pendingFilesByWindow = new Map();
+const bookWindows = new Map();
 
 function getMainWindow() {
-  return BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+  return mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
 }
 
 function getRendererPath(page) {
@@ -561,7 +565,8 @@ function validateRendererSetting(key, value) {
   }
 }
 
-function createWindow() {
+function createWindow({ bookFilePath = null } = {}) {
+  const isBookWindow = Boolean(bookFilePath);
   const settings = readSettings();
   const savedBounds = settings.mainWindowBounds;
   const hasSavedBounds = isValidWindowBounds(savedBounds);
@@ -572,6 +577,9 @@ function createWindow() {
     minHeight: 530,
     x: hasSavedBounds ? savedBounds.x : undefined,
     y: hasSavedBounds ? savedBounds.y : undefined,
+    title: isBookWindow
+      ? path.basename(bookFilePath, path.extname(bookFilePath))
+      : app.name,
     titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
     trafficLightPosition: { x: 16, y: 12 },
     webPreferences: {
@@ -582,16 +590,25 @@ function createWindow() {
       webSecurity: true,
     },
   });
+  const rendererId = win.webContents.id;
 
-  if (DEV_SERVER_URL) {
-    win.loadURL(new URL('index.html', `${DEV_SERVER_URL}/`).toString());
+  if (isBookWindow) {
+    bookWindows.set(bookFilePath, win);
+    pendingFilesByWindow.set(rendererId, [bookFilePath]);
   } else {
-    win.loadFile(getRendererPath('index.html'));
+    mainWindow = win;
   }
 
-  win.webContents.on('did-finish-load', () => {
-    // We no longer send pending files here, as we wait for 'renderer-ready'
-  });
+  if (DEV_SERVER_URL) {
+    const rendererUrl = new URL('index.html', `${DEV_SERVER_URL}/`);
+    if (isBookWindow) rendererUrl.searchParams.set('standalone', '1');
+    win.loadURL(rendererUrl.toString());
+  } else {
+    win.loadFile(
+      getRendererPath('index.html'),
+      isBookWindow ? { query: { standalone: '1' } } : undefined
+    );
+  }
 
   // The renderer is a single-page reader. Links are opened only through the
   // validated open-external IPC handler after an explicit content click.
@@ -601,18 +618,28 @@ function createWindow() {
 
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  win.on('resize', () => scheduleMainWindowStateSave(win));
-  win.on('move', () => scheduleMainWindowStateSave(win));
-  win.on('close', () => {
-    if (mainWindowStateSaveTimer) {
-      clearTimeout(mainWindowStateSaveTimer);
-      mainWindowStateSaveTimer = null;
+  if (!isBookWindow) {
+    win.on('resize', () => scheduleMainWindowStateSave(win));
+    win.on('move', () => scheduleMainWindowStateSave(win));
+    win.on('close', () => {
+      if (mainWindowStateSaveTimer) {
+        clearTimeout(mainWindowStateSaveTimer);
+        mainWindowStateSaveTimer = null;
+      }
+      saveMainWindowState(win);
+    });
+  }
+
+  win.on('closed', () => {
+    pendingFilesByWindow.delete(rendererId);
+    if (isBookWindow) {
+      if (bookWindows.get(bookFilePath) === win) bookWindows.delete(bookFilePath);
+    } else if (mainWindow === win) {
+      mainWindow = null;
     }
-    saveMainWindowState(win);
-    rendererReady = false;
   });
 
-  if (settings.mainWindowMaximized) {
+  if (!isBookWindow && settings.mainWindowMaximized) {
     win.maximize();
   }
 
@@ -623,27 +650,19 @@ function openFileInApp(filePath) {
   if (!filePath || !isSupportedFile(filePath)) return;
   if (!fs.existsSync(filePath)) return;
 
-  const win = getMainWindow();
-  if (win) {
-    if (rendererReady) {
-      win.webContents.send('open-file', filePath);
-    } else {
-      if (!pendingFiles.includes(filePath)) {
-        pendingFiles.push(filePath);
-      }
-    }
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  } else {
-    if (!pendingFiles.includes(filePath)) {
-      pendingFiles.push(filePath);
-    }
-    createWindow();
+  const resolved = path.resolve(filePath);
+  const existingWindow = bookWindows.get(resolved);
+  if (existingWindow && !existingWindow.isDestroyed()) {
+    if (existingWindow.isMinimized()) existingWindow.restore();
+    existingWindow.focus();
+    return;
   }
+
+  createWindow({ bookFilePath: resolved });
 }
 
 async function showOpenDialog() {
-  const win = getMainWindow();
+  const win = BrowserWindow.getFocusedWindow() || getMainWindow();
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile', 'multiSelections'],
     filters: [
@@ -736,7 +755,7 @@ app.on('open-file', (event, filePath) => {
   if (app.isReady()) {
     openFileInApp(filePath);
   } else {
-    pendingFiles.push(filePath);
+    if (!startupFiles.includes(filePath)) startupFiles.push(filePath);
   }
 });
 
@@ -893,7 +912,7 @@ app.whenReady().then(() => {
   // IPC: pick a folder of books to list in the sidebar
   ipcMain.handle('select-book-folder', async (event) => {
     assertTrustedIpc(event);
-    const win = getMainWindow();
+    const win = BrowserWindow.fromWebContents(event.sender) || getMainWindow();
     const result = await dialog.showOpenDialog(win, {
       title: 'Add Book Folder',
       buttonLabel: 'Add Folder',
@@ -931,30 +950,27 @@ app.whenReady().then(() => {
   for (const arg of args) {
     if (isSupportedFile(arg)) {
       const resolved = path.resolve(arg);
-      if (fs.existsSync(resolved)) {
-        pendingFiles.push(resolved);
-      }
+      if (fs.existsSync(resolved) && !startupFiles.includes(resolved)) startupFiles.push(resolved);
     }
   }
 
   ipcMain.on('renderer-ready', (event) => {
     assertTrustedIpc(event);
-    rendererReady = true;
-    const win = getMainWindow();
-    if (win) {
-      for (const filePath of pendingFiles) {
-        win.webContents.send('open-file', filePath);
-      }
+    const senderId = event.sender.id;
+    for (const filePath of pendingFilesByWindow.get(senderId) || []) {
+      event.sender.send('open-file', filePath);
     }
-    pendingFiles = [];
+    pendingFilesByWindow.delete(senderId);
   });
 
-  createWindow();
+  if (startupFiles.length === 0) createWindow();
+  for (const filePath of startupFiles) openFileInApp(filePath);
+  startupFiles = [];
 
   initAutoUpdater();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (!getMainWindow()) {
       createWindow();
     }
   });
