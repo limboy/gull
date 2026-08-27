@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.3.1](https://github.com/limboy/gull/compare/v1.3.0...v1.3.1) - 2026-08-27
+
+### Bug Fixes
+
+- **ui:** hide sidebar toggle in standalone windows ([ccec5c0](https://github.com/limboy/gull/commit/ccec5c07f9cd387c305ac59a4dd9179db9fcc1fe))
+
+### Documentation
+
+- update CHANGELOG for v1.3.0 ([fe84b4e](https://github.com/limboy/gull/commit/fe84b4e5294d0f31c0b0762ccfd84cd1c7730aef))
+
 ## [v1.3.0](https://github.com/limboy/gull/compare/v1.2.32...v1.3.0) - 2026-08-27
 
 ### Features
