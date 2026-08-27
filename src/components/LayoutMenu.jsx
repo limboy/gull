@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { CaseSensitive, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {Settings2, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export function LayoutMenu() {
   const initialSettings = window.initialSettings || {};
   const [chapterScrollbar, setChapterScrollbar] = useState(initialSettings.chapterScrollbar !== false);
   const [fullWidth, setFullWidth] = useState(initialSettings.fullWidth === true);
+  const openedByPointer = useRef(false);
 
   useEffect(() => {
     const sbHandler = (enabled) => setChapterScrollbar(enabled);
@@ -41,13 +42,29 @@ export function LayoutMenu() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button id="btn-layout-settings" title="Layout Settings" aria-label="Layout Settings">
-          <CaseSensitive size={16} aria-hidden="true" />
+        <button
+          id="btn-layout-settings"
+          title="Layout Settings"
+          aria-label="Layout Settings"
+          onPointerDown={() => { openedByPointer.current = true; }}
+          onKeyDown={() => { openedByPointer.current = false; }}
+        >
+          <Settings2 size={16} aria-hidden="true" />
         </button>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content className="sm-content layout-menu-content" side="bottom" align="end" sideOffset={8}>
+        <DropdownMenu.Content
+          className="sm-content layout-menu-content"
+          side="bottom"
+          align="end"
+          sideOffset={8}
+          onCloseAutoFocus={(event) => {
+            // Radix restores focus to the trigger on close; Chromium treats that
+            // as keyboard focus and leaves a focus ring behind a plain click.
+            if (openedByPointer.current) event.preventDefault();
+          }}
+        >
           {/* Chapter Scrollbar */}
           <DropdownMenu.CheckboxItem
             className="sm-item sm-checkbox-item"

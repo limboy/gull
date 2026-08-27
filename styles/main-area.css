@@ -82,6 +82,11 @@
     left: 82px;
 }
 
+/* No toggler in standalone windows, so only reserve the traffic lights */
+#app-layout.standalone-reader #tab-bar {
+    padding-left: 82px;
+}
+
 #tab-bar-tabs {
     display: flex;
     flex-direction: column;
