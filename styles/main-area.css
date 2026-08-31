@@ -122,7 +122,7 @@
 }
 
 .tab-section + .tab-section {
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 
@@ -134,9 +134,9 @@
 
 .tab-section-title {
     padding: 4px 8px 2px;
-    color: var(--text-secondary);
+    color: var(--text-sidebar-primary);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
     line-height: 18px;
     user-select: none;
     overflow: hidden;
@@ -170,13 +170,13 @@
 }
 
 .tab-section-folder-icon {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
     margin-right: 7px;
     fill: none;
-    stroke: var(--text-secondary);
-    stroke-width: 1.8;
+    stroke: var(--text-sidebar-primary);
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
@@ -184,7 +184,7 @@
 .tab-section-books {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    /*gap: 2px;*/
     min-width: 0;
 }
 
@@ -206,11 +206,11 @@
 }
 
 .tab-section + .tab-item {
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .tab-section-empty {
-    padding: 6px 8px;
+    padding: 4px 8px;
     color: var(--text-secondary);
     font-size: 11px;
     opacity: 0.6;
@@ -223,7 +223,7 @@
     align-items: center;
     padding: 4px 8px;
     border-radius: 8px;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-primary);
     cursor: default;
     white-space: nowrap;
@@ -269,7 +269,7 @@
 
 [data-theme="dark"] .tab-item:hover,
 [data-theme="dark"] .tab-item.active {
-    background: #111;
+    background: var(--hover);
 }
 
 .tab-item .tab-pin,
