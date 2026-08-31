@@ -327,6 +327,36 @@
     /*opacity: 0.75;*/
 }
 
+/* Real cover art fills the same 15px slot the placeholder icon occupies, so
+   rows keep their alignment whether or not a book has artwork. */
+.tab-icon .tab-cover {
+    width: 15px;
+    height: 19px;
+    object-fit: cover;
+    border-radius: 2px;
+    background: var(--hover);
+    box-shadow: 0 0 0 0.5px var(--border);
+}
+
+.tab-item .tab-finished {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 6px;
+    color: var(--text-secondary);
+}
+
+.tab-item .tab-finished svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .tab-item.active .tab-icon {
     color: var(--text-primary);
 }

@@ -20,6 +20,10 @@ EPUB parsing lives in `lib/epub-parser.js` and runs through `lib/epub-parser-wor
 4. **TOC** (`parseToc`): prefer EPUB 3 nav document (manifest item with `properties` containing `nav`), fall back to EPUB 2 NCX (`application/x-dtbncx+xml`). Shape: `[{ title, href, children }]`.
 5. For each spine item: sanitize XHTML, collect CSS, filter styles, inline images, normalize self-closing tags, emit `{ id, href, html, css }`.
 
+## Cover-only reads
+
+`parseEpubCover` shares the package-document reader (`readPackageDocument`) with the full parse but stops there: it locates the cover image and returns `{mime, data}`, or `null` when the book has none. Resolution order is EPUB 3's `properties="cover-image"`, EPUB 2's `<meta name="cover" content="id">`, any manifest image whose id or href says `cover`, then the first image inside the page named by `<guide reference type="cover">`. Entries above `MAX_COVER_SIZE` (32 MB) are skipped. The worker exposes this as `task: 'cover'`; main resizes and caches the result (see `docs/architecture.md`).
+
 ## Content safety
 
 `lib/book-content.js` removes executable or embedded elements, inline event handlers, `srcdoc`, popup targets, unsafe URL schemes, remote media loads, CSS imports, URL-bearing declarations, and Electron-specific drag regions. This happens before chapter markup is returned to the renderer. The production CSP independently blocks inline scripts, frames, objects, forms, and unexpected network connections.

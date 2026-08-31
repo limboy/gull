@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const { Worker } = require('worker_threads');
 const AdmZip = require('adm-zip');
-const { parseEpub } = require('../lib/epub-parser');
+const { parseEpub, parseEpubCover } = require('../lib/epub-parser');
 
 function createFixtureEpub() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'gull-epub-test-'));
@@ -26,6 +26,7 @@ function createFixtureEpub() {
         <item id="chapter" href="text/chapter.xhtml" media-type="application/xhtml+xml" />
         <item id="css" href="styles/book.css" media-type="text/css" />
         <item id="image" href="images/pixel.png" media-type="image/png" />
+        <item id="art" href="images/cover.png" media-type="image/png" properties="cover-image" />
       </manifest>
       <spine><itemref idref="chapter" /></spine>
     </package>
@@ -44,6 +45,7 @@ function createFixtureEpub() {
     </body></html>
   `));
   zip.addFile('OEBPS/images/pixel.png', Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  zip.addFile('OEBPS/images/cover.png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d]));
   zip.writeZip(epubPath);
   return { directory, epubPath };
 }
@@ -130,6 +132,78 @@ test('parses EPUB fixtures through the worker protocol', async () => {
     assert.equal(result.title, 'Fixture Book');
     assert.equal(result.identifier, 'urn:gull:test');
     assert.equal(result.chapters.length, 1);
+  } finally {
+    await worker.terminate();
+    fs.rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test('extracts the cover named by an EPUB 3 manifest property', () => {
+  const fixture = createFixtureEpub();
+  try {
+    const cover = parseEpubCover(fixture.epubPath);
+    assert.equal(cover.mime, 'image/png');
+    assert.deepEqual([...cover.data], [0x89, 0x50, 0x4e, 0x47, 0x0d]);
+  } finally {
+    fs.rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test('falls back to the EPUB 2 cover metadata and reports books without art', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'gull-epub-test-'));
+  const withCover = path.join(directory, 'with-cover.epub');
+  const withoutCover = path.join(directory, 'without-cover.epub');
+  const container = Buffer.from(`
+    <?xml version="1.0"?>
+    <container><rootfiles><rootfile full-path="OEBPS/content.opf" /></rootfiles></container>
+  `);
+  const opf = manifestExtra => Buffer.from(`
+    <package xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <metadata><dc:title>Fixture Book</dc:title><meta name="cover" content="art" /></metadata>
+      <manifest>
+        <item id="chapter" href="text/chapter.xhtml" media-type="application/xhtml+xml" />
+        ${manifestExtra}
+      </manifest>
+      <spine><itemref idref="chapter" /></spine>
+    </package>
+  `);
+  try {
+    const zip = new AdmZip();
+    zip.addFile('META-INF/container.xml', container);
+    zip.addFile('OEBPS/content.opf', opf('<item id="art" href="images/art.jpg" media-type="image/jpeg" />'));
+    zip.addFile('OEBPS/text/chapter.xhtml', Buffer.from('<html><body><p>Hello</p></body></html>'));
+    zip.addFile('OEBPS/images/art.jpg', Buffer.from([0xff, 0xd8, 0xff]));
+    zip.writeZip(withCover);
+
+    const bare = new AdmZip();
+    bare.addFile('META-INF/container.xml', container);
+    bare.addFile('OEBPS/content.opf', opf(''));
+    bare.addFile('OEBPS/text/chapter.xhtml', Buffer.from('<html><body><p>Hello</p></body></html>'));
+    bare.writeZip(withoutCover);
+
+    const cover = parseEpubCover(withCover);
+    assert.equal(cover.mime, 'image/jpeg');
+    assert.deepEqual([...cover.data], [0xff, 0xd8, 0xff]);
+    assert.equal(parseEpubCover(withoutCover), null);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('reads covers through the worker protocol', async () => {
+  const fixture = createFixtureEpub();
+  const worker = new Worker(path.join(__dirname, '..', 'lib', 'epub-parser-worker.js'));
+  try {
+    const result = await new Promise((resolve, reject) => {
+      worker.once('error', reject);
+      worker.once('message', message => {
+        if (message.error) reject(new Error(message.error.message));
+        else resolve(message.result);
+      });
+      worker.postMessage({ id: 1, task: 'cover', filePath: fixture.epubPath });
+    });
+    assert.equal(result.mime, 'image/png');
+    assert.deepEqual([...result.data], [0x89, 0x50, 0x4e, 0x47, 0x0d]);
   } finally {
     await worker.terminate();
     fs.rmSync(fixture.directory, { recursive: true, force: true });

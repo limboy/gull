@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { fileURLToPath } = require('url');
 const { Worker } = require('worker_threads');
 const AdmZip = require('adm-zip');
@@ -304,17 +305,21 @@ function getEpubParserWorker() {
   return worker;
 }
 
-function parseEpubOffMainThread(filePath) {
+function runEpubWorkerTask(task, filePath) {
   return new Promise((resolve, reject) => {
     const id = nextEpubParserRequestId++;
     epubParserRequests.set(id, { resolve, reject });
     try {
-      getEpubParserWorker().postMessage({ id, filePath });
+      getEpubParserWorker().postMessage({ id, task, filePath });
     } catch (error) {
       epubParserRequests.delete(id);
       reject(error);
     }
   });
+}
+
+function parseEpubOffMainThread(filePath) {
+  return runEpubWorkerTask('parse', filePath);
 }
 
 // --- Settings persistence ---
@@ -391,6 +396,14 @@ function broadcastToAllWindows(channel, ...args) {
   }
 }
 
+let mobiParserModule = null;
+async function getMobiParser() {
+  if (!mobiParserModule) {
+    mobiParserModule = await import('@lingo-reader/mobi-parser');
+  }
+  return mobiParserModule;
+}
+
 function getMobiCover(book, tempDir) {
   try {
     const coverPath = book.getCoverImage();
@@ -465,13 +478,10 @@ function mapToc(tocItems, book) {
   });
 }
 
-async function parseMobiOrAzw3(filePath) {
+async function initMobiBook(filePath, tempDir) {
   const { initMobiFile, initKf8File } = await getMobiParser();
-  const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-mobi-'));
-  
-  let book = null;
   let isKf = false;
-  
+
   try {
     const fd = fs.openSync(filePath, 'r');
     const buf = Buffer.alloc(120);
@@ -481,37 +491,42 @@ async function parseMobiOrAzw3(filePath) {
     fs.readSync(fd, vBuf, 0, 4, off + 20);
     const version = vBuf.readUInt32BE(0);
     fs.closeSync(fd);
-    
+
     isKf = version === 8 || version === 264 || version >= 8;
   } catch (e) {
     const ext = path.extname(filePath).toLowerCase();
     isKf = ext === '.azw3' || ext === '.azw';
   }
-  
-  try {
-    if (isKf) {
-      try {
-        book = await initKf8File(filePath, tempDir);
-      } catch (err) {
-        console.warn('initKf8File failed, trying initMobiFile fallback:', err);
-        book = await initMobiFile(filePath, tempDir);
-        isKf = false;
-      }
-    } else {
-      try {
-        book = await initMobiFile(filePath, tempDir);
-      } catch (err) {
-        console.warn('initMobiFile failed, trying initKf8File fallback:', err);
-        book = await initKf8File(filePath, tempDir);
-        isKf = true;
-      }
+
+  // The header sniff above is a guess, so each reader falls back to the other.
+  if (isKf) {
+    try {
+      return await initKf8File(filePath, tempDir);
+    } catch (err) {
+      console.warn('initKf8File failed, trying initMobiFile fallback:', err);
+      return initMobiFile(filePath, tempDir);
     }
+  }
+  try {
+    return await initMobiFile(filePath, tempDir);
+  } catch (err) {
+    console.warn('initMobiFile failed, trying initKf8File fallback:', err);
+    return initKf8File(filePath, tempDir);
+  }
+}
+
+async function parseMobiOrAzw3(filePath) {
+  const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-mobi-'));
+  let book = null;
+
+  try {
+    book = await initMobiBook(filePath, tempDir);
   } catch (err) {
     console.error('Failed to initialize MOBI/KF8 reader:', err);
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
     throw err;
   }
-  
+
   try {
     const metadata = book.getMetadata() || {};
     const title = metadata.title || path.basename(filePath, path.extname(filePath));
@@ -582,31 +597,7 @@ async function parseMobiOrAzw3(filePath) {
       });
     }
     
-    let cover = null;
-    const coverPath = getMobiCover(book, tempDir);
-    if (coverPath && fs.existsSync(coverPath)) {
-      try {
-        const coverData = fs.readFileSync(coverPath);
-        const mime = getMimeFromPath(coverPath);
-        
-        try {
-          const img = nativeImage.createFromBuffer(coverData);
-          if (!img.isEmpty()) {
-            const resized = img.resize({ height: 60, quality: 'better' });
-            const jpegBuf = resized.toJPEG(80);
-            cover = `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
-          }
-        } catch (resizeErr) {
-          console.error('Failed to resize MOBI cover image', resizeErr);
-        }
-        
-        if (!cover) {
-          cover = `data:${mime};base64,${coverData.toString('base64')}`;
-        }
-      } catch (e) {
-        console.error('Failed to read cover image', e);
-      }
-    }
+    const cover = readMobiCoverThumbnail(book, tempDir);
     
     const rawToc = book.getToc() || [];
     const toc = mapToc(rawToc, book);
@@ -618,6 +609,149 @@ async function parseMobiOrAzw3(filePath) {
     }
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
   }
+}
+
+// --- Book covers ---
+// Sidebar rows show real cover art, so artwork is needed for books nobody has
+// opened. Extraction is deduped, capped, and cached on disk, which keeps a
+// large library to one pass of work instead of one per launch.
+const COVER_THUMBNAIL_HEIGHT = 96;
+const MAX_CONCURRENT_COVER_JOBS = 3;
+const coverJobQueue = [];
+const coverRequests = new Map();
+let runningCoverJobs = 0;
+
+function drainCoverJobs() {
+  while (runningCoverJobs < MAX_CONCURRENT_COVER_JOBS && coverJobQueue.length > 0) {
+    const { job, resolve, reject } = coverJobQueue.shift();
+    runningCoverJobs += 1;
+    Promise.resolve().then(job).then(resolve, reject).finally(() => {
+      runningCoverJobs -= 1;
+      drainCoverJobs();
+    });
+  }
+}
+
+function enqueueCoverJob(job) {
+  return new Promise((resolve, reject) => {
+    coverJobQueue.push({ job, resolve, reject });
+    drainCoverJobs();
+  });
+}
+
+function toCoverDataUri(data, mime) {
+  if (!data || data.length === 0) return null;
+  const buffer = Buffer.from(data);
+  // nativeImage cannot rasterize SVG, so vector covers are passed through.
+  if (mime !== 'image/svg+xml') {
+    try {
+      const image = nativeImage.createFromBuffer(buffer);
+      if (!image.isEmpty()) {
+        const resized = image.resize({ height: COVER_THUMBNAIL_HEIGHT, quality: 'better' });
+        return `data:image/jpeg;base64,${resized.toJPEG(80).toString('base64')}`;
+      }
+    } catch (error) {
+      console.error('Failed to resize cover image', error);
+    }
+  }
+  return `data:${mime};base64,${buffer.toString('base64')}`;
+}
+
+function readMobiCoverThumbnail(book, tempDir) {
+  const coverPath = getMobiCover(book, tempDir);
+  if (!coverPath || !fs.existsSync(coverPath)) return null;
+  try {
+    return toCoverDataUri(fs.readFileSync(coverPath), getMimeFromPath(coverPath));
+  } catch (error) {
+    console.error('Failed to read cover image', error);
+    return null;
+  }
+}
+
+async function extractMobiCover(filePath) {
+  const tempDir = fs.mkdtempSync(path.join(app.getPath('temp'), 'gull-cover-'));
+  let book = null;
+  try {
+    book = await initMobiBook(filePath, tempDir);
+    return readMobiCoverThumbnail(book, tempDir);
+  } finally {
+    if (book) {
+      try { book.destroy(); } catch {}
+    }
+    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
+function extractBookCover(filePath) {
+  if (path.extname(filePath).toLowerCase() === '.epub') {
+    return runEpubWorkerTask('cover', filePath)
+      .then(cover => (cover ? toCoverDataUri(cover.data, cover.mime) : null));
+  }
+  return extractMobiCover(filePath);
+}
+
+// Size and mtime are part of the key, so replacing a book on disk invalidates
+// its thumbnail without any cache bookkeeping.
+function coverCacheKey(filePath) {
+  const stats = fs.statSync(filePath);
+  if (!stats.isFile() || stats.size > MAX_BOOK_FILE_SIZE) return null;
+  return crypto.createHash('sha1')
+    .update(`${filePath}\n${stats.size}\n${Math.round(stats.mtimeMs)}`)
+    .digest('hex');
+}
+
+function getCoverCachePath(key) {
+  return path.join(app.getPath('userData'), 'covers', `${key}.uri`);
+}
+
+// `undefined` means "not extracted yet"; an empty file records "has no cover".
+function readCachedCover(key) {
+  try {
+    return fs.readFileSync(getCoverCachePath(key), 'utf8') || null;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedCover(key, dataUri) {
+  const target = getCoverCachePath(key);
+  try {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    const tempPath = `${target}.${process.pid}.tmp`;
+    fs.writeFileSync(tempPath, dataUri || '');
+    fs.renameSync(tempPath, target);
+  } catch (error) {
+    console.error('Failed to cache book cover', error);
+  }
+}
+
+function getBookCover(filePath) {
+  let key = null;
+  try {
+    key = coverCacheKey(filePath);
+  } catch {
+    // A book that vanished or is still syncing simply has no cover to show.
+  }
+  if (!key) return Promise.resolve(null);
+
+  const cached = readCachedCover(key);
+  if (cached !== undefined) return Promise.resolve(cached);
+  const pending = coverRequests.get(key);
+  if (pending) return pending;
+
+  const request = enqueueCoverJob(() => extractBookCover(filePath))
+    .then(dataUri => {
+      writeCachedCover(key, dataUri);
+      return dataUri;
+    })
+    // Failures stay uncached so a transient read error retries later.
+    .catch(error => {
+      console.error('Failed to extract book cover:', filePath, error);
+      return null;
+    })
+    .finally(() => coverRequests.delete(key));
+  coverRequests.set(key, request);
+  return request;
 }
 
 // --- Window Management ---
@@ -903,6 +1037,15 @@ app.whenReady().then(() => {
     } else {
       throw new Error('Unsupported book format: ' + ext);
     }
+  });
+
+  // IPC: cover artwork for a sidebar row; null when the book has none.
+  ipcMain.handle('get-book-cover', (event, filePath) => {
+    assertTrustedIpc(event);
+    if (!isSupportedFile(filePath) || !path.isAbsolute(filePath)) {
+      throw new Error('Invalid book path');
+    }
+    return getBookCover(filePath);
   });
 
   ipcMain.handle('open-external', async (event, url) => {

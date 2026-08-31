@@ -12,9 +12,9 @@ Gull runs a single main process that owns the filesystem, one library window, an
 ## Processes
 
 - **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, book-folder scanning, native sidebar menus, and auto-update.
-- **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB parsing away from the Electron main thread.
+- **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB work away from the Electron main thread; the message's `task` selects a full `parse` (default) or a cover-only read.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
-  - `window.epub` — `parse`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
+  - `window.epub` — `parse`, `getBookCover`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
   - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onThemeChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
@@ -24,6 +24,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | Channel | Dir | Purpose |
 |---|---|---|
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
+| `get-book-cover` | R→M (invoke) | Return a book's cover as a thumbnail data URI, or `null` when it has none |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
 | `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
 | `select-book-folder` | R→M (invoke) | Show a folder picker, then return `{path, name, books}` for the chosen directory (`null` if canceled) |
@@ -51,6 +52,12 @@ Files can arrive from: macOS `open-file` event, `second-instance` CLI args, firs
 `select-book-folder` and `scan-book-folder` both answer with `readBookFolder`, which walks the directory into a tree: each node carries `path`, `name`, `createdAt`, its own `books` (`filePath`, `title`, `createdAt`), and its `folders`. `readFolderTree` descends `MAX_FOLDER_SCAN_DEPTH` (4) levels with a shared budget of `MAX_FOLDER_BOOKS` (500) files, so both flat folders and Calibre-style `Author/Title/book.epub` trees list correctly. Branches holding no books at any depth are pruned, dotfiles are skipped, and symlinks are ignored (readdir reports them as neither file nor directory), which also rules out symlink cycles. `createdAt` comes from `birthtimeMs`, falling back to `mtimeMs`, and is what the sidebar's *Date Created* sort orders by. Main only ever reports supported book extensions, and the renderer owns the list of folders — main keeps no library state.
 
 `watch-book-folders` carries the root folders the sidebar currently lists (up to `MAX_WATCHED_FOLDERS`, 50); main diffs that list against the window's live `fs.watch` handles, opening and closing watchers so the two match. Watching is recursive where the platform supports it (macOS, Windows) and falls back to the folder's own level on Linux. Events are filtered to names that can change the listing — supported book files and extension-less names, which are the folders — so Calibre metadata, cover art, and dotfiles cost nothing, then debounced by `FOLDER_CHANGE_DEBOUNCE_MS` (400ms) into one `book-folder-changed` per folder, because a Finder copy or a sync client fires a burst per file. Watchers are per window and closed with it; a watcher whose folder disappears drops itself and the sidebar keeps its listing.
+
+## Book covers
+
+Sidebar rows show real cover art, so `get-book-cover` has to produce artwork for books nobody has opened. EPUBs go back through the parser worker with `task: 'cover'`, which reads only the container, the OPF, and the one image entry; MOBI/AZW3 files initialize the same reader `parse-epub` uses and ask it for the cover resource. The image is resized to `COVER_THUMBNAIL_HEIGHT` (96px) and re-encoded as JPEG — SVG covers pass through untouched, since `nativeImage` cannot rasterize them.
+
+Results are cached at `<userData>/covers/<sha1>.uri`, keyed by path, size, and mtime, so replacing a book on disk invalidates its thumbnail with no bookkeeping. An empty cache file records "this book has no cover" and stops the re-extraction; extraction *failures* are left uncached so a book that was mid-sync retries later. Concurrent requests for the same book share one promise, and at most `MAX_CONCURRENT_COVER_JOBS` (3) extractions run at a time — the renderer only asks for rows that scroll into view, but a fast scroll through a large folder would otherwise queue hundreds of file reads at once.
 
 ## Single instance
 

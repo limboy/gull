@@ -201,8 +201,60 @@ function toggleFinishedBook(filePath) {
 
 const BOOK_TEXT_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>`;
-const BOOK_CHECK_ICON = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-check-icon lucide-book-check"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="m9 9.5 2 2 4-4"/></svg>`;
+const FINISHED_MARK = `
+  <span class="tab-finished" role="img" aria-label="Finished" title="Finished">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12.5 5 5L20 6.5"/></svg>
+  </span>`;
+
+// --- Sidebar Covers ---
+// Cover art is fetched only once a row scrolls into view: a library can list
+// hundreds of books and every miss costs main a read of the book file.
+const bookCovers = new Map(); // filePath -> data URI, or null when there is none
+const pendingCovers = new Set();
+
+const coverObserver = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      coverObserver.unobserve(entry.target);
+      loadBookCover(entry.target.dataset.coverFor);
+    }
+  }, { root: tabBar, rootMargin: '200px' })
+  : null;
+
+function bookIconHtml(filePath) {
+  const cover = bookCovers.get(filePath);
+  return cover ? `<img class="tab-cover" src="${escapeHtml(cover)}" alt="" />` : BOOK_TEXT_ICON;
+}
+
+async function loadBookCover(filePath) {
+  if (!filePath || bookCovers.has(filePath) || pendingCovers.has(filePath)) return;
+  pendingCovers.add(filePath);
+  let cover = null;
+  try {
+    cover = await window.epub.getBookCover(filePath);
+  } catch (error) {
+    console.error('Failed to load book cover', error);
+  } finally {
+    pendingCovers.delete(filePath);
+  }
+  bookCovers.set(filePath, cover || null);
+  if (!cover) return;
+
+  // Patch the row in place — re-rendering the sidebar would fight a scroll in
+  // progress, and covers land one by one.
+  for (const icon of tabBar.querySelectorAll('.tab-icon')) {
+    if (icon.dataset.coverFor === filePath) icon.innerHTML = bookIconHtml(filePath);
+  }
+}
+
+function observeBookCovers() {
+  for (const icon of tabBar.querySelectorAll('.tab-icon')) {
+    if (bookCovers.has(icon.dataset.coverFor)) continue;
+    if (coverObserver) coverObserver.observe(icon);
+    else loadBookCover(icon.dataset.coverFor);
+  }
+}
 
 function createBookTab(book) {
   const tab = document.createElement('div');
@@ -226,10 +278,11 @@ function createBookTab(book) {
     <button type="button" class="tab-activate" role="tab"
       aria-selected="${isActive}" tabindex="${isActive ? '0' : '-1'}"
       data-book-path="${safePath}">
-      <span class="tab-icon" aria-hidden="true">
-        ${isFinished ? BOOK_CHECK_ICON : BOOK_TEXT_ICON}
+      <span class="tab-icon" data-cover-for="${safePath}" aria-hidden="true">
+        ${bookIconHtml(book.filePath)}
       </span>
       <span class="tab-label">${safeTitle}</span>
+      ${isFinished ? FINISHED_MARK : ''}
     </button>
     <button type="button" class="tab-pin" data-pin-book="${safePath}"
       aria-label="${isPinned ? 'Unpin' : 'Pin'} ${safeTitle}"
@@ -322,6 +375,7 @@ function renderTabs() {
   // Books opened from Finder or File > Open sit loose under the folders.
   unfiledBooks.forEach(book => tabBar.appendChild(createBookTab(book)));
   tabBar.scrollTop = scrollTop;
+  observeBookCovers();
 }
 
 // --- Sidebar Folders ---
