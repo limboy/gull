@@ -15,7 +15,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 - **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB work away from the Electron main thread; the message's `task` selects a full `parse` (default) or a cover-only read.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
   - `window.epub` — `parse`, `getBookCover`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
-  - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onThemeChanged`
+  - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onChapterScrollbarChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
 
@@ -26,7 +26,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
 | `get-book-cover` | R→M (invoke) | Return a book's cover as a thumbnail data URI, or `null` when it has none |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
-| `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
+| `set-setting` | R→M (invoke) | Persist one validated key and broadcast the resulting `settings-changed` snapshot |
 | `select-book-folder` | R→M (invoke) | Show a folder picker, then return `{path, name, books}` for the chosen directory (`null` if canceled) |
 | `scan-book-folder` | R→M (invoke) | Re-read a folder the sidebar already lists; `null` when it is gone or unmounted |
 | `watch-book-folders` | R→M (send) | Replace the window's watched folder list with the roots the sidebar shows |
@@ -38,9 +38,8 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | `renderer-ready` | R→M (send) | Signals a renderer has wired `open-file`; main then flushes that window's pending file queue |
 | `open-file` | M→R | Deliver a file path to its standalone book window |
 | `settings-changed` | M→R (broadcast) | Full settings object after any write |
-| `theme-changed` | M→R (broadcast) | Just the new theme value |
 | `update-ready` | M→R (broadcast) | `electron-updater` finished downloading |
-| `chapter-scrollbar-changed` | M→R (broadcast) | Layout Settings toggle: `true` (chapter scrollbar) or `false` (native scrollbar) |
+| `chapter-scrollbar-changed` | M→R (broadcast) | Settings-menu toggle: `true` (chapter scrollbar) or `false` (native scrollbar) |
 | `book-folder-changed` | M→R | A watched library folder changed on disk; carries the root folder path to rescan |
 
 ## File-open pipeline
@@ -67,10 +66,9 @@ Results are cached at `<userData>/covers/<sha1>.uri`, keyed by path, size, and m
 
 Stored atomically at `path.join(app.getPath('userData'), 'settings.json')`. Renderer writes are restricted to known keys and validated value shapes. Known keys:
 - `mainWindowBounds`, `mainWindowMaximized` — window state, saved debounced (200ms) on move/resize/close
-- `theme` — `system` | `light` | `dark`
 - `sidebarStates` — persisted left/right sidebar visibility
-- `chapterScrollbar` — `true` (default) | `false`; toggled via Layout settings dropdown
-- `fullWidth` — `true` | `false` (default); toggled via Layout settings dropdown
+- `chapterScrollbar` — `true` (default) | `false`; toggled via the top-bar Settings menu
+- `fullWidth` — `true` | `false` (default); toggled via the top-bar Settings menu
 
 ## Navigation hardening
 

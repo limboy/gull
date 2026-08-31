@@ -23,7 +23,6 @@ const MAX_FOLDER_SCAN_DEPTH = 4;
 const MAX_WATCHED_FOLDERS = 50;
 const FOLDER_CHANGE_DEBOUNCE_MS = 400;
 const RENDERER_SETTING_VALIDATORS = {
-  theme: value => ['system', 'light', 'dark'].includes(value),
   chapterScrollbar: value => typeof value === 'boolean',
   fullWidth: value => typeof value === 'boolean',
   sidebarStates: value => value
@@ -1016,9 +1015,6 @@ app.whenReady().then(() => {
     settings[key] = value;
     writeSettings(settings);
     broadcastToAllWindows('settings-changed', settings);
-    if (key === 'theme') {
-      broadcastToAllWindows('theme-changed', value);
-    }
     if (key === 'chapterScrollbar') {
       broadcastToAllWindows('chapter-scrollbar-changed', value);
     }

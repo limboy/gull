@@ -26,7 +26,6 @@ const state = {
 ```
 
 Persisted via `window.settings.set`:
-- `theme` — via `applyTheme`
 - `sidebarStates` — left/right sidebar visibility
 - `chapterScrollbar`, `fullWidth` — viewport layout preferences
 
@@ -73,7 +72,7 @@ Pinned and finished states are stored in the same `gull-open-books` records. Pin
 | Chapter scrollbar | `initChapterScrollbar` (segmented bar visualizing book structure) |
 | Resize | `initResize`, `setupHandle`, `saveSidebarWidths`, `loadSidebarWidths` |
 | Reading style | `loadReadingStyle`, `applyReadingStyle`, `ensureReadingFontsLoaded`, `updateStyleDisplay`, `stepValue`, `FONT_SIZE_STEPS`, `LINE_HEIGHT_STEPS`, `PARA_SPACING_STEPS` |
-| Theme | `applyTheme` |
+| Theme | `applySystemTheme` plus the `prefers-color-scheme` listener |
 | Update pill | `initUpdatePill` |
 | Broken images | `initBrokenImageHandling` |
 | Bootstrap | `initApp` (bottom of file) |
@@ -82,7 +81,7 @@ Book tabs, folder headers, TOC entries, search results, highlights, sidebar tabs
 
 ## Top bar
 
-The bar above the content (`#tab-bar`) centers the active book's title in `#active-book-title`, inside the draggable region between the sidebar toggles. `renderActiveBookTitle` fills it from `state.openBooks` on every `renderContent`, and again when EPUB metadata replaces a book's title mid-render; it is empty when no book is open. Standalone windows show it too.
+The bar above the content (`#tab-bar`) centers the active book's title in `#active-book-title`, inside the draggable region between the sidebar toggles. `renderActiveBookTitle` fills it from `state.openBooks` on every `renderContent`, and again when EPUB metadata replaces a book's title mid-render; it is empty when no book is open. Standalone windows show it too. The top-right Settings menu owns the typography controls plus the chapter-scrollbar and full-width toggles.
 
 ## Rendering model
 

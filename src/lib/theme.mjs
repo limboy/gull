@@ -1,19 +1,8 @@
-const THEME_MODES = new Set(['system', 'light', 'dark']);
-
-export function normalizeThemeMode(value) {
-  return THEME_MODES.has(value) ? value : 'system';
-}
-
-export function resolveThemeMode(value, prefersDark = false) {
-  const mode = normalizeThemeMode(value);
-  return mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode;
-}
-
-export function applyThemeMode(value, root = document.documentElement, prefersDark) {
-  const mode = normalizeThemeMode(value);
+export function applySystemTheme(root = document.documentElement, prefersDark) {
   const isDark = typeof prefersDark === 'boolean'
     ? prefersDark
     : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  root.setAttribute('data-theme', resolveThemeMode(mode, isDark));
-  return mode;
+  const theme = isDark ? 'dark' : 'light';
+  root.setAttribute('data-theme', theme);
+  return theme;
 }

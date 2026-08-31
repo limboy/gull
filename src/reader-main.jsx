@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RefreshCw } from 'lucide-react';
 import { SettingsMenu } from '@/components/SettingsMenu';
-import { LayoutMenu } from '@/components/LayoutMenu';
-import { applyThemeMode } from '@/lib/theme.mjs';
+import { applySystemTheme } from '@/lib/theme.mjs';
 
 import './reader/fonts.css';
 import './reader/App.css';
@@ -12,14 +11,7 @@ const initialSettings = window.initialSettings || {};
 const isStandaloneReader = new URLSearchParams(window.location.search).get('standalone') === '1';
 
 function applyInitialAppearance() {
-  let savedTheme = 'system';
-  const rawTheme = localStorage.getItem('gull-theme');
-  try {
-    savedTheme = JSON.parse(rawTheme) || 'system';
-  } catch {
-    savedTheme = rawTheme || 'system';
-  }
-  applyThemeMode(initialSettings.theme || savedTheme);
+  applySystemTheme();
   document.documentElement.classList.toggle(
     'native-scrollbar',
     initialSettings.chapterScrollbar === false
@@ -116,9 +108,6 @@ function ReaderApp() {
           </button>
         </div>
         <div id="tab-bar-tabs" role="tablist" aria-label="Open books" aria-orientation="vertical" />
-        <div className="left-sidebar-footer">
-          <SettingsMenu />
-        </div>
       </aside>
 
       <div
@@ -151,7 +140,7 @@ function ReaderApp() {
             <RefreshCw aria-hidden="true" />
             <span>Update</span>
           </button>
-          <LayoutMenu />
+          <SettingsMenu />
           <button id="toggle-right-sidebar" title="Toggle Sidebar" aria-label="Toggle Sidebar">
             <svg className="sidebar-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="16" rx="2" />

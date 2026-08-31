@@ -31,7 +31,6 @@ contextBridge.exposeInMainWorld('settings', {
   getAll: () => ipcRenderer.invoke('get-settings'),
   set: (key, value) => ipcRenderer.invoke('set-setting', key, value),
   onSettingsChanged: (cb) => subscribe('settings-changed', cb),
-  onThemeChanged: (cb) => subscribe('theme-changed', cb),
   onChapterScrollbarChanged: (cb) => subscribe('chapter-scrollbar-changed', cb),
 });
 

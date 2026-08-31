@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Sun, Moon, Monitor, Type, AlignJustify, Rows3, ChevronRight, Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Settings2, Type, AlignJustify, Rows3, ChevronRight, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { applyThemeMode, normalizeThemeMode } from '@/lib/theme.mjs';
 
 const FONT_OPTIONS = [
   { label: 'Inter', value: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" },
@@ -34,18 +33,6 @@ function readLS(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
 }
 
-function readInitialTheme() {
-  const persisted = window.initialSettings?.theme;
-  if (persisted) return normalizeThemeMode(persisted);
-  const local = localStorage.getItem('gull-theme');
-  if (!local) return 'system';
-  try {
-    return normalizeThemeMode(JSON.parse(local));
-  } catch {
-    return normalizeThemeMode(local);
-  }
-}
-
 function nearestOption(options, value) {
   let best = options[0].value;
   let bestDiff = Infinity;
@@ -57,7 +44,10 @@ function nearestOption(options, value) {
 }
 
 export function SettingsMenu() {
-  const [theme, setTheme] = useState(readInitialTheme);
+  const initialSettings = window.initialSettings || {};
+  const [chapterScrollbar, setChapterScrollbar] = useState(initialSettings.chapterScrollbar !== false);
+  const [fullWidth, setFullWidth] = useState(initialSettings.fullWidth === true);
+  const openedByPointer = useRef(false);
   const [style, setStyle] = useState(() => {
     const saved = readLS('gull-reading-style', {});
     return {
@@ -69,20 +59,35 @@ export function SettingsMenu() {
   });
 
   useEffect(() => {
-    const handler = (e) => setTheme(e.detail);
-    window.addEventListener('gull-theme-changed', handler);
+    const unsubscribeScrollbar = window.settings?.onChapterScrollbarChanged((enabled) => {
+      setChapterScrollbar(enabled !== false);
+    });
+    const unsubscribeSettings = window.settings?.onSettingsChanged((settings) => {
+      if (typeof settings?.chapterScrollbar !== 'undefined') {
+        setChapterScrollbar(settings.chapterScrollbar !== false);
+      }
+      if (typeof settings?.fullWidth !== 'undefined') {
+        setFullWidth(settings.fullWidth === true);
+      }
+    });
 
     return () => {
-      window.removeEventListener('gull-theme-changed', handler);
+      unsubscribeScrollbar?.();
+      unsubscribeSettings?.();
     };
   }, []);
 
-  function applyTheme(value) {
-    const mode = applyThemeMode(value);
-    setTheme(mode);
-    localStorage.setItem('gull-theme', mode);
-    window.settings?.set('theme', mode).catch((error) => {
-      console.warn('Failed to save theme', error);
+  function toggleChapterScrollbar(checked) {
+    setChapterScrollbar(checked);
+    window.settings?.set('chapterScrollbar', checked).catch((error) => {
+      console.warn('Failed to save chapter scrollbar setting', error);
+    });
+  }
+
+  function toggleFullWidth(checked) {
+    setFullWidth(checked);
+    window.settings?.set('fullWidth', checked).catch((error) => {
+      console.warn('Failed to save full-width setting', error);
     });
   }
 
@@ -97,7 +102,6 @@ export function SettingsMenu() {
     root.style.setProperty('--book-para-spacing', next.paraSpacing + 'em');
   }
 
-  const themeIcon = theme === 'dark' ? <Moon size={14} /> : theme === 'system' ? <Monitor size={14} /> : <Sun size={14} />;
   const fontSize = nearestOption(FONT_SIZE_OPTIONS, style.fontSize);
   const lineHeight = nearestOption(LINE_HEIGHT_OPTIONS, style.lineHeight);
   const paraSpacing = nearestOption(PARA_SPACING_OPTIONS, style.paraSpacing);
@@ -105,32 +109,35 @@ export function SettingsMenu() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button id="btn-settings" aria-label="Settings">
-          <Settings size={15} aria-hidden="true" />
-          Settings
+        <button
+          id="btn-settings"
+          type="button"
+          title="Settings"
+          aria-label="Settings"
+          onPointerDown={() => { openedByPointer.current = true; }}
+          onKeyDown={() => { openedByPointer.current = false; }}
+        >
+          <Settings2 size={16} aria-hidden="true" />
         </button>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content className="sm-content" side="top" align="start" sideOffset={8}>
+        <DropdownMenu.Content
+          className="sm-content"
+          side="bottom"
+          align="end"
+          sideOffset={8}
+          onCloseAutoFocus={(event) => {
+            if (openedByPointer.current) event.preventDefault();
+          }}
+        >
+          <CheckboxItem checked={chapterScrollbar} onCheckedChange={toggleChapterScrollbar}>
+            Chapter scrollbar
+          </CheckboxItem>
 
-          {/* Theme */}
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger className="sm-item sm-sub-trigger">
-              <span className="sm-icon">{themeIcon}</span>
-              Switch theme
-              <ChevronRight size={12} className="sm-arrow" />
-            </DropdownMenu.SubTrigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.SubContent className="sm-content" sideOffset={4}>
-                <DropdownMenu.RadioGroup value={theme} onValueChange={applyTheme}>
-                  <RadioItem value="system" icon={<Monitor size={14} />}>System</RadioItem>
-                  <RadioItem value="light" icon={<Sun size={14} />}>Light</RadioItem>
-                  <RadioItem value="dark" icon={<Moon size={14} />}>Dark</RadioItem>
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Sub>
+          <CheckboxItem checked={fullWidth} onCheckedChange={toggleFullWidth}>
+            Full width
+          </CheckboxItem>
 
           <DropdownMenu.Separator className="sm-separator" />
 
@@ -182,6 +189,21 @@ export function SettingsMenu() {
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
+  );
+}
+
+function CheckboxItem({ checked, onCheckedChange, children }) {
+  return (
+    <DropdownMenu.CheckboxItem
+      className="sm-item sm-checkbox-item"
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+    >
+      <DropdownMenu.ItemIndicator className="sm-radio-indicator">
+        <Check size={12} />
+      </DropdownMenu.ItemIndicator>
+      {children}
+    </DropdownMenu.CheckboxItem>
   );
 }
 

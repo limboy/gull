@@ -1,4 +1,4 @@
-import { applyThemeMode, normalizeThemeMode } from './lib/theme.mjs';
+import { applySystemTheme } from './lib/theme.mjs';
 import { resolveHighlightOffsets, isOverlappingHighlight, mergeOverlappingHighlights } from './lib/highlight-anchor.mjs';
 import {
   groupPinnedBooks,
@@ -2466,21 +2466,9 @@ window.epub.onOpenFile((filePath) => {
 
 // --- Theme ---
 const systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-let currentThemeMode = 'system';
-
-function applyTheme(theme) {
-  currentThemeMode = applyThemeMode(theme, document.documentElement, systemThemeQuery.matches);
-  localStorage.setItem('gull-theme', currentThemeMode);
-  // Notify React SettingsMenu of externally-driven theme changes (IPC, etc.)
-  window.dispatchEvent(new CustomEvent('gull-theme-changed', { detail: currentThemeMode }));
-}
-
-window.settings.onThemeChanged((theme) => {
-  applyTheme(theme);
-});
 
 systemThemeQuery.addEventListener('change', () => {
-  if (currentThemeMode === 'system') applyTheme('system');
+  applySystemTheme(document.documentElement, systemThemeQuery.matches);
 });
 
 function setChapterScrollbar(enabled) {
@@ -2557,8 +2545,6 @@ function initSidebarScrollbars() {
 // Init
 async function initApp() {
   const settings = window.initialSettings || {};
-  let storedTheme = localStorage.getItem('gull-theme');
-  try { storedTheme = JSON.parse(storedTheme); } catch {}
 
   loadHighlights();
   setSidebarMode('toc');
@@ -2569,7 +2555,7 @@ async function initApp() {
   if (!isStandaloneReader) loadSidebarStates();
   setChapterScrollbar(settings.chapterScrollbar !== false);
   setFullWidth(settings.fullWidth === true);
-  applyTheme(normalizeThemeMode(settings.theme || storedTheme));
+  applySystemTheme(document.documentElement, systemThemeQuery.matches);
 
   initSidebarFolders();
   initBrokenImageHandling();

@@ -19,7 +19,7 @@ title: "Styling & Theming"
 
 ## Theme
 
-`theme` is one of `system` | `light` | `dark`, persisted in `settings.json`. `applyTheme` resolves system appearance onto `document.documentElement` and listens for operating-system appearance changes while system mode is active. Main broadcasts `theme-changed` on every validated `set-setting` with key `theme` so other windows (if any) stay in sync.
+The reader always follows the operating system's current appearance. `applySystemTheme` resolves `prefers-color-scheme` onto `document.documentElement`, and the renderer listens for appearance changes so every open window updates immediately. Theme is not a user setting.
 
 ## Reading style controls
 
@@ -32,7 +32,7 @@ const LINE_HEIGHT_STEPS = [1.2,1.4,1.6,1.8,2.0,2.2,2.4];
 const PARA_SPACING_STEPS= [0,0.3,0.6,1.0,1.5,2.0];
 ```
 
-The saved style is synchronously written to root CSS variables by `reader-main.jsx`, then mirrored by `applyReadingStyle` in the runtime. Before restoring a book, `ensureReadingFontsLoaded` awaits the selected regular, semibold, bold, and italic font faces so the first visible layout uses final font metrics. `SettingsMenu.jsx` owns subsequent updates and persists them in `gull-reading-style` local storage.
+The saved style is synchronously written to root CSS variables by `reader-main.jsx`, then mirrored by `applyReadingStyle` in the runtime. Before restoring a book, `ensureReadingFontsLoaded` awaits the selected regular, semibold, bold, and italic font faces so the first visible layout uses final font metrics. The top-right `SettingsMenu.jsx` owns subsequent updates and persists them in `gull-reading-style` local storage. It also contains the chapter-scrollbar and full-width layout toggles.
 
 ## Why so much book CSS is stripped
 

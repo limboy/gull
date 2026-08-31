@@ -95,40 +95,6 @@ body {
   transition: none !important;
 }
 
-/* Settings button in left sidebar footer */
-.left-sidebar-footer {
-  flex-shrink: 0;
-  display: block;
-  padding: 8px;
-}
-
-#btn-settings {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  background: none;
-  color: var(--text-secondary);
-  cursor: default;
-  font-size: 13px;
-  outline: none;
-  -webkit-app-region: no-drag;
-}
-
-#btn-settings:hover {
-  color: var(--text-primary);
-  background: var(--hover);
-}
-
-#btn-settings svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-}
-
 /* Update pill */
 .update-pill {
   display: inline-flex;
@@ -165,7 +131,7 @@ body {
 
 #toggle-left-sidebar,
 #toggle-right-sidebar,
-#btn-layout-settings {
+#btn-settings {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,13 +148,13 @@ body {
 
 #toggle-left-sidebar:hover,
 #toggle-right-sidebar:hover,
-#btn-layout-settings:hover,
-#btn-layout-settings[data-state="open"] {
+#btn-settings:hover,
+#btn-settings[data-state="open"] {
   background: var(--hover);
   color: var(--text-primary);
 }
 
-#btn-layout-settings svg {
+#btn-settings svg {
   width: 16px;
   height: 16px;
 }

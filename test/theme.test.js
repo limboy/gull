@@ -3,11 +3,16 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-test('normalizes and resolves persisted theme modes', async () => {
-  const { normalizeThemeMode, resolveThemeMode } = await import('../src/lib/theme.mjs');
-  assert.equal(normalizeThemeMode('system'), 'system');
-  assert.equal(normalizeThemeMode('sepia'), 'system');
-  assert.equal(resolveThemeMode('system', true), 'dark');
-  assert.equal(resolveThemeMode('system', false), 'light');
-  assert.equal(resolveThemeMode('light', true), 'light');
+test('applies the current system theme', async () => {
+  const { applySystemTheme } = await import('../src/lib/theme.mjs');
+  const root = {
+    setAttribute(name, value) {
+      this[name] = value;
+    },
+  };
+
+  assert.equal(applySystemTheme(root, true), 'dark');
+  assert.equal(root['data-theme'], 'dark');
+  assert.equal(applySystemTheme(root, false), 'light');
+  assert.equal(root['data-theme'], 'light');
 });
