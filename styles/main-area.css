@@ -133,7 +133,7 @@
 }
 
 .tab-section-title {
-    padding: 4px 8px 2px;
+    padding: 4px;
     color: var(--text-sidebar-primary);
     font-size: 13px;
     font-weight: 400;
@@ -173,7 +173,7 @@
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    margin-right: 7px;
+    margin-right: 4px;
     fill: none;
     stroke: var(--text-sidebar-primary);
     stroke-width: 2;
@@ -224,7 +224,7 @@
     padding: 4px 8px;
     border-radius: 8px;
     font-weight: 400;
-    color: var(--text-primary);
+    color: var(--text-sidebar-primary);
     cursor: default;
     white-space: nowrap;
     /*opacity: 0.8;*/
@@ -358,7 +358,7 @@
 }
 
 .tab-item.active .tab-icon {
-    color: var(--text-primary);
+    color: var(--text-sidebar-primary);
 }
 
 .tab-item:hover .tab-pin,
@@ -401,7 +401,7 @@
 }
 
 .tab-item .tab-pin[aria-pressed="true"] {
-    color: var(--text-primary);
+    color: var(--text-sidebar-primary);
 }
 
 .tab-item .tab-pin[aria-pressed="true"] .tab-pin-head {

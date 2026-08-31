@@ -44,7 +44,7 @@ body {
   --bg-tab-hover: #e8e8e8;
   --bg-input: #ffffff;
   --text-primary: #171717;
-  --text-sidebar-primary: #555555;
+  --text-sidebar-primary: #333;
   --text-secondary: #717171;
   --accent: #007acc;
   --border: #d5d5d5;
@@ -65,7 +65,7 @@ body {
   --bg-tab-hover: #2a2d2e;
   --bg-input: #3c3c3c;
   --text-primary: #CECDC3;
-  --text-sidebar-primary: #aaaaaa;
+  --text-sidebar-primary: #ccc;
   --text-secondary: #888888;
   --accent: #0a4d7a;
   --border: #3c3c3c;
