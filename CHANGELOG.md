@@ -3,6 +3,27 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.4.0](https://github.com/limboy/gull/compare/v1.3.2...v1.4.0) - 2026-08-31
+
+### Features
+
+- **covers:** add cover thumbnails to sidebar ([f661b4b](https://github.com/limboy/gull/commit/f661b4b72ef25b684184fdfce9878c184b8ac17e))
+- **folders:** watch library folders for file changes ([2f760bb](https://github.com/limboy/gull/commit/2f760bb3dd779e9059b5763ac1a2b9ae8b4612aa))
+
+### Refactoring
+
+- **ui:** move pin to context menu ([affc993](https://github.com/limboy/gull/commit/affc99385458cb15b34847a28e0868830054d1be))
+
+### Documentation
+
+- update CHANGELOG for v1.3.2 ([8e9136e](https://github.com/limboy/gull/commit/8e9136ea9f69fdb71b2d9800ef13729e49b4435b))
+
+### Styles
+
+- **ui:** adjust spacing and sidebar text contrast ([45a26c5](https://github.com/limboy/gull/commit/45a26c5e127d28cf982a0f78035f75dc8c2e73be))
+- update hover and active background styling ([19d118e](https://github.com/limboy/gull/commit/19d118ed5cbfa0423fa6f328da602b0d3f8e8837))
+- **ui:** update sidebar styling and typography ([0dd0b1b](https://github.com/limboy/gull/commit/0dd0b1baf0128e56e09e072f5230b2cdaf4d0d51))
+
 ## [v1.3.2](https://github.com/limboy/gull/compare/v1.3.1...v1.3.2) - 2026-08-27
 
 ### Features
