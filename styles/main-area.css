@@ -184,7 +184,7 @@
 .tab-section-books {
     display: flex;
     flex-direction: column;
-    /*gap: 2px;*/
+    gap: 1px;
     min-width: 0;
 }
 
@@ -264,7 +264,7 @@
 }*/
 
 [data-theme="light"] .tab-item.active {
-    background: #e2e2e6;
+    background: var(--hover);
 }
 
 [data-theme="dark"] .tab-item:hover,

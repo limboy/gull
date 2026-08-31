@@ -49,7 +49,7 @@ body {
   --accent: #007acc;
   --border: #d5d5d5;
   --gutter-highlight: #e0e0e0;
-  --hover: rgba(0, 0, 0, 0.04);
+  --hover: rgba(0, 0, 0, 0.08);
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
   --tab-close-hover: rgba(0, 0, 0, 0.1);
