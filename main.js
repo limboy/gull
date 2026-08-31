@@ -19,6 +19,8 @@ const MAX_BOOK_FILE_SIZE = 512 * 1024 * 1024;
 const MAX_PATH_CHECKS = 500;
 const MAX_FOLDER_BOOKS = 500;
 const MAX_FOLDER_SCAN_DEPTH = 4;
+const MAX_WATCHED_FOLDERS = 50;
+const FOLDER_CHANGE_DEBOUNCE_MS = 400;
 const RENDERER_SETTING_VALIDATORS = {
   theme: value => ['system', 'light', 'dark'].includes(value),
   chapterScrollbar: value => typeof value === 'boolean',
@@ -124,6 +126,100 @@ function statCreatedAt(targetPath) {
 
 function readBookFolder(folderPath) {
   return readFolderTree(folderPath, 0, { remaining: MAX_FOLDER_BOOKS });
+}
+
+// --- Book folder watching ---
+
+// webContents id -> Map(folder path -> { watcher, timer })
+const folderWatchersByWindow = new Map();
+
+function stopFolderWatch(entry) {
+  if (entry.timer) clearTimeout(entry.timer);
+  try {
+    entry.watcher.close();
+  } catch (e) {
+    // Already closed with its folder; nothing left to release.
+  }
+}
+
+function stopFolderWatchers(rendererId) {
+  const watchers = folderWatchersByWindow.get(rendererId);
+  if (!watchers) return;
+  for (const entry of watchers.values()) stopFolderWatch(entry);
+  folderWatchersByWindow.delete(rendererId);
+}
+
+/**
+ * Does a changed path under a library folder alter what the sidebar lists?
+ *
+ * Book folders collect plenty of noise — Calibre metadata, cover art, sync
+ * lock files — and rescanning for those would walk the whole tree for nothing.
+ * Extension-less names are treated as folders, which do change the listing.
+ */
+function affectsBookListing(filename) {
+  if (!filename) return true; // the platform did not say what changed
+  const base = path.basename(filename);
+  if (base.startsWith('.')) return false; // dotfiles are never listed
+  return isSupportedFile(base) || path.extname(base) === '';
+}
+
+/**
+ * Watch one library folder and tell its window when what is under it changes.
+ *
+ * Finder copies and sync clients write in bursts, so events are debounced into
+ * one notification per folder. Recursive watching is unavailable on Linux;
+ * there we fall back to the folder itself, which still catches books added or
+ * removed at its root.
+ */
+function watchBookFolder(webContents, folderPath) {
+  let watcher;
+  try {
+    watcher = fs.watch(folderPath, { recursive: true });
+  } catch (e) {
+    try {
+      watcher = fs.watch(folderPath);
+    } catch (err) {
+      return null; // unwatchable: gone, or a filesystem without notifications
+    }
+  }
+
+  const entry = { watcher, timer: null };
+  watcher.on('change', (eventType, filename) => {
+    if (!affectsBookListing(filename)) return;
+    if (entry.timer) clearTimeout(entry.timer);
+    entry.timer = setTimeout(() => {
+      entry.timer = null;
+      if (!webContents.isDestroyed()) webContents.send('book-folder-changed', folderPath);
+    }, FOLDER_CHANGE_DEBOUNCE_MS);
+  });
+  // A watcher dies with its folder. Drop it and leave the sidebar listing
+  // alone; the renderer rescans on focus and can pick the folder back up.
+  watcher.on('error', () => {
+    const watchers = folderWatchersByWindow.get(webContents.id);
+    if (watchers && watchers.get(folderPath) === entry) watchers.delete(folderPath);
+    stopFolderWatch(entry);
+  });
+  return entry;
+}
+
+/** Watch exactly the folders a window's sidebar lists, and nothing else. */
+function syncFolderWatchers(webContents, folderPaths) {
+  let watchers = folderWatchersByWindow.get(webContents.id);
+  if (!watchers) {
+    watchers = new Map();
+    folderWatchersByWindow.set(webContents.id, watchers);
+  }
+
+  for (const [folderPath, entry] of watchers) {
+    if (folderPaths.includes(folderPath)) continue;
+    stopFolderWatch(entry);
+    watchers.delete(folderPath);
+  }
+  for (const folderPath of folderPaths) {
+    if (watchers.has(folderPath)) continue;
+    const entry = watchBookFolder(webContents, folderPath);
+    if (entry) watchers.set(folderPath, entry);
+  }
 }
 
 function isSafeExternalUrl(value) {
@@ -632,6 +728,7 @@ function createWindow({ bookFilePath = null } = {}) {
 
   win.on('closed', () => {
     pendingFilesByWindow.delete(rendererId);
+    stopFolderWatchers(rendererId);
     if (isBookWindow) {
       if (bookWindows.get(bookFilePath) === win) bookWindows.delete(bookFilePath);
     } else if (mainWindow === win) {
@@ -931,6 +1028,22 @@ app.whenReady().then(() => {
       return null; // unmounted drive or deleted folder: keep the saved listing
     }
     return readBookFolder(folderPath);
+  });
+
+  // IPC: keep watching the folders the sidebar lists, so books added or deleted
+  // outside Gull show up without a restart
+  ipcMain.on('watch-book-folders', (event, folderPaths) => {
+    assertTrustedIpc(event);
+    if (!Array.isArray(folderPaths)) return;
+    const watchable = [];
+    for (const folderPath of folderPaths.slice(0, MAX_WATCHED_FOLDERS)) {
+      try {
+        watchable.push(validateFolderPath(folderPath));
+      } catch (e) {
+        // Deleted or unmounted: nothing to watch, the listing stays as saved.
+      }
+    }
+    syncFolderWatchers(event.sender, watchable);
   });
 
   ipcMain.handle('check-paths-existence', (event, paths) => {

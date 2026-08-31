@@ -308,6 +308,9 @@ function createSection(section) {
 }
 
 function renderTabs() {
+  // Rebuilding the list would otherwise jump a scrolled sidebar back to the
+  // top whenever a folder rescan lands while the user is reading.
+  const scrollTop = tabBar.scrollTop;
   tabBar.innerHTML = '';
   if (isStandaloneReader) return;
 
@@ -318,6 +321,7 @@ function renderTabs() {
   sections.forEach(section => tabBar.appendChild(createSection(section)));
   // Books opened from Finder or File > Open sit loose under the folders.
   unfiledBooks.forEach(book => tabBar.appendChild(createBookTab(book)));
+  tabBar.scrollTop = scrollTop;
 }
 
 // --- Sidebar Folders ---
@@ -365,6 +369,22 @@ function applyFolderScan(scan) {
   );
 }
 
+/** Ask main to watch exactly the folders the sidebar lists right now. */
+function updateFolderWatchers() {
+  if (isStandaloneReader) return;
+  window.epub.watchBookFolders(state.folders.map(folder => folder.path));
+}
+
+// Rescans mutate shared state and await renderContent, so they run one at a
+// time: a watcher event and a focus refresh can otherwise overlap.
+const FOLDER_FOCUS_REFRESH_MS = 2000;
+let lastFolderRefreshAt = 0;
+let folderRefreshChain = Promise.resolve();
+function queueFolderRefresh(task) {
+  folderRefreshChain = folderRefreshChain.then(task, task);
+  return folderRefreshChain;
+}
+
 async function addFolderFromDisk() {
   const scan = await window.epub.selectBookFolder();
   if (!scan) return;
@@ -373,24 +393,48 @@ async function addFolderFromDisk() {
   renderTabs();
   if (activeLost) await renderContent();
   saveReaderState();
+  updateFolderWatchers();
+}
+
+/** Re-read one folder after main reports the files under it changed. */
+function refreshFolder(folderPath) {
+  return queueFolderRefresh(async () => {
+    lastFolderRefreshAt = Date.now();
+    if (!findFolder(state.folders, folderPath)) return;
+
+    // A null scan means the folder is gone or its drive is unmounted; keep the
+    // saved listing rather than emptying the sidebar over a transient miss.
+    const scan = await window.epub.scanBookFolder(folderPath);
+    if (!scan) return;
+
+    const activeLost = applyFolderScan(scan);
+    renderTabs();
+    if (activeLost) await renderContent();
+    saveReaderState();
+  });
 }
 
 /** Re-read every folder so the sidebar reflects what is on disk right now. */
-async function refreshFolders() {
-  if (state.folders.length === 0) return;
+function refreshFolders() {
+  return queueFolderRefresh(async () => {
+    lastFolderRefreshAt = Date.now();
+    // Watchers are re-armed even with no folders, so removals reach main too.
+    updateFolderWatchers();
+    if (state.folders.length === 0) return;
 
-  let activeLost = false;
-  for (const folder of [...state.folders]) {
-    // A null scan means the folder is gone or its drive is unmounted; keep the
-    // saved listing rather than emptying the sidebar over a transient miss.
-    const scan = await window.epub.scanBookFolder(folder.path);
-    if (scan && applyFolderScan(scan)) activeLost = true;
-  }
-  // Root folders are shown in the order they were added; only their contents sort.
+    let activeLost = false;
+    for (const folder of [...state.folders]) {
+      // A null scan means the folder is gone or its drive is unmounted; keep the
+      // saved listing rather than emptying the sidebar over a transient miss.
+      const scan = await window.epub.scanBookFolder(folder.path);
+      if (scan && applyFolderScan(scan)) activeLost = true;
+    }
+    // Root folders are shown in the order they were added; only their contents sort.
 
-  renderTabs();
-  if (activeLost) await renderContent();
-  saveReaderState();
+    renderTabs();
+    if (activeLost) await renderContent();
+    saveReaderState();
+  });
 }
 
 function removeFolderFromSidebar(folderPath) {
@@ -398,6 +442,7 @@ function removeFolderFromSidebar(folderPath) {
   renderTabs();
   if (activeLost) renderContent();
   saveReaderState();
+  updateFolderWatchers();
 }
 
 async function showSortMenu(anchor) {
@@ -435,6 +480,18 @@ function initSidebarFolders() {
   document.getElementById('btn-new-folder')?.addEventListener('click', () => {
     addFolderFromDisk();
   });
+
+  if (!isStandaloneReader) {
+    window.epub.onBookFolderChanged(folderPath => refreshFolder(folderPath));
+
+    // Fallback for changes no watcher reported: a folder that was missing or
+    // unmounted at startup has no watcher, and one deleted and recreated
+    // outside Gull loses the watcher it had. Regaining focus re-arms both.
+    window.addEventListener('focus', () => {
+      if (Date.now() - lastFolderRefreshAt < FOLDER_FOCUS_REFRESH_MS) return;
+      refreshFolders();
+    });
+  }
 
   document.getElementById('btn-sort-books')?.addEventListener('click', (e) => {
     const rect = e.currentTarget.getBoundingClientRect();

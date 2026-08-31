@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('epub', {
   showSidebarMenu: (target) => ipcRenderer.invoke('show-sidebar-menu', target),
   showSortMenu: (current) => ipcRenderer.invoke('show-sort-menu', current),
   scanBookFolder: (folderPath) => ipcRenderer.invoke('scan-book-folder', folderPath),
+  watchBookFolders: (folderPaths) => ipcRenderer.send('watch-book-folders', folderPaths),
+  onBookFolderChanged: (cb) => subscribe('book-folder-changed', cb),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
 });
 

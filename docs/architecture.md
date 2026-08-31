@@ -14,7 +14,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 - **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, book-folder scanning, native sidebar menus, and auto-update.
 - **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB parsing away from the Electron main thread.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
-  - `window.epub` — `parse`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `showSidebarMenu`, `showSortMenu`, `openExternal`
+  - `window.epub` — `parse`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
   - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onThemeChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
@@ -28,6 +28,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | `set-setting` | R→M (invoke) | Persist one key; broadcasts `settings-changed` (+ `theme-changed` when key=`theme`) |
 | `select-book-folder` | R→M (invoke) | Show a folder picker, then return `{path, name, books}` for the chosen directory (`null` if canceled) |
 | `scan-book-folder` | R→M (invoke) | Re-read a folder the sidebar already lists; `null` when it is gone or unmounted |
+| `watch-book-folders` | R→M (send) | Replace the window's watched folder list with the roots the sidebar shows |
 | `show-sort-menu` | R→M (invoke) | Pop the sidebar's native sort menu (Name / Date Created, Ascending / Descending, Folders First) and return the updated settings, or `null` if dismissed |
 | `show-sidebar-menu` | R→M (invoke) | Pop the native right-click menu for a sidebar folder (Show in Finder / Expand All / Collapse All / Remove) or book row (Show in Finder); reveals the path itself and returns the chosen action |
 | `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
@@ -39,6 +40,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | `theme-changed` | M→R (broadcast) | Just the new theme value |
 | `update-ready` | M→R (broadcast) | `electron-updater` finished downloading |
 | `chapter-scrollbar-changed` | M→R (broadcast) | Layout Settings toggle: `true` (chapter scrollbar) or `false` (native scrollbar) |
+| `book-folder-changed` | M→R | A watched library folder changed on disk; carries the root folder path to rescan |
 
 ## File-open pipeline
 
@@ -47,6 +49,8 @@ Files can arrive from: macOS `open-file` event, `second-instance` CLI args, firs
 ## Book folders
 
 `select-book-folder` and `scan-book-folder` both answer with `readBookFolder`, which walks the directory into a tree: each node carries `path`, `name`, `createdAt`, its own `books` (`filePath`, `title`, `createdAt`), and its `folders`. `readFolderTree` descends `MAX_FOLDER_SCAN_DEPTH` (4) levels with a shared budget of `MAX_FOLDER_BOOKS` (500) files, so both flat folders and Calibre-style `Author/Title/book.epub` trees list correctly. Branches holding no books at any depth are pruned, dotfiles are skipped, and symlinks are ignored (readdir reports them as neither file nor directory), which also rules out symlink cycles. `createdAt` comes from `birthtimeMs`, falling back to `mtimeMs`, and is what the sidebar's *Date Created* sort orders by. Main only ever reports supported book extensions, and the renderer owns the list of folders — main keeps no library state.
+
+`watch-book-folders` carries the root folders the sidebar currently lists (up to `MAX_WATCHED_FOLDERS`, 50); main diffs that list against the window's live `fs.watch` handles, opening and closing watchers so the two match. Watching is recursive where the platform supports it (macOS, Windows) and falls back to the folder's own level on Linux. Events are filtered to names that can change the listing — supported book files and extension-less names, which are the folders — so Calibre metadata, cover art, and dotfiles cost nothing, then debounced by `FOLDER_CHANGE_DEBOUNCE_MS` (400ms) into one `book-folder-changed` per folder, because a Finder copy or a sync client fires a burst per file. Watchers are per window and closed with it; a watcher whose folder disappears drops itself and the sidebar keeps its listing.
 
 ## Single instance
 
