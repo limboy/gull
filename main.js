@@ -1088,6 +1088,12 @@ app.whenReady().then(() => {
         template.push(
           { type: 'separator' },
           {
+            label: 'Pin',
+            type: 'checkbox',
+            checked: payload?.pinned === true,
+            click: () => { action = 'toggle-pin'; },
+          },
+          {
             label: 'Mark as Finished',
             type: 'checkbox',
             checked: payload?.finished === true,

@@ -31,7 +31,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | `scan-book-folder` | R→M (invoke) | Re-read a folder the sidebar already lists; `null` when it is gone or unmounted |
 | `watch-book-folders` | R→M (send) | Replace the window's watched folder list with the roots the sidebar shows |
 | `show-sort-menu` | R→M (invoke) | Pop the sidebar's native sort menu (Name / Date Created, Ascending / Descending, Folders First) and return the updated settings, or `null` if dismissed |
-| `show-sidebar-menu` | R→M (invoke) | Pop the native right-click menu for a sidebar folder (Show in Finder / Expand All / Collapse All / Remove) or book row (Show in Finder); reveals the path itself and returns the chosen action |
+| `show-sidebar-menu` | R→M (invoke) | Pop the native right-click menu for a sidebar folder (Show in Finder / Expand All / Collapse All / Remove) or book row (Show in Finder / Pin / Mark as Finished); reveals the path itself and returns the chosen action |
 | `check-paths-existence` | R→M (invoke) | Batch check whether paths still exist; treats iCloud `.<name>.icloud` placeholders as "exists" so temporarily evicted books stay in tabs |
 | `open-external` | R→M (invoke) | Open a validated `http`, `https`, `mailto`, or `tel` URL after an explicit reader link click |
 | `apply-update` | R→M (invoke) | Calls `autoUpdater.quitAndInstall()` |

@@ -178,18 +178,11 @@ function setActiveBook(filePath) {
   saveReaderState();
 }
 
-function pinBook(filePath, restoreFocus = false) {
+function pinBook(filePath) {
   if (toggleBookPin(state.openBooks, filePath) === null) return;
 
   renderTabs();
   saveReaderState();
-  if (!restoreFocus) return;
-
-  requestAnimationFrame(() => {
-    [...tabBar.querySelectorAll('[data-pin-book]')]
-      .find(button => button.dataset.pinBook === filePath)
-      ?.focus();
-  });
 }
 
 function toggleFinishedBook(filePath) {
@@ -258,7 +251,6 @@ function observeBookCovers() {
 
 function createBookTab(book) {
   const tab = document.createElement('div');
-  const isPinned = book.pinned === true;
   const isFinished = book.finished === true;
   tab.className = 'tab-item' + (book.filePath === state.activeBookPath ? ' active' : '');
   tab.setAttribute('role', 'presentation');
@@ -283,14 +275,6 @@ function createBookTab(book) {
       </span>
       <span class="tab-label">${safeTitle}</span>
       ${isFinished ? FINISHED_MARK : ''}
-    </button>
-    <button type="button" class="tab-pin" data-pin-book="${safePath}"
-      aria-label="${isPinned ? 'Unpin' : 'Pin'} ${safeTitle}"
-      aria-pressed="${isPinned}" title="${isPinned ? 'Unpin' : 'Pin'} ${safeTitle}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path class="tab-pin-head" d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/>
-        <path d="M12 14v7"/>
-      </svg>
     </button>
     ${closeHtml}
   `;
@@ -511,15 +495,17 @@ async function showSortMenu(anchor) {
   }
 }
 
-async function showSidebarMenu(type, targetPath, finished = false) {
+async function showSidebarMenu(type, targetPath, bookState = {}) {
   try {
     const action = await window.epub.showSidebarMenu({
       type,
       path: targetPath,
-      finished,
+      pinned: bookState.pinned === true,
+      finished: bookState.finished === true,
     });
     if (type === 'book') {
-      if (action === 'toggle-finished') toggleFinishedBook(targetPath);
+      if (action === 'toggle-pin') pinBook(targetPath);
+      else if (action === 'toggle-finished') toggleFinishedBook(targetPath);
       return;
     }
     if (action === 'remove') removeFolderFromSidebar(targetPath);
@@ -566,7 +552,10 @@ function initSidebarFolders() {
     if (bookRow) {
       const bookPath = bookRow.dataset.bookItem;
       const book = state.openBooks.find(candidate => candidate.filePath === bookPath);
-      showSidebarMenu('book', bookPath, book?.finished === true);
+      showSidebarMenu('book', bookPath, {
+        pinned: book?.pinned === true,
+        finished: book?.finished === true,
+      });
     } else {
       showSidebarMenu('folder', folder.dataset.folderPath);
     }
@@ -2171,14 +2160,6 @@ contentArea.addEventListener('scroll', () => {
 
 // --- Event Delegation ---
 getAppLayout()?.addEventListener('click', (e) => {
-  const pinBtn = e.target.closest('[data-pin-book]');
-  if (pinBtn) {
-    // Keyboard-generated clicks have detail 0. Preserve focus for keyboard
-    // users without leaving hover actions revealed after a pointer click.
-    pinBook(pinBtn.dataset.pinBook, e.detail === 0);
-    return;
-  }
-
   const closeBtn = e.target.closest('[data-close-book]');
   if (closeBtn) {
     closeBook(closeBtn.dataset.closeBook);
