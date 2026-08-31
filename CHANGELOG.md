@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v1.4.1](https://github.com/limboy/gull/compare/v1.4.0...v1.4.1) - 2026-08-31
+
+### Refactoring
+
+- **ui:** consolidate layout controls into settings menu ([e1d1844](https://github.com/limboy/gull/commit/e1d1844cedd6e75b887c041d98dad062d8423f50))
+
+### Documentation
+
+- update CHANGELOG for v1.4.0 ([5230257](https://github.com/limboy/gull/commit/52302579faa98f4c66179a110d5919759926d729))
+
 ## [v1.4.0](https://github.com/limboy/gull/compare/v1.3.2...v1.4.0) - 2026-08-31
 
 ### Features
