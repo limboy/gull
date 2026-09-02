@@ -122,7 +122,20 @@
 }
 
 .tab-section[data-section-kind="pinned"] {
-    margin-bottom: 12px;
+    padding: 4px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: var(--bg-pinned);
+
+    .tab-section-title {
+        font-size: 11px;
+        padding: 0 0 0 4px;
+        color: var(--text-sidebar-primary);
+    }
+
+    .tab-section-books .tab-item {
+        padding-left: 4px;
+    }
 }
 
 .tab-section + .tab-section {

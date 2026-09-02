@@ -43,6 +43,7 @@ body {
   --bg-tab-active: #ffffff;
   --bg-tab-hover: #e8e8e8;
   --bg-input: #ffffff;
+  --bg-pinned: rgba(0, 0, 0, 0.04);
   --text-primary: #171717;
   --text-sidebar-primary: #333;
   --text-secondary: #717171;
@@ -64,6 +65,7 @@ body {
   --bg-tab-active: #1e1e1e;
   --bg-tab-hover: #2a2d2e;
   --bg-input: #3c3c3c;
+  --bg-pinned: rgba(255, 255, 255, 0.05);
   --text-primary: #CECDC3;
   --text-sidebar-primary: #ccc;
   --text-secondary: #888888;
