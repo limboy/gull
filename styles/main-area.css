@@ -6,6 +6,23 @@
     position: relative;
 }
 
+#left-sidebar.folder-drop-active::after {
+    content: "Drop folder to add";
+    position: absolute;
+    inset: calc(38px + 8px) 8px 8px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--text-secondary);
+    border-radius: 10px;
+    background: var(--bg-sidebar);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+}
+
 .left-sidebar-header {
     display: flex;
     align-items: center;

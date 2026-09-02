@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 function subscribe(channel, callback) {
   if (typeof callback !== 'function') return () => {};
@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld('epub', {
   signalReady: () => ipcRenderer.send('renderer-ready'),
   checkPathsExistence: (paths) => ipcRenderer.invoke('check-paths-existence', paths),
   selectBookFolder: () => ipcRenderer.invoke('select-book-folder'),
+  scanDroppedBookFolder: (file) => {
+    const folderPath = webUtils.getPathForFile(file);
+    return folderPath
+      ? ipcRenderer.invoke('scan-book-folder', folderPath)
+      : Promise.resolve(null);
+  },
   showSidebarMenu: (target) => ipcRenderer.invoke('show-sidebar-menu', target),
   showSortMenu: (current) => ipcRenderer.invoke('show-sort-menu', current),
   scanBookFolder: (folderPath) => ipcRenderer.invoke('scan-book-folder', folderPath),

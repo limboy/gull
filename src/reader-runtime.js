@@ -36,6 +36,7 @@ const isStandaloneReader = new URLSearchParams(window.location.search).get('stan
 // DOM refs
 const appLayout = document.getElementById('app-layout');
 const getAppLayout = () => document.getElementById('app-layout') || appLayout;
+const leftSidebar = document.getElementById('left-sidebar');
 const tabBar = document.getElementById('tab-bar-tabs');
 const contentArea = document.getElementById('content-area');
 const emptyState = document.getElementById('empty-state');
@@ -427,11 +428,36 @@ async function addFolderFromDisk() {
   const scan = await window.epub.selectBookFolder();
   if (!scan) return;
 
-  const activeLost = applyFolderScan(scan);
+  await addFolderScans([scan]);
+}
+
+async function addFolderScans(scans) {
+  let activeLost = false;
+  let added = false;
+  for (const scan of scans) {
+    if (!scan) continue;
+    added = true;
+    if (applyFolderScan(scan)) activeLost = true;
+  }
+  if (!added) return;
+
   renderTabs();
   if (activeLost) await renderContent();
   saveReaderState();
   updateFolderWatchers();
+}
+
+async function addDroppedFolders(files) {
+  const scans = [];
+  for (const file of files) {
+    try {
+      const scan = await window.epub.scanDroppedBookFolder(file);
+      if (scan) scans.push(scan);
+    } catch (err) {
+      console.warn('Dropped folder scan failed', err);
+    }
+  }
+  await addFolderScans(scans);
 }
 
 /** Re-read one folder after main reports the files under it changed. */
@@ -523,6 +549,35 @@ function initSidebarFolders() {
 
   if (!isStandaloneReader) {
     window.epub.onBookFolderChanged(folderPath => refreshFolder(folderPath));
+
+    const isFileDrag = (event) =>
+      Array.from(event.dataTransfer?.types || []).includes('Files');
+    const clearFolderDropTarget = () => {
+      leftSidebar?.classList.remove('folder-drop-active');
+    };
+
+    leftSidebar?.addEventListener('dragenter', (event) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      leftSidebar.classList.add('folder-drop-active');
+    });
+    leftSidebar?.addEventListener('dragover', (event) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      leftSidebar.classList.add('folder-drop-active');
+    });
+    leftSidebar?.addEventListener('dragleave', (event) => {
+      if (!leftSidebar.contains(event.relatedTarget)) clearFolderDropTarget();
+    });
+    leftSidebar?.addEventListener('drop', (event) => {
+      if (!isFileDrag(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      clearFolderDropTarget();
+      addDroppedFolders(Array.from(event.dataTransfer.files));
+    });
+    window.addEventListener('dragend', clearFolderDropTarget);
 
     // Fallback for changes no watcher reported: a folder that was missing or
     // unmounted at startup has no watcher, and one deleted and recreated
