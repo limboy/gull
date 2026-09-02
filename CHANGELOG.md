@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 This file is generated automatically from [Conventional Commits](https://www.conventionalcommits.org/) — run `npm run changelog` to regenerate.
 
+## [v2.0.0](https://github.com/limboy/gull/compare/v1.4.1...v2.0.0) - 2026-09-02
+
+### Features
+
+- **pdf:** add fixed-layout PDF reading and zoom support ([e20289b](https://github.com/limboy/gull/commit/e20289bef7281630d541f7d440b954140b47b1ae))
+- **ui:** support dragging folders into sidebar ([1e10b8e](https://github.com/limboy/gull/commit/1e10b8eb3c104bc251dd670067d465a4d57323a9))
+
+### Documentation
+
+- update CHANGELOG for v1.4.1 ([46afdd5](https://github.com/limboy/gull/commit/46afdd51731b95e6de5d088df51385b14872f459))
+
+### Styles
+
+- **ui:** update pinned section styling ([252f690](https://github.com/limboy/gull/commit/252f6902d59c698e67f58a62281a7cad3104c3f2))
+- **ui:** remove gap from main area and adjust pinned section margin ([54e6db5](https://github.com/limboy/gull/commit/54e6db50df45661945fa62693735c0e3edafbfb8))
+
 ## [v1.4.1](https://github.com/limboy/gull/compare/v1.4.0...v1.4.1) - 2026-08-31
 
 ### Refactoring
