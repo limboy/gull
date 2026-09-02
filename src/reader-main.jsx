@@ -75,15 +75,13 @@ function ReaderApp() {
   const leftHidden = isStandaloneReader || !!sidebarStates.leftHidden;
   const rightHidden = !!sidebarStates.rightHidden;
   const nativeScrollbar = initialSettings.chapterScrollbar === false;
-  const fullWidth = initialSettings.fullWidth === true;
 
   const layoutClasses = [
     'app-starting',
     isStandaloneReader ? 'standalone-reader' : '',
     leftHidden ? 'left-sidebar-hidden' : '',
     rightHidden ? 'right-sidebar-hidden' : '',
-    nativeScrollbar ? 'native-scrollbar' : '',
-    fullWidth ? 'full-width' : ''
+    nativeScrollbar ? 'native-scrollbar' : ''
   ].filter(Boolean).join(' ');
 
   return (

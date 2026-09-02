@@ -24,7 +24,6 @@ const MAX_WATCHED_FOLDERS = 50;
 const FOLDER_CHANGE_DEBOUNCE_MS = 400;
 const RENDERER_SETTING_VALIDATORS = {
   chapterScrollbar: value => typeof value === 'boolean',
-  fullWidth: value => typeof value === 'boolean',
   sidebarStates: value => value
     && typeof value === 'object'
     && !Array.isArray(value)

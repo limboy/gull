@@ -27,7 +27,7 @@ const state = {
 
 Persisted via `window.settings.set`:
 - `sidebarStates` — left/right sidebar visibility
-- `chapterScrollbar`, `fullWidth` — viewport layout preferences
+- `chapterScrollbar` — viewport scrollbar preference
 
 Persisted via `localStorage`:
 - `gull-sidebar-widths` — left/right panel widths (`saveSidebarWidths`)
@@ -83,7 +83,7 @@ Book tabs, folder headers, TOC entries, search results, highlights, sidebar tabs
 
 ## Top bar
 
-The bar above the content (`#tab-bar`) centers the active book's title in `#active-book-title`, inside the draggable region between the sidebar toggles. `renderActiveBookTitle` fills it from `state.openBooks` on every `renderContent`, and again when EPUB metadata replaces a book's title mid-render; it is empty when no book is open. Standalone windows show it too. The top-right Settings menu owns the typography controls plus the chapter-scrollbar and full-width toggles. `notifyBookKind` tells it which kind of book is open (`window.gullBookKind` and the `gull:book-kind` event), and it swaps the typography controls for a page-zoom control while a PDF is active — none of the reflow settings do anything to a fixed-layout page.
+The bar above the content (`#tab-bar`) centers the active book's title in `#active-book-title`, inside the draggable region between the sidebar toggles. `renderActiveBookTitle` fills it from `state.openBooks` on every `renderContent`, and again when EPUB metadata replaces a book's title mid-render; it is empty when no book is open. Standalone windows show it too. The top-right Settings menu owns the typography controls plus the chapter-scrollbar toggle. `notifyBookKind` tells it which kind of book is open (`window.gullBookKind` and the `gull:book-kind` event), and it replaces the typography controls with page-zoom choices directly in the main menu while a PDF is active — none of the reflow settings do anything to a fixed-layout page.
 
 ## Rendering model
 
@@ -91,7 +91,7 @@ Chapters are injected as HTML strings into `#content-area`. Scroll position + pr
 
 A PDF goes through the same path: `src/pdf-book.js` returns one chapter per page, whose markup is an empty page box that pdf.js fills with a canvas and a text layer as it scrolls into view (`pdf-rendering.md`). Only the PDF on screen keeps its pdf.js document open — `releaseInactivePdf` closes the previous one and drops its cached payload when another book is opened, because the worker holds the entire file. Its search index is kept, so returning to it re-reads the file but does not re-extract its text. The EPUB-only passes — font stripping, broken-image fallbacks, footnote asides, and the initial highlight pass — are skipped for those pages, and a PDF without bookmarks feeds the chapter scrollbar a sampled subset of its pages so a long document does not draw hundreds of segments.
 
-At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, full-width mode, and the saved reading-style CSS variables before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot and awaits the selected reading-font faces before restoring the active book, so its scroll position is measured against the final viewport and final font metrics. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
+At startup, `reader-main.jsx` synchronously seeds sidebar visibility, sidebar widths, chapter-scrollbar mode, and the saved reading-style CSS variables before creating the layout. When saved books are queued for restoration, the first content placeholder is `Loading…`; the empty state is rendered only when no books are saved. `initApp` applies the same layout snapshot and awaits the selected reading-font faces before restoring the active book, so its scroll position is measured against the final viewport and final font metrics. The initial book is revealed without the normal content/sidebar transitions; later tab and sidebar interactions retain their transitions.
 
 ## Multi-book EPUB collections
 

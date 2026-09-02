@@ -69,7 +69,6 @@ Stored atomically at `path.join(app.getPath('userData'), 'settings.json')`. Rend
 - `mainWindowBounds`, `mainWindowMaximized` — window state, saved debounced (200ms) on move/resize/close
 - `sidebarStates` — persisted left/right sidebar visibility
 - `chapterScrollbar` — `true` (default) | `false`; toggled via the top-bar Settings menu
-- `fullWidth` — `true` | `false` (default); toggled via the top-bar Settings menu
 
 ## Navigation hardening
 

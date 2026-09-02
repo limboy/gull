@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Settings2, Type, AlignJustify, Rows3, ChevronRight, Check, ZoomIn } from 'lucide-react';
+import { Settings2, Type, AlignJustify, Rows3, ChevronRight, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   normalizePdfView,
@@ -51,7 +51,6 @@ function nearestOption(options, value) {
 export function SettingsMenu() {
   const initialSettings = window.initialSettings || {};
   const [chapterScrollbar, setChapterScrollbar] = useState(initialSettings.chapterScrollbar !== false);
-  const [fullWidth, setFullWidth] = useState(initialSettings.fullWidth === true);
   // Typography does nothing to a fixed-layout PDF, so the menu swaps those
   // controls for page zoom while one is open. The runtime announces which kind
   // of book is on screen.
@@ -82,9 +81,6 @@ export function SettingsMenu() {
       if (typeof settings?.chapterScrollbar !== 'undefined') {
         setChapterScrollbar(settings.chapterScrollbar !== false);
       }
-      if (typeof settings?.fullWidth !== 'undefined') {
-        setFullWidth(settings.fullWidth === true);
-      }
     });
 
     return () => {
@@ -97,13 +93,6 @@ export function SettingsMenu() {
     setChapterScrollbar(checked);
     window.settings?.set('chapterScrollbar', checked).catch((error) => {
       console.warn('Failed to save chapter scrollbar setting', error);
-    });
-  }
-
-  function toggleFullWidth(checked) {
-    setFullWidth(checked);
-    window.settings?.set('fullWidth', checked).catch((error) => {
-      console.warn('Failed to save full-width setting', error);
     });
   }
 
@@ -159,24 +148,18 @@ export function SettingsMenu() {
             Chapter scrollbar
           </CheckboxItem>
 
-          <CheckboxItem checked={fullWidth} onCheckedChange={toggleFullWidth}>
-            Full width
-          </CheckboxItem>
-
           <DropdownMenu.Separator className="sm-separator" />
 
           {isPdf ? (
             /* Page zoom — the only layout control a fixed-layout PDF has */
-            <SubMenu icon={<ZoomIn size={14} />} label="Page Zoom">
-              <DropdownMenu.RadioGroup
-                value={String(pdfView.zoom)}
-                onValueChange={(v) => updatePdfView({ zoom: /^[\d.]+$/.test(v) ? Number(v) : v })}
-              >
-                {PDF_ZOOM_OPTIONS.map((o) => (
-                  <RadioItem key={String(o.value)} value={String(o.value)}>{o.label}</RadioItem>
-                ))}
-              </DropdownMenu.RadioGroup>
-            </SubMenu>
+            <DropdownMenu.RadioGroup
+              value={String(pdfView.zoom)}
+              onValueChange={(v) => updatePdfView({ zoom: /^[\d.]+$/.test(v) ? Number(v) : v })}
+            >
+              {PDF_ZOOM_OPTIONS.map((o) => (
+                <RadioItem key={String(o.value)} value={String(o.value)}>{o.label}</RadioItem>
+              ))}
+            </DropdownMenu.RadioGroup>
           ) : (
           <>
           {/* Font family */}
