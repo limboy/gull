@@ -108,7 +108,7 @@
     align-items: stretch;
     flex: 1;
     overflow-y: auto;
-    gap: 12px;
+    gap: 0px;
     padding: 8px;
     min-width: 0;
 }
@@ -119,6 +119,10 @@
     flex-shrink: 0;
     gap: 2px;
     min-width: 0;
+}
+
+.tab-section[data-section-kind="pinned"] {
+    margin-bottom: 12px;
 }
 
 .tab-section + .tab-section {
