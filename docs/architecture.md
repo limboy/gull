@@ -14,7 +14,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 - **Main** (`main.js`): window lifecycle, file associations, validated IPC, settings persistence, book-folder scanning, native sidebar menus, and auto-update.
 - **EPUB worker** (`lib/epub-parser-worker.js`): serializes CPU-heavy EPUB work away from the Electron main thread; the message's `task` selects a full `parse` (default) or a cover-only read.
 - **Preload** (`preload.js`): exposes three namespaces via `contextBridge`:
-  - `window.epub` — `parse`, `getBookCover`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanDroppedBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
+  - `window.epub` — `parse`, `readBookFile`, `getBookCover`, `onOpenFile`, `signalReady`, `checkPathsExistence`, `selectBookFolder`, `scanDroppedBookFolder`, `scanBookFolder`, `watchBookFolders`, `onBookFolderChanged`, `showSidebarMenu`, `showSortMenu`, `openExternal`
   - `window.settings` — `getAll`, `set`, `onSettingsChanged`, `onChapterScrollbarChanged`
   - `window.updater` — `onUpdateReady`, `apply`
 - **Renderer** (`src/reader-main.jsx` + `src/reader-runtime.js`): pure DOM work, no Node access.
@@ -24,6 +24,7 @@ Gull runs a single main process that owns the filesystem, one library window, an
 | Channel | Dir | Purpose |
 |---|---|---|
 | `parse-epub` | R→M (invoke) | Parse a file path, return `{title, chapters, toc}` |
+| `read-book-file` | R→M (invoke) | Return a PDF's raw bytes for pdf.js; refuses every other format |
 | `get-book-cover` | R→M (invoke) | Return a book's cover as a thumbnail data URI, or `null` when it has none |
 | `get-settings` | R→M (invoke) | Read `settings.json` |
 | `set-setting` | R→M (invoke) | Persist one validated key and broadcast the resulting `settings-changed` snapshot |
@@ -54,7 +55,7 @@ Files can arrive from: macOS `open-file` event, `second-instance` CLI args, firs
 
 ## Book covers
 
-Sidebar rows show real cover art, so `get-book-cover` has to produce artwork for books nobody has opened. EPUBs go back through the parser worker with `task: 'cover'`, which reads only the container, the OPF, and the one image entry; MOBI/AZW3 files initialize the same reader `parse-epub` uses and ask it for the cover resource. The image is resized to `COVER_THUMBNAIL_HEIGHT` (96px) and re-encoded as JPEG — SVG covers pass through untouched, since `nativeImage` cannot rasterize them.
+Sidebar rows show real cover art, so `get-book-cover` has to produce artwork for books nobody has opened. EPUBs go back through the parser worker with `task: 'cover'`, which reads only the container, the OPF, and the one image entry; MOBI/AZW3 files initialize the same reader `parse-epub` uses and ask it for the cover resource. PDFs return `null` — main has no rasterizer, so the renderer draws their first page itself (see `pdf-rendering.md`). The image is resized to `COVER_THUMBNAIL_HEIGHT` (96px) and re-encoded as JPEG — SVG covers pass through untouched, since `nativeImage` cannot rasterize them.
 
 Results are cached at `<userData>/covers/<sha1>.uri`, keyed by path, size, and mtime, so replacing a book on disk invalidates its thumbnail with no bookkeeping. An empty cache file records "this book has no cover" and stops the re-extraction; extraction *failures* are left uncached so a book that was mid-sync retries later. Concurrent requests for the same book share one promise, and at most `MAX_CONCURRENT_COVER_JOBS` (3) extractions run at a time — the renderer only asks for rows that scroll into view, but a fast scroll through a large folder would otherwise queue hundreds of file reads at once.
 
@@ -74,4 +75,4 @@ Stored atomically at `path.join(app.getPath('userData'), 'settings.json')`. Rend
 
 Renderer navigation and popup creation are always denied. External links open only through the validated `open-external` IPC channel after an explicit content click.
 
-All renderer IPC must originate from the trusted main frame. Book parsing additionally requires an absolute supported file path, a regular file, and a size under 512 MB.
+All renderer IPC must originate from the trusted main frame. Book parsing and `read-book-file` additionally require an absolute supported file path, a regular file, and a size under 512 MB.

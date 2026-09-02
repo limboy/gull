@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "build:icon": "node scripts/build-icon.js",
     "changelog": "node scripts/generate-changelog.js",
-    "check": "node --check main.js && node --check preload.js && node --check lib/book-content.js && node --check lib/epub-parser.js && node --check lib/epub-parser-worker.js && node --check src/lib/theme.mjs && node --check src/lib/highlight-anchor.mjs && node --check src/lib/book-order.mjs",
+    "check": "node --check main.js && node --check preload.js && node --check lib/book-content.js && node --check lib/epub-parser.js && node --check lib/epub-parser-worker.js && node --check src/lib/theme.mjs && node --check src/lib/pdf-view.mjs && node --check src/lib/math-sum-precise.mjs && node --check src/lib/highlight-anchor.mjs && node --check src/lib/book-order.mjs",
     "test": "node --test"
   },
   "keywords": [],
@@ -52,6 +52,13 @@
         "mimeType": "application/vnd.amazon.ebook"
       },
       {
+        "ext": "pdf",
+        "name": "PDF Document",
+        "description": "PDF document",
+        "role": "Viewer",
+        "mimeType": "application/pdf"
+      },
+      {
         "ext": "prc",
         "name": "PRC Document",
         "description": "Mobipocket e-book file",
@@ -85,7 +92,8 @@
       "preload.js",
       "lib/**/*.js",
       "dist/index.html",
-      "dist/assets/**/*"
+      "dist/assets/**/*",
+      "dist/pdfjs/**/*"
     ],
     "publish": [
       {
@@ -119,6 +127,7 @@
     "electron-builder": "^26.8.1",
     "geist": "^1.7.0",
     "lucide-react": "^1.8.0",
+    "pdfjs-dist": "^6.3.289",
     "postcss": "^8.5.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

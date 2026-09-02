@@ -35,7 +35,7 @@ Required repo secrets: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SP
 npm run build      # vite build → dist/, then electron-builder --mac
 ```
 
-Outputs `.dmg` and `.zip` (see `build.mac.target`). Only `main.js`, `preload.js`, `lib/**/*.js`, `dist/index.html`, and `dist/assets/**` are packaged (`build.files`). Local builds need a Developer ID Application cert in Keychain and the Apple env vars in `.env` (loaded via `dotenv-cli`). Hardened runtime is on; entitlements live at `build/entitlements.mac.plist`.
+Outputs `.dmg` and `.zip` (see `build.mac.target`). Only `main.js`, `preload.js`, `lib/**/*.js`, `dist/index.html`, `dist/assets/**`, and `dist/pdfjs/**` (pdf.js' wasm decoders, standard fonts, CMaps, and ICC profiles — see `pdf-rendering.md`) are packaged (`build.files`). Local builds need a Developer ID Application cert in Keychain and the Apple env vars in `.env` (loaded via `dotenv-cli`). Hardened runtime is on; entitlements live at `build/entitlements.mac.plist`.
 
 `.github/workflows/ci.yml` runs syntax checks, tests, and the production renderer build for pushes to `main` and pull requests. The release workflow repeats the production build before signing and publishing.
 

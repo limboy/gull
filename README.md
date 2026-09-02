@@ -2,13 +2,13 @@
 
 **A focused, typography-first e-book reader for macOS.**
 
-Gull is a lightweight desktop reader for DRM-free EPUB and Kindle/Mobipocket books. It reflows each book into a clean, consistent reading layout while keeping navigation, search, highlights, and reading controls close at hand.
+Gull is a lightweight desktop reader for DRM-free EPUB, Kindle/Mobipocket, and PDF books. It reflows each book into a clean, consistent reading layout while keeping navigation, search, highlights, and reading controls close at hand.
 
 ![Gull showing an open book, the book list, and the table of contents](assets/screenshot.png)
 
 ## Highlights
 
-- **Read common e-book formats** — EPUB, MOBI, AZW3, AZW, and PRC.
+- **Read common e-book formats** — EPUB, MOBI, AZW3, AZW, PRC, and PDF. PDFs keep their fixed page layout and offer page zoom instead of typography controls.
 - **Keep multiple books open** — switch between books from the left sidebar, organized into folders you add from disk. Gull restores open books and reading positions when it restarts.
 - **Navigate long books easily** — use the table of contents or Gull's segmented chapter scrollbar, which maps the structure of the whole book. A standard native scrollbar is also available.
 - **Search and highlight** — search the current book, jump directly to matches, and keep persistent text highlights in a dedicated sidebar.
@@ -70,7 +70,7 @@ Build artifacts are written to `dist/`. See [Development, Build & Release](docs/
 - **Desktop shell:** Electron
 - **Renderer:** React + Vite
 - **UI and styling:** Tailwind CSS, Radix UI, and hand-written CSS
-- **Book parsing:** `adm-zip` and Cheerio for EPUB; `@lingo-reader/mobi-parser` for MOBI/KF8 formats
+- **Book parsing:** `adm-zip` and Cheerio for EPUB; `@lingo-reader/mobi-parser` for MOBI/KF8 formats; `pdfjs-dist` renders PDF pages in the renderer
 - **Distribution:** electron-builder and electron-updater via GitHub Releases
 
 The Electron main process owns files, validated IPC, settings, and updates, while EPUB parsing runs in a dedicated worker. A context-isolated preload bridge exposes the narrow application API to the renderer. React provides the application shell, while `src/reader-runtime.js` manages the reader's tabs, content, navigation, search, highlights, and saved state.

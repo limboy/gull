@@ -14,6 +14,13 @@ import {
   buildSidebarSections,
   DEFAULT_SORT,
 } from './lib/book-order.mjs';
+import {
+  isPdfPath,
+  normalizePdfView,
+  pdfPageChapterId,
+  samplePdfChapters,
+  PDF_VIEW_STORAGE_KEY,
+} from './lib/pdf-view.mjs';
 
 
 const state = {
@@ -80,6 +87,139 @@ function throttle(func, limit) {
       }, limit - (Date.now() - lastRan));
     }
   };
+}
+
+// --- PDF support ---
+// pdf.js is a large dependency, so it is only pulled in the first time a PDF is
+// opened (or a PDF row asks for its cover).
+let pdfModulePromise = null;
+let pdfModule = null;
+function getPdfModule() {
+  if (!pdfModulePromise) {
+    pdfModulePromise = import('./pdf-book.js')
+      .then((module) => {
+        pdfModule = module;
+        return module;
+      })
+      .catch((error) => {
+        pdfModulePromise = null;
+        throw error;
+      });
+  }
+  return pdfModulePromise;
+}
+
+let activePdfMount = null;
+// Only the PDF on screen keeps its pdf.js document open: the worker holds the
+// whole file, so a folder of large scans would otherwise pile up in memory.
+let livePdfPath = null;
+let pdfSearchIndexToken = 0;
+let searchHighlightTimer = null;
+
+function loadPdfView() {
+  try {
+    return normalizePdfView(JSON.parse(localStorage.getItem(PDF_VIEW_STORAGE_KEY)));
+  } catch {
+    return normalizePdfView(null);
+  }
+}
+
+function destroyActivePdfMount() {
+  activePdfMount?.destroy();
+  activePdfMount = null;
+}
+
+/**
+ * Hand the injected page placeholders to pdf.js. The module is already loaded
+ * by the time a PDF renders — mounting synchronously matters because the page
+ * boxes must have their final height before the saved scroll position is
+ * restored.
+ */
+function mountPdfBook(filePath, container) {
+  const mount = (pdf) => {
+    if (state.activeBookPath !== filePath || !container.isConnected) return;
+    destroyActivePdfMount();
+    activePdfMount = pdf.mountPdfPages(filePath, container, {
+      scrollRoot: contentArea,
+      view: loadPdfView(),
+      onPageRendered: (pageNumber, pageEl) => {
+        const section = pageEl.closest('section.gull-chapter');
+        // Highlights live in the text layer, which only exists once the page
+        // has been rendered.
+        if (section) applyHighlightsToChapter(pdfPageChapterId(pageNumber), section);
+        scheduleSearchHighlightRefresh();
+        contentArea.dispatchEvent(new Event('force-update-scrollbar'));
+      },
+    });
+  };
+
+  if (pdfModule) mount(pdfModule);
+  else getPdfModule().then(mount).catch(error => console.warn('Failed to mount PDF pages', error));
+}
+
+/**
+ * The settings menu offers page zoom for PDFs and typography for reflowable
+ * books, so it has to know which kind is on screen.
+ */
+let currentBookKind = null;
+function notifyBookKind(kind) {
+  if (currentBookKind === kind) return;
+  currentBookKind = kind;
+  window.gullBookKind = kind;
+  getAppLayout()?.classList.toggle('pdf-active', kind === 'pdf');
+  window.dispatchEvent(new CustomEvent('gull:book-kind', { detail: { kind } }));
+}
+
+// Zoom is chosen in the settings menu, which owns no rendering of its own.
+window.addEventListener('gull:pdf-view-changed', (event) => {
+  if (!activePdfMount) return;
+  const maxScroll = contentArea.scrollHeight - contentArea.clientHeight;
+  const progress = maxScroll > 0 ? contentArea.scrollTop / maxScroll : 0;
+  activePdfMount.setView(normalizePdfView(event.detail));
+  requestAnimationFrame(() => {
+    const nextMax = contentArea.scrollHeight - contentArea.clientHeight;
+    contentArea.scrollTop = nextMax * progress;
+    contentArea.dispatchEvent(new Event('force-update-scrollbar'));
+  });
+});
+
+/** Closing a PDF has to hand its pages and its pdf.js document back. */
+function releaseBookResources(filePath) {
+  if (!isPdfPath(filePath)) return;
+  if (filePath === state.activeBookPath) destroyActivePdfMount();
+  if (filePath === livePdfPath) livePdfPath = null;
+  pdfModulePromise?.then(pdf => pdf.releasePdfBook(filePath)).catch(() => {});
+}
+
+/**
+ * Reading a different book releases the last PDF's document. Its payload goes
+ * with it, so re-opening re-reads the file; the search index survives, because
+ * page ids are stable and re-extracting the text of a long PDF is not cheap.
+ */
+function releaseInactivePdf() {
+  if (!livePdfPath || livePdfPath === state.activeBookPath) return;
+  const filePath = livePdfPath;
+  delete state.bookContent[filePath];
+  releaseBookResources(filePath);
+}
+
+/** Page text arrives asynchronously, so the search index is built once it has. */
+async function indexPdfForSearch(filePath, data) {
+  const token = ++pdfSearchIndexToken;
+  const pdf = await getPdfModule();
+  const extracted = await pdf.extractPdfText(filePath);
+  if (!extracted || token !== pdfSearchIndexToken) return;
+  indexBookForSearch(filePath, data.chapters, data.toc);
+}
+
+// Pages render one at a time; re-running the whole highlight pass per page
+// would be wasteful, so coalesce them into one refresh.
+function scheduleSearchHighlightRefresh() {
+  if (!state.searchQuery || searchHighlightTimer) return;
+  searchHighlightTimer = setTimeout(() => {
+    searchHighlightTimer = null;
+    refreshContentSearchHighlights();
+  }, 150);
 }
 
 /**
@@ -156,6 +296,7 @@ function closeBook(filePath) {
   if (idx === -1) return;
 
   state.openBooks.splice(idx, 1);
+  releaseBookResources(filePath);
   delete state.bookContent[filePath];
   delete state.bookSearchIndex[filePath];
 
@@ -203,6 +344,7 @@ const FINISHED_MARK = `
 // --- Sidebar Covers ---
 // Cover art is fetched only once a row scrolls into view: a library can list
 // hundreds of books and every miss costs main a read of the book file.
+const COVER_THUMBNAIL_HEIGHT = 96; // matches the thumbnails main produces
 const bookCovers = new Map(); // filePath -> data URI, or null when there is none
 const pendingCovers = new Set();
 
@@ -221,12 +363,30 @@ function bookIconHtml(filePath) {
   return cover ? `<img class="tab-cover" src="${escapeHtml(cover)}" alt="" />` : BOOK_TEXT_ICON;
 }
 
+// Main has no PDF rasterizer, so their thumbnails are rendered here. They are
+// queued behind one another because each one reads a whole file.
+let pdfCoverQueue = Promise.resolve();
+function loadPdfCover(filePath) {
+  pdfCoverQueue = pdfCoverQueue
+    .then(async () => {
+      const pdf = await getPdfModule();
+      return pdf.renderPdfThumbnail(filePath, COVER_THUMBNAIL_HEIGHT);
+    })
+    .catch((error) => {
+      console.warn('Failed to render PDF cover', filePath, error);
+      return null;
+    });
+  return pdfCoverQueue;
+}
+
 async function loadBookCover(filePath) {
   if (!filePath || bookCovers.has(filePath) || pendingCovers.has(filePath)) return;
   pendingCovers.add(filePath);
   let cover = null;
   try {
-    cover = await window.epub.getBookCover(filePath);
+    cover = isPdfPath(filePath)
+      ? await loadPdfCover(filePath)
+      : await window.epub.getBookCover(filePath);
   } catch (error) {
     console.error('Failed to load book cover', error);
   } finally {
@@ -391,6 +551,7 @@ function forgetBooks(filePaths) {
   if (filePaths.length === 0) return false;
 
   for (const filePath of filePaths) {
+    releaseBookResources(filePath);
     delete state.bookContent[filePath];
     delete state.bookSearchIndex[filePath];
   }
@@ -722,7 +883,10 @@ function indexBookForSearch(filePath, chapters, toc) {
     while (i < (chapters || []).length && performance.now() - start < 15) {
       const chapter = chapters[i];
       tempDiv.innerHTML = chapter.html || '';
-      const text = normalizeText(tempDiv.textContent || '');
+      // PDF pages carry their text directly; their markup is an empty page box.
+      const text = chapter.text
+        ? normalizeText(chapter.text)
+        : normalizeText(tempDiv.textContent || '');
       if (text) {
         const file = (chapter.href || '').split('/').pop();
         if (tocFiles.has(file) && titleMap[file]) {
@@ -733,7 +897,7 @@ function indexBookForSearch(filePath, chapters, toc) {
         index.push({
           id: chapter.id,
           href: chapter.href || '',
-          title: titleMap[file] || chapter.title || inheritedTitle || headingTitle || '',
+          title: titleMap[file] || inheritedTitle || chapter.title || headingTitle || '',
           text,
           textLower: text.toLowerCase(),
         });
@@ -975,6 +1139,8 @@ function renderActiveBookTitle() {
 }
 
 async function renderContent() {
+  destroyActivePdfMount();
+  releaseInactivePdf();
   contentArea.querySelectorAll('.book-content').forEach(el => el.remove());
   renderActiveBookTitle();
   const isStartupRender = getAppLayout()?.classList.contains('app-starting');
@@ -990,7 +1156,9 @@ async function renderContent() {
         div.textContent = 'Loading…';
         contentArea.appendChild(div);
         try {
-          state.bookContent[book.filePath] = await window.epub.parse(book.filePath);
+          state.bookContent[book.filePath] = isPdfPath(book.filePath)
+            ? await (await getPdfModule()).loadPdfBook(book.filePath)
+            : await window.epub.parse(book.filePath);
           migrateHighlightsToPublicationId(book.filePath);
         } catch (err) {
           div.textContent = 'Failed to load book: ' + err.message;
@@ -1001,6 +1169,9 @@ async function renderContent() {
       }
 
       const data = state.bookContent[book.filePath];
+      const isPdf = data.kind === 'pdf';
+      if (isPdf) livePdfPath = book.filePath;
+      notifyBookKind(isPdf ? 'pdf' : 'book');
       let needsTabsRefresh = false;
       // Update title from metadata if available
       if (data.title && book.title !== data.title) {
@@ -1015,7 +1186,7 @@ async function renderContent() {
       }
 
       const div = document.createElement('div');
-      div.className = 'book-content active';
+      div.className = isPdf ? 'book-content active pdf-book' : 'book-content active';
       if (data.language) {
         div.setAttribute('lang', data.language);
       }
@@ -1056,10 +1227,12 @@ async function renderContent() {
       contentArea.appendChild(div);
       const searchToRun = !state.bookSearchIndex[book.filePath];
       renderOutline(data.toc, data.chapters);
-      if (searchToRun) {
-        indexBookForSearch(book.filePath, data.chapters, data.toc);
-      } else {
+      if (!searchToRun) {
         renderSearchResults();
+      } else if (isPdf) {
+        indexPdfForSearch(book.filePath, data);
+      } else {
+        indexBookForSearch(book.filePath, data.chapters, data.toc);
       }
 
       let chapterIdx = 0;
@@ -1076,12 +1249,15 @@ async function renderContent() {
           section.className = 'gull-chapter';
           section.id = 'chapter-' + ch.id;
           section.innerHTML = ch.html;
-          stripEpubFonts(section);
-          bindImageFallback(section);
-          hideFootnoteAsides(section);
-          applyHighlightsToChapter(ch.id, section);
+          if (!isPdf) {
+            stripEpubFonts(section);
+            bindImageFallback(section);
+            hideFootnoteAsides(section);
+            // A PDF page gets its highlights once its text layer exists.
+            applyHighlightsToChapter(ch.id, section);
+          }
           div.appendChild(section);
-          if (chapterIdx < data.chapters.length - 1) {
+          if (!isPdf && chapterIdx < data.chapters.length - 1) {
             div.appendChild(document.createElement('hr'));
           }
           chapterIdx++;
@@ -1090,8 +1266,12 @@ async function renderContent() {
         if (chapterIdx < data.chapters.length) {
           requestAnimationFrame(processChapterBatch);
         } else {
+          if (isPdf) mountPdfBook(book.filePath, div);
           initOutlineScrollTracking(data.chapters);
-          initChapterScrollbar(data.chapters, data.toc);
+          initChapterScrollbar(
+            isPdf && data.toc.length === 0 ? samplePdfChapters(data.chapters) : data.chapters,
+            data.toc
+          );
 
           // Restore position instantly before showing
           if (book.position) {
@@ -1113,6 +1293,7 @@ async function renderContent() {
       requestAnimationFrame(processChapterBatch);
     }
   } else {
+    notifyBookKind(null);
     emptyState.style.display = '';
     renderOutline([], []);
     searchPanel.innerHTML = '';

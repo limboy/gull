@@ -543,13 +543,15 @@
     display: block;
 }
 
-.book-content
+/* PDF pages are excluded: pdf.js positions its text layer with per-span font
+   sizes and families of its own, which these rules would flatten. */
+.book-content:not(.pdf-book)
     *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
     font-family: inherit !important;
     font-size: inherit;
 }
 
-.book-content * {
+.book-content:not(.pdf-book) * {
     color: inherit;
     max-width: 100% !important;
     box-sizing: border-box !important;
@@ -557,7 +559,7 @@
 }
 
 /* Fix for EPUBs with negative margins or extreme offsets */
-.book-content > * {
+.book-content:not(.pdf-book) > * {
     margin-left: 0 !important;
     margin-right: 0 !important;
     left: 0 !important;

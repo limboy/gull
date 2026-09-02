@@ -9,6 +9,7 @@ function subscribe(channel, callback) {
 
 contextBridge.exposeInMainWorld('epub', {
   parse: (filePath) => ipcRenderer.invoke('parse-epub', filePath),
+  readBookFile: (filePath) => ipcRenderer.invoke('read-book-file', filePath),
   getBookCover: (filePath) => ipcRenderer.invoke('get-book-cover', filePath),
   onOpenFile: (cb) => subscribe('open-file', cb),
   signalReady: () => ipcRenderer.send('renderer-ready'),

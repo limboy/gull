@@ -15,7 +15,7 @@ const {
 
 app.setName('Gull');
 
-const SUPPORTED_EXTENSIONS = ['.epub', '.mobi', '.azw3', '.azw', '.prc'];
+const SUPPORTED_EXTENSIONS = ['.epub', '.mobi', '.azw3', '.azw', '.prc', '.pdf'];
 const MAX_BOOK_FILE_SIZE = 512 * 1024 * 1024;
 const MAX_PATH_CHECKS = 500;
 const MAX_FOLDER_BOOKS = 500;
@@ -682,6 +682,9 @@ async function extractMobiCover(filePath) {
 }
 
 function extractBookCover(filePath) {
+  // PDF thumbnails come from the renderer's pdf.js instance — the main process
+  // has no rasterizer for page content.
+  if (path.extname(filePath).toLowerCase() === '.pdf') return Promise.resolve(null);
   if (path.extname(filePath).toLowerCase() === '.epub') {
     return runEpubWorkerTask('cover', filePath)
       .then(cover => (cover ? toCoverDataUri(cover.data, cover.mime) : null));
@@ -896,9 +899,10 @@ async function showOpenDialog() {
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile', 'multiSelections'],
     filters: [
-      { name: 'E-Books', extensions: ['epub', 'mobi', 'azw3', 'azw', 'prc'] },
+      { name: 'E-Books', extensions: ['epub', 'mobi', 'azw3', 'azw', 'prc', 'pdf'] },
       { name: 'EPUB Files', extensions: ['epub'] },
-      { name: 'Kindle Files', extensions: ['mobi', 'azw3', 'azw', 'prc'] }
+      { name: 'Kindle Files', extensions: ['mobi', 'azw3', 'azw', 'prc'] },
+      { name: 'PDF Files', extensions: ['pdf'] }
     ],
   });
   if (!result.canceled) {
@@ -1031,8 +1035,20 @@ app.whenReady().then(() => {
     } else if (['.mobi', '.azw3', '.azw', '.prc'].includes(ext)) {
       return parseMobiOrAzw3(filePath);
     } else {
+      // PDFs never reach here: the renderer reads their bytes and lays them
+      // out with pdf.js instead of asking for reflowable chapters.
       throw new Error('Unsupported book format: ' + ext);
     }
+  });
+
+  // IPC: raw bytes of a PDF, which the renderer hands to pdf.js.
+  ipcMain.handle('read-book-file', async (event, filePath) => {
+    assertTrustedIpc(event);
+    validateBookPath(filePath);
+    if (path.extname(filePath).toLowerCase() !== '.pdf') {
+      throw new Error('read-book-file only serves PDF files');
+    }
+    return fs.promises.readFile(filePath);
   });
 
   // IPC: cover artwork for a sidebar row; null when the book has none.
