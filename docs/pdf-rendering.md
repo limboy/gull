@@ -69,8 +69,8 @@ sidebar re-fits the pages.
 `renderContent` announces the active book's kind (`notifyBookKind`) on
 `window.gullBookKind` and a `gull:book-kind` event. `SettingsMenu.jsx` listens
 and swaps its controls: a PDF gets the page-zoom choices directly in the main
-menu, while a reflowable book gets Font, Font Size, Line Height, and Paragraphs.
-The chapter-scrollbar toggle applies to both.
+menu, while a reflowable book gets Full width, Font, Font Size, Line Height, and
+Paragraphs. The chapter-scrollbar toggle applies to both.
 
 ## Covers
 

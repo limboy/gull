@@ -2716,6 +2716,18 @@ function setChapterScrollbar(enabled) {
   document.documentElement.classList.toggle('native-scrollbar', !isEnabled);
 }
 
+function setFullWidth(enabled) {
+  const isEnabled = enabled === true;
+  const layout = document.getElementById('app-layout');
+  if (layout) {
+    layout.classList.toggle('full-width', isEnabled);
+  }
+  const contentArea = document.getElementById('content-area');
+  if (contentArea) {
+    contentArea.dispatchEvent(new Event('force-update-scrollbar'));
+  }
+}
+
 window.settings.onChapterScrollbarChanged((enabled) => {
   setChapterScrollbar(enabled);
 });
@@ -2724,6 +2736,9 @@ window.settings.onSettingsChanged((settings) => {
   if (settings) {
     if (typeof settings.chapterScrollbar !== 'undefined') {
       setChapterScrollbar(settings.chapterScrollbar);
+    }
+    if (typeof settings.fullWidth !== 'undefined') {
+      setFullWidth(settings.fullWidth);
     }
   }
 });
@@ -2775,6 +2790,7 @@ async function initApp() {
   initResize();
   if (!isStandaloneReader) loadSidebarStates();
   setChapterScrollbar(settings.chapterScrollbar !== false);
+  setFullWidth(settings.fullWidth === true);
   applySystemTheme(document.documentElement, systemThemeQuery.matches);
 
   initSidebarFolders();

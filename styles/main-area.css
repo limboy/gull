@@ -831,3 +831,8 @@ mark.search-match {
 .footnote-popover[hidden] {
     display: none;
 }
+
+/* Full width mode — reflowable books only; a PDF page box has its own width. */
+#app-layout.full-width .book-content:not(.pdf-book) {
+    max-width: none;
+}

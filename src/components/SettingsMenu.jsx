@@ -51,6 +51,7 @@ function nearestOption(options, value) {
 export function SettingsMenu() {
   const initialSettings = window.initialSettings || {};
   const [chapterScrollbar, setChapterScrollbar] = useState(initialSettings.chapterScrollbar !== false);
+  const [fullWidth, setFullWidth] = useState(initialSettings.fullWidth === true);
   // Typography does nothing to a fixed-layout PDF, so the menu swaps those
   // controls for page zoom while one is open. The runtime announces which kind
   // of book is on screen.
@@ -81,6 +82,9 @@ export function SettingsMenu() {
       if (typeof settings?.chapterScrollbar !== 'undefined') {
         setChapterScrollbar(settings.chapterScrollbar !== false);
       }
+      if (typeof settings?.fullWidth !== 'undefined') {
+        setFullWidth(settings.fullWidth === true);
+      }
     });
 
     return () => {
@@ -93,6 +97,13 @@ export function SettingsMenu() {
     setChapterScrollbar(checked);
     window.settings?.set('chapterScrollbar', checked).catch((error) => {
       console.warn('Failed to save chapter scrollbar setting', error);
+    });
+  }
+
+  function toggleFullWidth(checked) {
+    setFullWidth(checked);
+    window.settings?.set('fullWidth', checked).catch((error) => {
+      console.warn('Failed to save full-width setting', error);
     });
   }
 
@@ -162,6 +173,13 @@ export function SettingsMenu() {
             </DropdownMenu.RadioGroup>
           ) : (
           <>
+          {/* Reflowable-only: a fixed-layout PDF page has its own width */}
+          <CheckboxItem checked={fullWidth} onCheckedChange={toggleFullWidth}>
+            Full width
+          </CheckboxItem>
+
+          <DropdownMenu.Separator className="sm-separator" />
+
           {/* Font family */}
           <SubMenu icon={<Type size={14} />} label="Font">
             <DropdownMenu.RadioGroup value={style.fontFamily} onValueChange={(v) => updateStyle({ fontFamily: v })}>
