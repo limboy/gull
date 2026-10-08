@@ -14,26 +14,17 @@ xcodebuild -scheme Gull test
 
 ## Releases and auto-update
 
-Gull updates itself with [Sparkle](https://sparkle-project.org). It checks at launch and every 6 hours, downloads in the background, and installs on quit; once an update is ready, a **Restart to Update** button appears in the toolbar. **Gull › Check for Updates…** checks on demand.
-
-The feed is `https://github.com/limboy/gull/releases/latest/download/appcast.xml`, so every GitHub release carries the appcast alongside the app.
-
-One-time setup: create Sparkle's signing key (stored in your login Keychain, so back it up):
+Gull updates itself with [Sparkle](https://sparkle-project.org). Release builds check at launch and every 6 hours, download in the background, and install on quit; once an update is ready, a **Restart to Update** button appears in the toolbar. **Gull › Check for Updates…** checks on demand (Debug builds only check from the menu). The feed is the `appcast.xml` attached to the latest [GitHub release](https://github.com/limboy/gull-native/releases/latest).
 
 ```bash
-build/release/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys
+scripts/release.sh 3.0.0 notes.md
 ```
 
-(Run `xcodebuild -resolvePackageDependencies -derivedDataPath build/release/DerivedData` first if the tool isn't there yet.)
+This sets the version, commits it, tags `v3.0.0` (with the notes as its message) and pushes. The Release workflow (`.github/workflows/release.yml`) then builds the app, signs it with the Developer ID, notarizes it, signs the zip for Sparkle, builds a signed and notarized DMG, writes `appcast.xml`, and publishes the GitHub release with all three. Without a notes file, the notes are the commit subjects since the last tag.
 
-Each release:
+The workflow needs these repository secrets: `CSC_LINK` (the Developer ID Application certificate as a base64 `.p12`), `CSC_KEY_PASSWORD` (if the `.p12` has one), `APPLE_API_KEY` (an App Store Connect API key's `.p8` contents), `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`, and `SPARKLE_PRIVATE_KEY` (from `generate_keys -x`; the same key as Magpie, whose public half is `SUPublicEDKey` in `Gull/Info.plist`).
 
-```bash
-scripts/release.sh 3.0.1 notes.md   # archive, Developer ID sign, notarize, zip, sign appcast
-gh release create v3.0.1 dist/Gull-3.0.1.zip dist/appcast.xml --repo limboy/gull --notes-file notes.md
-```
-
-The script reads `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` from the environment or `.env`, injects the Keychain key's public half as `SUPublicEDKey`, and uses the commit count as the build number (Sparkle compares `CFBundleVersion`). Builds without a public key — every Debug build and plain local builds — never start the updater.
+`LOCAL=1 scripts/release.sh …` builds and publishes from your Mac instead, signing updates with the Sparkle key in your Keychain; set `DEVELOPER_ID` and the `APPLE_API_*` variables to sign and notarize too. `scripts/build-release.sh` alone builds into `dist/` without touching git or GitHub. It builds the committed `Gull.xcodeproj`, so run `xcodegen generate` after editing `project.yml`.
 
 ## Architecture
 

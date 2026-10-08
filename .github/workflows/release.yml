@@ -1,0 +1,76 @@
+name: Release
+
+# Pushed by scripts/release.sh: builds, signs, notarizes and publishes the
+# tagged version, with the appcast.xml that Sparkle reads.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # The newest Xcode on the runner; the project needs the macOS 26 SDK
+      # or later.
+      - name: Select Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      # The Developer ID certificate, in a keychain that lives only for
+      # this job.
+      - name: Import signing certificate
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          keychain=$RUNNER_TEMP/signing.keychain-db
+          password=$(uuidgen)
+          echo "$CSC_LINK" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security create-keychain -p "$password" $keychain
+          security set-keychain-settings -lut 21600 $keychain
+          security unlock-keychain -p "$password" $keychain
+          # The certificate may have no password; the secret is optional.
+          security import $RUNNER_TEMP/certificate.p12 -k $keychain -P "${CSC_KEY_PASSWORD:-}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" $keychain >/dev/null
+          security list-keychains -d user -s $keychain $(security list-keychains -d user | tr -d '"')
+          identity=$(security find-identity -v -p codesigning $keychain | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')
+          test -n "$identity"
+          echo "DEVELOPER_ID=$identity" >> $GITHUB_ENV
+
+      # An annotated tag's message is the notes; otherwise build-release.sh
+      # lists the commits since the previous tag.
+      - name: Release notes
+        run: |
+          if [ "$(git cat-file -t "$GITHUB_REF_NAME")" = tag ]; then
+            git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > $RUNNER_TEMP/notes.md
+            echo "NOTES_FILE=$RUNNER_TEMP/notes.md" >> $GITHUB_ENV
+          fi
+
+      - name: Build, sign and notarize
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: scripts/build-release.sh "${GITHUB_REF_NAME#v}" $NOTES_FILE
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          gh release create "$GITHUB_REF_NAME" dist/Gull-$version.dmg dist/Gull-$version.zip dist/appcast.xml \
+            --title "Gull $version" --notes-file dist/notes.md
+
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain $RUNNER_TEMP/signing.keychain-db || true

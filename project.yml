@@ -43,14 +43,21 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Gull/Gull.entitlements
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
-        ENABLE_HARDENED_RUNTIME: YES
+        # scripts/build-release.sh signs releases with the hardened runtime;
+        # local builds stay ad-hoc, where it would block loading Sparkle.
+        ENABLE_HARDENED_RUNTIME: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         COMBINE_HIDPI_IMAGES: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
-        # Sparkle: set SPARKLE_PUBLIC_KEY to the output of Sparkle's `generate_keys`.
-        # Left empty, the updater stays off (e.g. for local builds).
-        SPARKLE_FEED_URL: https://github.com/limboy/gull/releases/latest/download/appcast.xml
-        SPARKLE_PUBLIC_KEY: ""
+        # Each GitHub release carries its own appcast.xml (scripts/build-release.sh).
+        SPARKLE_FEED_URL: https://github.com/limboy/gull-native/releases/latest/download/appcast.xml
+      configs:
+        # Builds run from Xcode never offer to replace themselves; the menu
+        # item still checks.
+        Debug:
+          SPARKLE_AUTOMATIC_CHECKS: NO
+        Release:
+          SPARKLE_AUTOMATIC_CHECKS: YES
     dependencies:
       - package: Sparkle
   GullTests:

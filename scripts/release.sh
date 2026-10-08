@@ -1,84 +1,51 @@
 #!/bin/zsh
-# Builds, signs, notarizes, and packages a Gull release for Sparkle.
+# Starts a Gull release.
 #
-#   scripts/release.sh 3.0.1 [release-notes.md]
+#   scripts/release.sh 3.0.0 [notes.md]
 #
-# Needs a "Developer ID Application" certificate in the Keychain, Sparkle's
-# EdDSA private key in the Keychain (created once with `generate_keys`), and
-# these variables (a local .env file is loaded if present):
-#   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+# Sets the version in project.yml, commits it, tags v3.0.0 and pushes both.
+# The Release workflow then builds, signs, notarizes and publishes it, with
+# appcast.xml for Sparkle (the app's feed is the latest release's appcast).
 #
-# Produces dist/Gull-<version>.zip and dist/appcast.xml. Attach both to a
-# GitHub release tagged v<version> on limboy/gull — the app's feed URL is
-# .../releases/latest/download/appcast.xml, so every release carries the
-# appcast, and generate_appcast keeps the previous entries in it.
+# LOCAL=1 builds and publishes from this Mac instead (scripts/build-release.sh,
+# signing updates with the Sparkle key in your Keychain); set DEVELOPER_ID
+# and the APPLE_API_* variables to sign and notarize too.
+#
+# Release notes come from the given Markdown file (one "- item" per line),
+# or else from the commit subjects since the last tag.
 set -euo pipefail
 
-VERSION=${1:?usage: scripts/release.sh <version> [release-notes.md]}
-NOTES=${2:-}
-REPO=limboy/gull
-ROOT=${0:A:h:h}
-cd "$ROOT"
-[[ -f .env ]] && set -a && source .env && set +a
-: ${APPLE_ID:?} ${APPLE_APP_SPECIFIC_PASSWORD:?} ${APPLE_TEAM_ID:?}
+cd "$(dirname "$0")/.."
+version=${1:?usage: scripts/release.sh <version> [notes.md]}
+notes_file=${2:-}
+tag="v$version"
 
-BUILD=build/release
-DIST=dist
-SPARKLE_BIN=$BUILD/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin
-rm -rf $BUILD/Gull.xcarchive $BUILD/export
-mkdir -p $BUILD $DIST
+[[ -z $(git status --porcelain) ]] || { echo "Commit or stash your changes first." >&2; exit 1; }
+[[ $(git branch --show-current) == main ]] || { echo "Release from main." >&2; exit 1; }
+git rev-parse -q --verify "refs/tags/$tag" >/dev/null && { echo "$tag already exists." >&2; exit 1; }
+gh auth status >/dev/null
 
+notes_args=()
+if [[ -n $notes_file ]]; then
+  # The workflow reads the notes from the tag's message.
+  notes_args=(-F "$notes_file")
+fi
+
+sed -i '' -E "s/^( *MARKETING_VERSION: ).*/\1\"$version\"/" project.yml
 xcodegen generate >/dev/null
-xcodebuild -resolvePackageDependencies -project Gull.xcodeproj -scheme Gull \
-  -derivedDataPath $BUILD/DerivedData >/dev/null
+# Already at this version (e.g. the first release): tag what's there.
+if [[ -n $(git status --porcelain) ]]; then git commit -q -am "chore: release $tag"; fi
+if (( ${#notes_args} )); then git tag -a "$tag" "${notes_args[@]}"; else git tag "$tag"; fi
 
-# The public half of the Keychain key goes into Info.plist (SUPublicEDKey).
-PUBLIC_KEY=$($SPARKLE_BIN/generate_keys -p)
-# Sparkle compares CFBundleVersion, so it must only ever grow.
-BUILD_NUMBER=$(git rev-list --count HEAD)
+if [[ ${LOCAL:-0} != 1 ]]; then
+  git push -q origin main "$tag"
+  echo "Pushed $tag; the Release workflow takes it from here:"
+  echo "  https://github.com/limboy/gull-native/actions"
+  exit 0
+fi
 
-echo "▸ Archiving Gull $VERSION ($BUILD_NUMBER)"
-xcodebuild archive -project Gull.xcodeproj -scheme Gull -configuration Release \
-  -derivedDataPath $BUILD/DerivedData -archivePath $BUILD/Gull.xcarchive \
-  MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
-  SPARKLE_PUBLIC_KEY=$PUBLIC_KEY \
-  CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Developer ID Application" \
-  DEVELOPMENT_TEAM=$APPLE_TEAM_ID OTHER_CODE_SIGN_FLAGS=--timestamp > $BUILD/archive.log 2>&1 \
-  || { grep -E "error:" $BUILD/archive.log; echo "archive failed, see $BUILD/archive.log"; exit 1; }
-
-cat > $BUILD/ExportOptions.plist <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-  <key>method</key><string>developer-id</string>
-  <key>teamID</key><string>$APPLE_TEAM_ID</string>
-  <key>signingStyle</key><string>manual</string>
-</dict></plist>
-EOF
-xcodebuild -exportArchive -archivePath $BUILD/Gull.xcarchive \
-  -exportPath $BUILD/export -exportOptionsPlist $BUILD/ExportOptions.plist >/dev/null
-
-APP=$BUILD/export/Gull.app
-ZIP=$DIST/Gull-$VERSION.zip
-
-echo "▸ Notarizing"
-ditto -c -k --keepParent $APP $BUILD/notarize.zip
-xcrun notarytool submit $BUILD/notarize.zip --wait \
-  --apple-id $APPLE_ID --password $APPLE_APP_SPECIFIC_PASSWORD --team-id $APPLE_TEAM_ID
-xcrun stapler staple $APP
-rm -f $ZIP && ditto -c -k --keepParent $APP $ZIP
-
-echo "▸ Generating appcast"
-FEED=$BUILD/feed
-rm -rf $FEED && mkdir -p $FEED
-# Start from the published appcast so earlier releases stay listed.
-curl -fsL https://github.com/$REPO/releases/latest/download/appcast.xml -o $FEED/appcast.xml || rm -f $FEED/appcast.xml
-cp $ZIP $FEED/
-[[ -n $NOTES ]] && cp $NOTES $FEED/Gull-$VERSION.md
-$SPARKLE_BIN/generate_appcast $FEED \
-  --download-url-prefix https://github.com/$REPO/releases/download/v$VERSION/ \
-  --embed-release-notes --maximum-deltas 0
-cp $FEED/appcast.xml $DIST/appcast.xml
-
-echo "✓ $ZIP and $DIST/appcast.xml are ready. Publish with:"
-echo "  gh release create v$VERSION $ZIP $DIST/appcast.xml --repo $REPO${NOTES:+ --notes-file $NOTES}"
+scripts/build-release.sh "$version" $notes_file
+git push -q origin main "$tag"
+gh release create "$tag" dist/Gull-$version.dmg dist/Gull-$version.zip dist/appcast.xml \
+  --title "Gull $version" --notes-file dist/notes.md
+echo "Released Gull $version."

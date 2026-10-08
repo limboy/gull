@@ -16,26 +16,15 @@ final class AppUpdater: NSObject {
     @ObservationIgnored private lazy var controller = SPUStandardUpdaterController(
         startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
 
-    /// Updates need an EdDSA public key and a feed; local builds have neither.
-    var isConfigured: Bool {
-        let info = Bundle.main.infoDictionary ?? [:]
-        let key = (info["SUPublicEDKey"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
-        let feed = (info["SUFeedURL"] as? String) ?? ""
-        return !key.isEmpty && !key.hasPrefix("$(") && feed.hasPrefix("https://")
-    }
-
+    /// Debug builds don't check on their own (`SUEnableAutomaticChecks` is off
+    /// there), but the menu item still works.
     func start() {
-        #if DEBUG
-        return
-        #else
-        guard isConfigured else { return }
         controller.startUpdater()
-        #endif
     }
 
-    /// Target/action pair for the "Check for Updates…" menu item. Sparkle's
-    /// controller validates the item itself (disabled while a check runs).
-    var menuTarget: AnyObject? { isConfigured ? controller : nil }
+    /// Target for the "Check for Updates…" menu item. Sparkle's controller
+    /// validates the item itself (disabled while a check runs).
+    var menuTarget: AnyObject { controller }
 
     func restartToUpdate() {
         installNow?()

@@ -33,9 +33,9 @@
 	<key>SUFeedURL</key>
 	<string>$(SPARKLE_FEED_URL)</string>
 	<key>SUPublicEDKey</key>
-	<string>$(SPARKLE_PUBLIC_KEY)</string>
+	<string>ehhywz5vCS8B/opI5Yz5lNVVWZAHQKUFxnCpJIYMqsY=</string>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<string>$(SPARKLE_AUTOMATIC_CHECKS)</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>21600</integer>
 	<key>SUAllowsAutomaticUpdates</key>
