@@ -87,7 +87,14 @@ body {
 
 .book-content.ready { opacity: 1; transition: opacity 0.15s ease-in-out; }
 html.instant .book-content.ready { transition: none; }
-html.full-width .book-content { max-width: none; }
+/* A book's own `body` rules are scoped onto this column, so the centered
+   reading width has to outrank them. */
+.book-content {
+  max-width: 800px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+html.full-width .book-content { max-width: none !important; }
 
 .book-content *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
   font-family: inherit !important;
