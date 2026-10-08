@@ -73,8 +73,10 @@ struct LibrarySidebar: View {
 }
 
 /// Folder contents: books and subfolders interleaved in the chosen order.
+/// Books are inset so they sit under the folder rather than flush with it.
 private struct FolderItems: View {
     let items: [SidebarEntry]
+    private let inset: CGFloat = 12
 
     var body: some View {
         if items.isEmpty {
@@ -82,11 +84,13 @@ private struct FolderItems: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .selectionDisabled()
+                .padding(.leading, inset)
         }
         ForEach(items) { entry in
             switch entry {
             case .book(let book):
                 BookRow(book: book)
+                    .padding(.leading, inset)
             case .folder(let section):
                 SubfolderRow(section: section)
             }
