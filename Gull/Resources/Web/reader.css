@@ -1,0 +1,203 @@
+/* Reader page styles, ported from styles/main-area.css. The page only renders
+   book content; every piece of chrome around it is native. */
+
+@font-face { font-family: 'Charter'; src: url('fonts/Charter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Charter'; src: url('fonts/Charter-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Charter'; src: url('fonts/Charter-Bold.ttf') format('truetype'); font-weight: 600 700; font-style: normal; }
+@font-face { font-family: 'Charter'; src: url('fonts/Charter-Bold-Italic.ttf') format('truetype'); font-weight: 600 700; font-style: italic; }
+
+@font-face { font-family: 'Inter'; src: url('fonts/inter-latin-400-normal.woff2') format('woff2'); font-weight: 400; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Inter'; src: url('fonts/inter-latin-ext-400-normal.woff2') format('woff2'); font-weight: 400; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Inter'; src: url('fonts/inter-latin-600-normal.woff2') format('woff2'); font-weight: 600 700; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Inter'; src: url('fonts/inter-latin-ext-600-normal.woff2') format('woff2'); font-weight: 600 700; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+@font-face { font-family: 'Open Sans'; src: url('fonts/open-sans-latin-400-normal.woff2') format('woff2'); font-weight: 400; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Open Sans'; src: url('fonts/open-sans-latin-ext-400-normal.woff2') format('woff2'); font-weight: 400; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Open Sans'; src: url('fonts/open-sans-latin-600-normal.woff2') format('woff2'); font-weight: 600 700; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Open Sans'; src: url('fonts/open-sans-latin-ext-600-normal.woff2') format('woff2'); font-weight: 600 700; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+@font-face { font-family: 'Geist Mono'; src: url('fonts/GeistMono-Variable.woff2') format('woff2'); font-weight: 100 900; }
+
+:root {
+  color-scheme: light dark;
+  --text-primary: #171717;
+  --text-secondary: #717171;
+  --accent: #007aff;
+  --border: #d5d5d5;
+  --code-bg: rgba(0, 0, 0, 0.04);
+  --highlight: rgba(255, 213, 0, 0.42);
+  --highlight-hover: rgba(255, 213, 0, 0.62);
+  --highlight-flash: rgba(255, 213, 0, 0.85);
+  --search-match: rgba(255, 196, 0, 0.55);
+
+  --book-font-family: 'Charter', serif;
+  --book-font-size: 16px;
+  --book-line-height: 1.8;
+  --book-para-spacing: 0.6em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #cecdc3;
+    --text-secondary: #888888;
+    --accent: #4aa3ff;
+    --border: #3c3c3c;
+    --code-bg: rgba(255, 255, 255, 0.06);
+    --highlight: rgba(255, 213, 0, 0.26);
+    --highlight-hover: rgba(255, 213, 0, 0.4);
+    --highlight-flash: rgba(255, 213, 0, 0.6);
+    --search-match: rgba(255, 196, 0, 0.36);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: transparent;
+  -webkit-text-size-adjust: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The native chapter scrollbar replaces WebKit's own. */
+html.hide-scrollbar { scrollbar-width: none; }
+html.hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+body {
+  margin: 0;
+  padding: 40px 60px 80px;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+@media (max-width: 560px) {
+  body { padding: 28px 24px 64px; }
+}
+
+.book-content {
+  color: var(--text-primary);
+  font-family: var(--book-font-family);
+  font-size: var(--book-font-size);
+  line-height: var(--book-line-height);
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  opacity: 0;
+  overflow-wrap: break-word;
+}
+
+.book-content.ready { opacity: 1; transition: opacity 0.15s ease-in-out; }
+html.instant .book-content.ready { transition: none; }
+html.full-width .book-content { max-width: none; }
+
+.book-content *:not([class*="dropcap"]):not([class*="DropCap"]):not([class*="drop-cap"]) {
+  font-family: inherit !important;
+  font-size: inherit;
+}
+
+.book-content * {
+  color: inherit;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+}
+
+/* EPUBs with negative margins or extreme offsets. */
+.book-content > * {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  left: 0 !important;
+}
+
+.book-content code, .book-content pre, .book-content kbd, .book-content samp {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace !important;
+}
+
+.book-content h1, .book-content h2, .book-content h3,
+.book-content h4, .book-content h5, .book-content h6 {
+  font-weight: bold;
+  margin: 1.2em 0 0.6em;
+  line-height: 1.3;
+}
+.book-content h1 { font-size: 1.6em !important; }
+.book-content h2 { font-size: 1.4em !important; }
+.book-content h3 { font-size: 1.25em !important; }
+.book-content h4 { font-size: 1.1em !important; }
+.book-content h5 { font-size: 1.05em !important; }
+.book-content h6 { font-size: 1em !important; }
+
+.book-content p {
+  margin-top: var(--book-para-spacing) !important;
+  margin-bottom: var(--book-para-spacing) !important;
+}
+
+.book-content img, .book-content svg { max-width: 100%; height: auto; }
+.book-content img { opacity: 0; transition: opacity 0.12s ease; }
+.book-content img.image-loaded { opacity: 1; }
+.book-content img.image-missing { display: none !important; }
+.book-content svg { display: block; }
+
+.book-content a { color: inherit; text-decoration: none; }
+.book-content a[href] { color: var(--accent); cursor: pointer; }
+.book-content a[href]:hover { text-decoration: underline; }
+
+.book-content ul, .book-content ol { margin: 0.6em 0; padding-left: 1.5em; }
+
+.book-content pre {
+  background: var(--code-bg);
+  padding: 0.8em;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.9em !important;
+}
+.book-content code { font-size: 0.9em !important; }
+
+.book-content table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+.book-content th, .book-content td {
+  border: 1px solid var(--border);
+  padding: 0.4em 0.8em;
+  text-align: left;
+}
+
+.book-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.book-content .gull-chapter { margin-bottom: 1em; }
+.book-content small, .book-content sup { font-size: smaller !important; }
+
+mark.reader-highlight {
+  background-color: var(--highlight);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background-color 0.5s;
+}
+mark.reader-highlight:hover { background-color: var(--highlight-hover); }
+mark.reader-highlight.flash { background-color: var(--highlight-flash); transition: none; }
+
+mark.search-match {
+  background-color: var(--search-match);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Duokan / EPUB 3 footnote blocks are shown in a popover instead. */
+.book-content aside[epub\:type="footnote"],
+.book-content aside[epub\:type="rearnote"],
+.book-content aside[epub\:type="endnote"] { display: none; }
+
+.book-content img.epub-footnote {
+  width: 14px;
+  height: 14px;
+  vertical-align: super;
+  cursor: pointer;
+  border-radius: 2px;
+  opacity: 0.75;
+}
+.book-content img.epub-footnote.image-loaded { opacity: 0.75; }
+.book-content img.epub-footnote:hover { opacity: 1; }
+
+::selection { background: rgba(0, 122, 255, 0.25); }

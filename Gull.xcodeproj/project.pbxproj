@@ -1,0 +1,573 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1B1EAE3B8305AF50ABAA4E87 /* ReaderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */; };
+		265363287B2B7617FAC67694 /* LibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52089771E95E004788F4EAF /* LibrarySidebar.swift */; };
+		3200E7B00676B2DF06FD4303 /* GullTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5C7A763E268B3F98A10AE /* GullTests.swift */; };
+		3335DA68DC02F2A20DF0A451 /* ReaderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF03D83C34768EC43C88252E /* ReaderSettings.swift */; };
+		3AD8EAB059E997AA80AEDA3B /* HighlightStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78DA437DDBB25E1C2682385F /* HighlightStore.swift */; };
+		3B54E88D5134FB02566F33D8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7962895C58E940312BEE6A /* AppDelegate.swift */; };
+		3DE36E5F31180D84040D183A /* WebReaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30287ADF8538048A0A293F21 /* WebReaderController.swift */; };
+		42C17AD4373FD043FE43C7FE /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7100135A790BA9D3A784DEE7 /* MainMenu.swift */; };
+		579CFFDA77F3D6F6252901A5 /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */; };
+		70B5AF3733D39095132FD16E /* PDFReaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */; };
+		7F2A1E8893805958C85BE99E /* HTMLEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCAEC64726D5A5881DB5E25 /* HTMLEntities.swift */; };
+		808DA26855E3C8F22CA28750 /* ReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3326E9670498F03A39A1AC /* ReaderModel.swift */; };
+		88AAC2B1CA1F86A066E8C4EB /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758636935D52A2008BEC8460 /* Storage.swift */; };
+		8A11E489EBC5B97346596A43 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B7299B9CF142A810C01867 /* LibraryStore.swift */; };
+		8AF7D8D124ABD9B664AA00D2 /* ReaderSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */; };
+		8F3F9F997B2992C6138F40AD /* WindowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D5BF7E6D615C47A85CB2652 /* WindowViews.swift */; };
+		8F4F02D7F83101CBEE3189AB /* BookContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA913E2FE0737B1F7255810 /* BookContent.swift */; };
+		950655DC9BCCA78F8810DBAD /* SearchIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713FFECBA9ECF228B5396A9A /* SearchIndex.swift */; };
+		96BD1E644B4B9323DBD72512 /* ZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160220EA5CFEE09B0DB52D7F /* ZipArchive.swift */; };
+		ADC60C6C6D6890052D5E4864 /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C59272F1EC3D3432BAAD658 /* EPUBParser.swift */; };
+		B367C69929B84626998D5A86 /* CoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2849EFCCC3B172A02375A23F /* CoverService.swift */; };
+		D4A0C111AFF89F4E189EAD8C /* FolderScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC491B6917CEDCB163DACC49 /* FolderScanner.swift */; };
+		D7E11E6B2EF6620A9428D986 /* Web in Resources */ = {isa = PBXBuildFile; fileRef = 9EBDFA1E34E8C22C775C960D /* Web */; };
+		D8B5DB4B87275FD8908A88B5 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0524713D9EA2F88D620B02F /* InspectorView.swift */; };
+		DB5B5BBBD00803020690DE71 /* MOBIParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9FE575ED15233AC609F066 /* MOBIParser.swift */; };
+		DC900715AFD0818657AA3290 /* ContentSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89E0D332C778FEE7BCD9AB6 /* ContentSanitizer.swift */; };
+		FC06F1DB5AFB84072E561E0F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 0F103FF0517A61FEDB14AE34 /* AppIcon.icon */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FCCF364EE12BFC62FF40CEB3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F61F3C2FDEFD57CAED3DF2CB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD0785209B4870B06C9EEC98;
+			remoteInfo = Gull;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01B7299B9CF142A810C01867 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		0F103FF0517A61FEDB14AE34 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		0F3326E9670498F03A39A1AC /* ReaderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderModel.swift; sourceTree = "<group>"; };
+		160220EA5CFEE09B0DB52D7F /* ZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipArchive.swift; sourceTree = "<group>"; };
+		250F0D2E7FDE0694F95EB1E2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2849EFCCC3B172A02375A23F /* CoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverService.swift; sourceTree = "<group>"; };
+		30287ADF8538048A0A293F21 /* WebReaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebReaderController.swift; sourceTree = "<group>"; };
+		3D5BF7E6D615C47A85CB2652 /* WindowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowViews.swift; sourceTree = "<group>"; };
+		4BCAEC64726D5A5881DB5E25 /* HTMLEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLEntities.swift; sourceTree = "<group>"; };
+		4C59272F1EC3D3432BAAD658 /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
+		50E5C7A763E268B3F98A10AE /* GullTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GullTests.swift; sourceTree = "<group>"; };
+		54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderDetailView.swift; sourceTree = "<group>"; };
+		5B7962895C58E940312BEE6A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		620589E90CF1D97C40DC68EA /* GullTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GullTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7100135A790BA9D3A784DEE7 /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
+		713FFECBA9ECF228B5396A9A /* SearchIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchIndex.swift; sourceTree = "<group>"; };
+		758636935D52A2008BEC8460 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		78DA437DDBB25E1C2682385F /* HighlightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightStore.swift; sourceTree = "<group>"; };
+		7C9FE575ED15233AC609F066 /* MOBIParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MOBIParser.swift; sourceTree = "<group>"; };
+		812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSchemeHandler.swift; sourceTree = "<group>"; };
+		84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderController.swift; sourceTree = "<group>"; };
+		84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModels.swift; sourceTree = "<group>"; };
+		9EBDFA1E34E8C22C775C960D /* Web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Web; path = Gull/Resources/Web; sourceTree = SOURCE_ROOT; };
+		A8A1E0B339B4A41378D06030 /* Gull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gull.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B52089771E95E004788F4EAF /* LibrarySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySidebar.swift; sourceTree = "<group>"; };
+		BEA913E2FE0737B1F7255810 /* BookContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookContent.swift; sourceTree = "<group>"; };
+		C89E0D332C778FEE7BCD9AB6 /* ContentSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentSanitizer.swift; sourceTree = "<group>"; };
+		CF03D83C34768EC43C88252E /* ReaderSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSettings.swift; sourceTree = "<group>"; };
+		E0524713D9EA2F88D620B02F /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		EC491B6917CEDCB163DACC49 /* FolderScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderScanner.swift; sourceTree = "<group>"; };
+		F614726184858F95748D5F52 /* Gull.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gull.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		10DD6631CBEDF6CEBE53B3D4 /* GullTests */ = {
+			isa = PBXGroup;
+			children = (
+				50E5C7A763E268B3F98A10AE /* GullTests.swift */,
+			);
+			path = GullTests;
+			sourceTree = "<group>";
+		};
+		19C5CA64323E73B0FAB4F7F0 /* Reader */ = {
+			isa = PBXGroup;
+			children = (
+				84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */,
+				0F3326E9670498F03A39A1AC /* ReaderModel.swift */,
+				812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */,
+				30287ADF8538048A0A293F21 /* WebReaderController.swift */,
+			);
+			path = Reader;
+			sourceTree = "<group>";
+		};
+		2AD5297E12CB90BAD01377AA = {
+			isa = PBXGroup;
+			children = (
+				F2E6BE0BFB648C07E2F11A2A /* Gull */,
+				10DD6631CBEDF6CEBE53B3D4 /* GullTests */,
+				99F0483793A23AAB2CBAA07C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6E6D8EF8584424A3E369F604 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5B7962895C58E940312BEE6A /* AppDelegate.swift */,
+				7100135A790BA9D3A784DEE7 /* MainMenu.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		9564E505863F3AF1B0C80D37 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				2849EFCCC3B172A02375A23F /* CoverService.swift */,
+				EC491B6917CEDCB163DACC49 /* FolderScanner.swift */,
+				78DA437DDBB25E1C2682385F /* HighlightStore.swift */,
+				84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */,
+				01B7299B9CF142A810C01867 /* LibraryStore.swift */,
+				CF03D83C34768EC43C88252E /* ReaderSettings.swift */,
+				713FFECBA9ECF228B5396A9A /* SearchIndex.swift */,
+				758636935D52A2008BEC8460 /* Storage.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		99F0483793A23AAB2CBAA07C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A8A1E0B339B4A41378D06030 /* Gull.app */,
+				620589E90CF1D97C40DC68EA /* GullTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ADEE413C5FB82C61A33AE508 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E0524713D9EA2F88D620B02F /* InspectorView.swift */,
+				B52089771E95E004788F4EAF /* LibrarySidebar.swift */,
+				54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */,
+				3D5BF7E6D615C47A85CB2652 /* WindowViews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B149606553BD51DA0086AE5D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0F103FF0517A61FEDB14AE34 /* AppIcon.icon */,
+				9EBDFA1E34E8C22C775C960D /* Web */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		E748A08BDC0C0A42FD1F59CF /* Parsing */ = {
+			isa = PBXGroup;
+			children = (
+				BEA913E2FE0737B1F7255810 /* BookContent.swift */,
+				C89E0D332C778FEE7BCD9AB6 /* ContentSanitizer.swift */,
+				4C59272F1EC3D3432BAAD658 /* EPUBParser.swift */,
+				4BCAEC64726D5A5881DB5E25 /* HTMLEntities.swift */,
+				7C9FE575ED15233AC609F066 /* MOBIParser.swift */,
+				160220EA5CFEE09B0DB52D7F /* ZipArchive.swift */,
+			);
+			path = Parsing;
+			sourceTree = "<group>";
+		};
+		F2E6BE0BFB648C07E2F11A2A /* Gull */ = {
+			isa = PBXGroup;
+			children = (
+				F614726184858F95748D5F52 /* Gull.entitlements */,
+				250F0D2E7FDE0694F95EB1E2 /* Info.plist */,
+				6E6D8EF8584424A3E369F604 /* App */,
+				9564E505863F3AF1B0C80D37 /* Model */,
+				E748A08BDC0C0A42FD1F59CF /* Parsing */,
+				19C5CA64323E73B0FAB4F7F0 /* Reader */,
+				B149606553BD51DA0086AE5D /* Resources */,
+				ADEE413C5FB82C61A33AE508 /* Views */,
+			);
+			path = Gull;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1995561FAE9A1437F9843E3F /* GullTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA4C6C69B9B0BA63E1258CC5 /* Build configuration list for PBXNativeTarget "GullTests" */;
+			buildPhases = (
+				1BE03F98AC8F184DF8493810 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				71EB247DCF9DB147F8B080FC /* PBXTargetDependency */,
+			);
+			name = GullTests;
+			packageProductDependencies = (
+			);
+			productName = GullTests;
+			productReference = 620589E90CF1D97C40DC68EA /* GullTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DD0785209B4870B06C9EEC98 /* Gull */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB7FE045C04DFAC5270DF90D /* Build configuration list for PBXNativeTarget "Gull" */;
+			buildPhases = (
+				0AFEE404BCE91C75D603C529 /* Sources */,
+				E4722E56B4546CDC80C9C155 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Gull;
+			packageProductDependencies = (
+			);
+			productName = Gull;
+			productReference = A8A1E0B339B4A41378D06030 /* Gull.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F61F3C2FDEFD57CAED3DF2CB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					DD0785209B4870B06C9EEC98 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = F5CD30DA8E88420113D13638 /* Build configuration list for PBXProject "Gull" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2AD5297E12CB90BAD01377AA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 99F0483793A23AAB2CBAA07C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DD0785209B4870B06C9EEC98 /* Gull */,
+				1995561FAE9A1437F9843E3F /* GullTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E4722E56B4546CDC80C9C155 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC06F1DB5AFB84072E561E0F /* AppIcon.icon in Resources */,
+				D7E11E6B2EF6620A9428D986 /* Web in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0AFEE404BCE91C75D603C529 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B54E88D5134FB02566F33D8 /* AppDelegate.swift in Sources */,
+				8F4F02D7F83101CBEE3189AB /* BookContent.swift in Sources */,
+				DC900715AFD0818657AA3290 /* ContentSanitizer.swift in Sources */,
+				B367C69929B84626998D5A86 /* CoverService.swift in Sources */,
+				ADC60C6C6D6890052D5E4864 /* EPUBParser.swift in Sources */,
+				D4A0C111AFF89F4E189EAD8C /* FolderScanner.swift in Sources */,
+				7F2A1E8893805958C85BE99E /* HTMLEntities.swift in Sources */,
+				3AD8EAB059E997AA80AEDA3B /* HighlightStore.swift in Sources */,
+				D8B5DB4B87275FD8908A88B5 /* InspectorView.swift in Sources */,
+				579CFFDA77F3D6F6252901A5 /* LibraryModels.swift in Sources */,
+				265363287B2B7617FAC67694 /* LibrarySidebar.swift in Sources */,
+				8A11E489EBC5B97346596A43 /* LibraryStore.swift in Sources */,
+				DB5B5BBBD00803020690DE71 /* MOBIParser.swift in Sources */,
+				42C17AD4373FD043FE43C7FE /* MainMenu.swift in Sources */,
+				70B5AF3733D39095132FD16E /* PDFReaderController.swift in Sources */,
+				1B1EAE3B8305AF50ABAA4E87 /* ReaderDetailView.swift in Sources */,
+				808DA26855E3C8F22CA28750 /* ReaderModel.swift in Sources */,
+				8AF7D8D124ABD9B664AA00D2 /* ReaderSchemeHandler.swift in Sources */,
+				3335DA68DC02F2A20DF0A451 /* ReaderSettings.swift in Sources */,
+				950655DC9BCCA78F8810DBAD /* SearchIndex.swift in Sources */,
+				88AAC2B1CA1F86A066E8C4EB /* Storage.swift in Sources */,
+				3DE36E5F31180D84040D183A /* WebReaderController.swift in Sources */,
+				8F3F9F997B2992C6138F40AD /* WindowViews.swift in Sources */,
+				96BD1E644B4B9323DBD72512 /* ZipArchive.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1BE03F98AC8F184DF8493810 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3200E7B00676B2DF06FD4303 /* GullTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		71EB247DCF9DB147F8B080FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD0785209B4870B06C9EEC98 /* Gull */;
+			targetProxy = FCCF364EE12BFC62FF40CEB3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		394F0401E78EA8554E33741A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Gull/Gull.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Gull/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 3.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
+				PRODUCT_NAME = Gull;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4B732990E419624BC680AE6F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gull.app/Contents/MacOS/Gull";
+			};
+			name = Debug;
+		};
+		652AFA909C4D197771E95DDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gull.app/Contents/MacOS/Gull";
+			};
+			name = Release;
+		};
+		B3DB8CD9127946A2A398F247 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		BBDAC0C1381AFA4EA71E8DBE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Gull/Gull.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Gull/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 3.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
+				PRODUCT_NAME = Gull;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C0C1F57332AAF13A46892B59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AB7FE045C04DFAC5270DF90D /* Build configuration list for PBXNativeTarget "Gull" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BBDAC0C1381AFA4EA71E8DBE /* Debug */,
+				394F0401E78EA8554E33741A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CA4C6C69B9B0BA63E1258CC5 /* Build configuration list for PBXNativeTarget "GullTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4B732990E419624BC680AE6F /* Debug */,
+				652AFA909C4D197771E95DDC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F5CD30DA8E88420113D13638 /* Build configuration list for PBXProject "Gull" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3DB8CD9127946A2A398F247 /* Debug */,
+				C0C1F57332AAF13A46892B59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F61F3C2FDEFD57CAED3DF2CB /* Project object */;
+}

@@ -1,0 +1,67 @@
+name: Gull
+options:
+  bundleIdPrefix: me.limboy
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    ARCHS: arm64
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+targets:
+  Gull:
+    type: application
+    platform: macOS
+    sources:
+      - path: Gull
+        excludes:
+          - Resources/AppIcon.icon
+          - Resources/Web
+      - path: Gull/Resources/Web
+        type: folder
+        buildPhase: resources
+      - path: Gull/Resources/AppIcon.icon
+        type: file
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.limboy.gull
+        PRODUCT_NAME: Gull
+        MARKETING_VERSION: "3.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_FILE: Gull/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Gull/Gull.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+  GullTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: GullTests
+    dependencies:
+      - target: Gull
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.limboy.gull.tests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Gull.app/Contents/MacOS/Gull"
+        CODE_SIGN_IDENTITY: "-"
+schemes:
+  Gull:
+    build:
+      targets:
+        Gull: all
+        GullTests: [test]
+    test:
+      targets:
+        - GullTests
