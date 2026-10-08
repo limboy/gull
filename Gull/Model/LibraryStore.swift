@@ -48,8 +48,9 @@ final class LibraryStore {
 
     func flush() { saver.flush() }
 
-    var sections: (pinned: [LibraryBook], folders: [SidebarFolderSection], unfiled: [LibraryBook]) {
-        LibraryRules.sections(books: books, folders: folders, sort: sort)
+    func sections(filter: String = "") -> (pinned: [LibraryBook], folders: [SidebarFolderSection], unfiled: [LibraryBook]) {
+        LibraryRules.sections(books: books, folders: folders, sort: sort,
+                              filter: filter.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     func book(at path: String) -> LibraryBook? { books.first { $0.filePath == path } }

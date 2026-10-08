@@ -206,23 +206,33 @@ nonisolated enum LibraryRules {
         return sorted.filter(\.isFolder).map(\.entry) + sorted.filter { !$0.isFolder }.map(\.entry)
     }
 
+    /// Whether a book's file name contains the filter text; an empty filter matches all.
+    static func matches(_ book: LibraryBook, filter: String) -> Bool {
+        filter.isEmpty || (book.filePath as NSString).lastPathComponent.localizedStandardContains(filter)
+    }
+
+    /// While filtering, folders holding no match are dropped and the rest are
+    /// shown expanded so every match is visible.
     private static func folderSection(_ folder: LibraryFolder, _ booksByFolder: [String: [LibraryBook]],
-                                      _ sort: SortOptions, depth: Int) -> SidebarFolderSection {
-        let children = folder.folders.map { folderSection($0, booksByFolder, sort, depth: depth + 1) }
+                                      _ sort: SortOptions, filter: String, depth: Int) -> SidebarFolderSection? {
+        let children = folder.folders.compactMap { folderSection($0, booksByFolder, sort, filter: filter, depth: depth + 1) }
         let entries = children.map { SortEntry(entry: .folder($0), name: $0.title, date: $0.createdAt, isFolder: true) }
             + (booksByFolder[folder.path] ?? []).map {
                 SortEntry(entry: .book($0), name: $0.title, date: $0.createdAt, isFolder: false)
             }
+        if !filter.isEmpty, entries.isEmpty { return nil }
         return SidebarFolderSection(
             path: folder.path, title: folder.name, createdAt: folder.createdAt,
-            collapsed: folder.collapsed, depth: depth, items: sortEntries(entries, sort))
+            collapsed: filter.isEmpty && folder.collapsed, depth: depth, items: sortEntries(entries, sort))
     }
 
     /// Splits the library into pinned books, folder sections, and loose rows.
     /// Pinned books are lifted out of their folder but keep `folderPath`.
-    static func sections(books: [LibraryBook], folders: [LibraryFolder], sort: SortOptions)
+    /// A non-empty `filter` keeps only books whose file name contains it.
+    static func sections(books allBooks: [LibraryBook], folders: [LibraryFolder], sort: SortOptions, filter: String = "")
         -> (pinned: [LibraryBook], folders: [SidebarFolderSection], unfiled: [LibraryBook])
     {
+        let books = allBooks.filter { matches($0, filter: filter) }
         let pinned = books.filter(\.pinned)
         var booksByFolder: [String: [LibraryBook]] = [:]
         var unfiled: [LibraryBook] = []
@@ -233,7 +243,7 @@ nonisolated enum LibraryRules {
                 unfiled.append(book)
             }
         }
-        let sections = folders.map { folderSection($0, booksByFolder, sort, depth: 0) }
+        let sections = folders.compactMap { folderSection($0, booksByFolder, sort, filter: filter, depth: 0) }
         let loose = sortEntries(unfiled.map { SortEntry(entry: .book($0), name: $0.title, date: $0.createdAt, isFolder: false) }, sort)
             .compactMap { if case .book(let book) = $0 { book } else { nil } }
         return (pinned, sections, loose)

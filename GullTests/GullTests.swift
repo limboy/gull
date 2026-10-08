@@ -104,6 +104,22 @@ import Testing
         #expect(interleaved.folders[0].items.map(\.id) == ["folder:/lib/z", "book:/lib/b.epub", "book:/lib/a.epub"])
     }
 
+    @Test func filterKeepsMatchingFileNamesAndExpandsTheirFolders() {
+        let folders = [LibraryFolder(path: "/lib", name: "lib", collapsed: true,
+                                     folders: [LibraryFolder(path: "/lib/z", name: "z", collapsed: true),
+                                               LibraryFolder(path: "/lib/y", name: "y")])]
+        let books = [book("/lib/Animal Farm.epub", folder: "/lib"), book("/lib/z/1984.epub", folder: "/lib/z"),
+                     book("/lib/y/Dune.epub", folder: "/lib/y"), book("/farm-notes.pdf")]
+        let sections = LibraryRules.sections(books: books, folders: folders, sort: SortOptions(), filter: "farm")
+        #expect(sections.unfiled.map(\.filePath) == ["/farm-notes.pdf"])
+        #expect(sections.folders.count == 1)
+        #expect(!sections.folders[0].collapsed)
+        #expect(sections.folders[0].items.map(\.id) == ["book:/lib/Animal Farm.epub"])
+
+        let nested = LibraryRules.sections(books: books, folders: folders, sort: SortOptions(), filter: "1984")
+        #expect(nested.folders[0].items.map(\.id) == ["folder:/lib/z"])
+    }
+
     @Test func mergeKeepsCollapsedState() {
         let existing = LibraryFolder(path: "/lib", name: "lib", collapsed: true,
                                      folders: [LibraryFolder(path: "/lib/a", name: "a", collapsed: true)])

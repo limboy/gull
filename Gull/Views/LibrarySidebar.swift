@@ -5,9 +5,10 @@ import SwiftUI
 /// collapsible tree mirroring the directories, then any loose rows.
 struct LibrarySidebar: View {
     @Bindable private var library = LibraryStore.shared
+    @State private var filter = ""
 
     var body: some View {
-        let sections = library.sections
+        let sections = library.sections(filter: filter)
         List(selection: $library.activePath) {
             if !sections.pinned.isEmpty {
                 Section("Pinned") {
@@ -24,6 +25,7 @@ struct LibrarySidebar: View {
             }
         }
         .listStyle(.sidebar)
+        .safeAreaInset(edge: .bottom, spacing: 0) { SidebarBottomBar(filter: $filter) }
         .overlay {
             if library.folders.isEmpty, library.books.isEmpty {
                 ContentUnavailableView {
@@ -40,17 +42,6 @@ struct LibrarySidebar: View {
             guard !folders.isEmpty else { return false }
             Task { await library.addFolders(folders) }
             return true
-        }
-        .toolbar {
-            ToolbarItemGroup {
-                SortMenu()
-                Button {
-                    library.addFolderFromPanel(window: NSApp.keyWindow)
-                } label: {
-                    Label("Add Book Folder", systemImage: "folder.badge.plus")
-                }
-                .help("Add Book Folder")
-            }
         }
     }
 }
@@ -173,6 +164,55 @@ struct CoverThumbnail: View {
     }
 }
 
+/// The bar pinned to the bottom of the sidebar: add a folder, the sort
+/// menu, and a filter field matching book file names. Living in the sidebar,
+/// it collapses along with it.
+private struct SidebarBottomBar: View {
+    @Binding var filter: String
+    private var library: LibraryStore { .shared }
+    /// Shared by the round buttons and the filter capsule so they line up.
+    static let controlHeight: CGFloat = 32
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button {
+                library.addFolderFromPanel(window: NSApp.keyWindow)
+            } label: {
+                Image(systemName: "folder.badge.plus")
+                    .frame(width: Self.controlHeight, height: Self.controlHeight)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .help("Add Book Folder")
+
+            SortMenu()
+
+            HStack(spacing: 4) {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .foregroundStyle(.secondary)
+                TextField("Filter", text: $filter)
+                    .textFieldStyle(.plain)
+                if !filter.isEmpty {
+                    Button {
+                        filter = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Clear Filter")
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: Self.controlHeight)
+            .glassEffect(.regular.interactive(), in: .capsule)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+}
+
 private struct SortMenu: View {
     @Bindable private var library = LibraryStore.shared
 
@@ -191,8 +231,15 @@ private struct SortMenu: View {
             Divider()
             Toggle("Folders First", isOn: $library.sort.foldersFirst)
         } label: {
-            Label("Sort", systemImage: "arrow.up.arrow.down")
+            Image(systemName: "arrow.up.arrow.down")
+                .frame(width: SidebarBottomBar.controlHeight, height: SidebarBottomBar.controlHeight)
+                .contentShape(.circle)
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .glassEffect(.regular.interactive(), in: .circle)
         .help("Sort Books")
     }
 }
