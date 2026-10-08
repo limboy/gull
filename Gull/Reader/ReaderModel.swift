@@ -240,10 +240,8 @@ final class ReaderModel {
     }
 
     private func didLoad(title: String, identifier: String, path: String) {
-        if !title.isEmpty {
-            self.title = title
-            LibraryStore.shared.updateTitle(path, title)
-        }
+        // The window shows the book's own title; the sidebar keeps the file name.
+        if !title.isEmpty { self.title = title }
         let key = HighlightStore.key(filePath: path, identifier: identifier.hasPrefix("pdf:") ? nil : identifier)
         HighlightStore.shared.migrate(from: path, to: key)
         highlightKey = key

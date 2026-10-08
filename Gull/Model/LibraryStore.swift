@@ -66,14 +66,6 @@ final class LibraryStore {
         saver.schedule()
     }
 
-    /// EPUB metadata replaces the file-name title once a book is opened.
-    func updateTitle(_ path: String, _ title: String) {
-        guard let index = books.firstIndex(where: { $0.filePath == path }), books[index].title != title, !title.isEmpty
-        else { return }
-        books[index].title = title
-        saver.schedule()
-    }
-
     // MARK: Folders
 
     func setCollapsed(_ path: String, _ collapsed: Bool) {

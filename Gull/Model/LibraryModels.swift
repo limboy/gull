@@ -167,7 +167,7 @@ nonisolated enum LibraryRules {
             if let index = indexByPath[book.filePath] {
                 books[index].folderPath = book.folderPath
                 books[index].createdAt = book.createdAt
-                if books[index].title.isEmpty { books[index].title = book.title }
+                books[index].title = book.title
             } else {
                 indexByPath[book.filePath] = books.count
                 books.append(book)
