@@ -30,6 +30,7 @@ struct LibraryWindowView: View {
             ReaderDetailView(model: model)
                 .readerChrome(model: model)
         }
+        .readerInspector(model: model)
         .onChange(of: library.activePath, initial: true) { _, path in model.open(path) }
         .frame(minWidth: 500, minHeight: 530)
     }
@@ -41,9 +42,18 @@ struct BookWindowView: View {
     @Bindable var model: ReaderModel
 
     var body: some View {
-        ReaderDetailView(model: model)
-            .readerChrome(model: model)
-            .frame(minWidth: 500, minHeight: 530)
+        // A split view with no sidebar, so the inspector gets the same
+        // full-height column it has in the library window.
+        NavigationSplitView(columnVisibility: .constant(.detailOnly)) {
+            EmptyView()
+                .toolbar(removing: .sidebarToggle)
+        } detail: {
+            ReaderDetailView(model: model)
+                .readerChrome(model: model)
+        }
+        .toolbar(removing: .sidebarToggle)
+        .readerInspector(model: model)
+        .frame(minWidth: 500, minHeight: 530)
     }
 }
 
@@ -52,10 +62,6 @@ private struct ReaderChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .inspector(isPresented: $model.showInspector) {
-                InspectorView(model: model)
-                    .inspectorColumnWidth(min: 240, ideal: 290, max: 480)
-            }
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
                     ReadingSettingsMenu(model: model)
@@ -74,8 +80,22 @@ private struct ReaderChrome: ViewModifier {
     }
 }
 
+/// Attached to the split view itself (not its detail column) so the inspector
+/// runs the full height of the window, under the toolbar, like the sidebar.
+private struct ReaderInspector: ViewModifier {
+    @Bindable var model: ReaderModel
+
+    func body(content: Content) -> some View {
+        content.inspector(isPresented: $model.showInspector) {
+            InspectorView(model: model)
+                .inspectorColumnWidth(min: 240, ideal: 290, max: 480)
+        }
+    }
+}
+
 extension View {
     func readerChrome(model: ReaderModel) -> some View { modifier(ReaderChrome(model: model)) }
+    func readerInspector(model: ReaderModel) -> some View { modifier(ReaderInspector(model: model)) }
 }
 
 /// The toolbar's reading settings: typography for reflowable books, page zoom for PDFs.
