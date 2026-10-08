@@ -5,7 +5,6 @@ import SwiftUI
 /// collapsible tree mirroring the directories, then any loose rows.
 struct LibrarySidebar: View {
     @Bindable private var library = LibraryStore.shared
-    @State private var isDropTarget = false
 
     var body: some View {
         let sections = library.sections
@@ -15,16 +14,9 @@ struct LibrarySidebar: View {
                     ForEach(sections.pinned) { BookRow(book: $0) }
                 }
             }
-            ForEach(sections.folders) { folder in
-                Section(isExpanded: Binding(
-                    get: { !folder.collapsed },
-                    set: { library.setCollapsed(folder.path, !$0) }
-                )) {
-                    FolderItems(items: folder.items)
-                } header: {
-                    FolderLabel(section: folder)
-                }
-            }
+            // Folders are plain disclosure rows rather than sections, so their
+            // titles read like rows and they stack without section spacing.
+            ForEach(sections.folders) { SubfolderRow(section: $0) }
             if !sections.unfiled.isEmpty {
                 Section("Books") {
                     ForEach(sections.unfiled) { BookRow(book: $0) }
@@ -43,21 +35,12 @@ struct LibrarySidebar: View {
                 }
             }
         }
-        .overlay {
-            if isDropTarget {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.accentColor.opacity(0.08)))
-                    .padding(6)
-                    .allowsHitTesting(false)
-            }
-        }
         .dropDestination(for: URL.self) { urls, _ in
             let folders = urls.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
             guard !folders.isEmpty else { return false }
             Task { await library.addFolders(folders) }
             return true
-        } isTargeted: { isDropTarget = $0 }
+        }
         .toolbar {
             ToolbarItemGroup {
                 SortMenu()
