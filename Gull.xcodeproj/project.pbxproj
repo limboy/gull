@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1B1EAE3B8305AF50ABAA4E87 /* ReaderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */; };
+		1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07F90EE2499527EC8F04C9B /* AppUpdater.swift */; };
 		265363287B2B7617FAC67694 /* LibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52089771E95E004788F4EAF /* LibrarySidebar.swift */; };
 		3200E7B00676B2DF06FD4303 /* GullTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5C7A763E268B3F98A10AE /* GullTests.swift */; };
 		3335DA68DC02F2A20DF0A451 /* ReaderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF03D83C34768EC43C88252E /* ReaderSettings.swift */; };
@@ -16,6 +17,7 @@
 		3DE36E5F31180D84040D183A /* WebReaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30287ADF8538048A0A293F21 /* WebReaderController.swift */; };
 		42C17AD4373FD043FE43C7FE /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7100135A790BA9D3A784DEE7 /* MainMenu.swift */; };
 		579CFFDA77F3D6F6252901A5 /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */; };
+		5826515B497064E97B317E2D /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC630454464BA133C9DE15C /* Sparkle */; };
 		70B5AF3733D39095132FD16E /* PDFReaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */; };
 		7F2A1E8893805958C85BE99E /* HTMLEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCAEC64726D5A5881DB5E25 /* HTMLEntities.swift */; };
 		808DA26855E3C8F22CA28750 /* ReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3326E9670498F03A39A1AC /* ReaderModel.swift */; };
@@ -76,9 +78,21 @@
 		C89E0D332C778FEE7BCD9AB6 /* ContentSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentSanitizer.swift; sourceTree = "<group>"; };
 		CF03D83C34768EC43C88252E /* ReaderSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSettings.swift; sourceTree = "<group>"; };
 		E0524713D9EA2F88D620B02F /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		E07F90EE2499527EC8F04C9B /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		EC491B6917CEDCB163DACC49 /* FolderScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderScanner.swift; sourceTree = "<group>"; };
 		F614726184858F95748D5F52 /* Gull.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gull.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		76211A98716F81F2E9902A2A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5826515B497064E97B317E2D /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		10DD6631CBEDF6CEBE53B3D4 /* GullTests */ = {
@@ -113,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				5B7962895C58E940312BEE6A /* AppDelegate.swift */,
+				E07F90EE2499527EC8F04C9B /* AppUpdater.swift */,
 				7100135A790BA9D3A784DEE7 /* MainMenu.swift */,
 			);
 			path = App;
@@ -217,6 +232,7 @@
 			buildPhases = (
 				0AFEE404BCE91C75D603C529 /* Sources */,
 				E4722E56B4546CDC80C9C155 /* Resources */,
+				76211A98716F81F2E9902A2A /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -224,6 +240,7 @@
 			);
 			name = Gull;
 			packageProductDependencies = (
+				0EC630454464BA133C9DE15C /* Sparkle */,
 			);
 			productName = Gull;
 			productReference = A8A1E0B339B4A41378D06030 /* Gull.app */;
@@ -252,6 +269,9 @@
 			);
 			mainGroup = 2AD5297E12CB90BAD01377AA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F60C53FA2E630600076F7972 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 99F0483793A23AAB2CBAA07C /* Products */;
 			projectDirPath = "";
@@ -281,6 +301,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B54E88D5134FB02566F33D8 /* AppDelegate.swift in Sources */,
+				1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */,
 				8F4F02D7F83101CBEE3189AB /* BookContent.swift in Sources */,
 				DC900715AFD0818657AA3290 /* ContentSanitizer.swift in Sources */,
 				B367C69929B84626998D5A86 /* CoverService.swift in Sources */,
@@ -337,14 +358,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Gull/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
+				SPARKLE_FEED_URL = "https://github.com/limboy/gull/releases/latest/download/appcast.xml";
+				SPARKLE_PUBLIC_KEY = "";
 			};
 			name = Release;
 		};
@@ -464,14 +484,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Gull/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
+				SPARKLE_FEED_URL = "https://github.com/limboy/gull/releases/latest/download/appcast.xml";
+				SPARKLE_PUBLIC_KEY = "";
 			};
 			name = Debug;
 		};
@@ -568,6 +587,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F60C53FA2E630600076F7972 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0EC630454464BA133C9DE15C /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F60C53FA2E630600076F7972 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F61F3C2FDEFD57CAED3DF2CB /* Project object */;
 }

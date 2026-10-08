@@ -63,6 +63,18 @@ private struct ReaderChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
+                if let version = AppUpdater.shared.readyVersion {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            AppUpdater.shared.restartToUpdate()
+                        } label: {
+                            Label("Restart to Update", systemImage: "arrow.down.circle")
+                                .labelStyle(.titleAndIcon)
+                        }
+                        .tint(.orange)
+                        .help("Gull \(version) is ready to install")
+                    }
+                }
                 ToolbarItemGroup(placement: .primaryAction) {
                     ReadingSettingsMenu(model: model)
                 }

@@ -4,6 +4,10 @@ options:
   deploymentTarget:
     macOS: "26.0"
   createIntermediateGroups: true
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.10.0
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -42,6 +46,13 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        # Sparkle: set SPARKLE_PUBLIC_KEY to the output of Sparkle's `generate_keys`.
+        # Left empty, the updater stays off (e.g. for local builds).
+        SPARKLE_FEED_URL: https://github.com/limboy/gull/releases/latest/download/appcast.xml
+        SPARKLE_PUBLIC_KEY: ""
+    dependencies:
+      - package: Sparkle
   GullTests:
     type: bundle.unit-test
     platform: macOS

@@ -12,6 +12,29 @@ xcodebuild -scheme Gull build
 xcodebuild -scheme Gull test
 ```
 
+## Releases and auto-update
+
+Gull updates itself with [Sparkle](https://sparkle-project.org). It checks at launch and every 6 hours, downloads in the background, and installs on quit; once an update is ready, a **Restart to Update** button appears in the toolbar. **Gull › Check for Updates…** checks on demand.
+
+The feed is `https://github.com/limboy/gull/releases/latest/download/appcast.xml`, so every GitHub release carries the appcast alongside the app.
+
+One-time setup: create Sparkle's signing key (stored in your login Keychain, so back it up):
+
+```bash
+build/release/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys
+```
+
+(Run `xcodebuild -resolvePackageDependencies -derivedDataPath build/release/DerivedData` first if the tool isn't there yet.)
+
+Each release:
+
+```bash
+scripts/release.sh 3.0.1 notes.md   # archive, Developer ID sign, notarize, zip, sign appcast
+gh release create v3.0.1 dist/Gull-3.0.1.zip dist/appcast.xml --repo limboy/gull --notes-file notes.md
+```
+
+The script reads `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` from the environment or `.env`, injects the Keychain key's public half as `SUPublicEDKey`, and uses the commit count as the build number (Sparkle compares `CFBundleVersion`). Builds without a public key — every Debug build and plain local builds — never start the updater.
+
 ## Architecture
 
 | Area | Electron | Native |
@@ -31,7 +54,7 @@ Book markup reaches the web view only after sanitizing (no scripts, handlers, re
 
 ## Differences from the Electron app
 
-- No auto-updater yet (electron-updater has no direct equivalent; Sparkle would be the native choice).
+- Updates come through Sparkle instead of electron-updater. Electron releases can't update into the native app on their own; users need to install the first native release by hand.
 - Library state, highlights, and positions start fresh — Electron's localStorage is not migrated.
 - MOBI6 `filepos` links and TOC entries now resolve (anchors are inserted at their byte offsets).
 - Reading positions are saved for standalone book windows too, anchored to a chapter rather than a raw scroll ratio.

@@ -35,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if !openedBookAtLaunch { showLibrary() }
+        AppUpdater.shared.start()
         Task { await LibraryStore.shared.refreshAll() }
         NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main

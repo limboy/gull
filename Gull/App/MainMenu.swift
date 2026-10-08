@@ -1,4 +1,5 @@
 import AppKit
+import Sparkle
 
 /// The menu bar, built in code. Reader commands target the first responder and
 /// are answered by the key window's `ReaderWindowController`.
@@ -35,6 +36,9 @@ enum MainMenu {
     private static func appMenu() -> NSMenu {
         let menu = NSMenu(title: "Gull")
         menu.addItem(item("About Gull", #selector(NSApplication.orderFrontStandardAboutPanel(_:)), target: NSApp))
+        if let updater = AppUpdater.shared.menuTarget {
+            menu.addItem(item("Check for Updates…", #selector(SPUStandardUpdaterController.checkForUpdates(_:)), target: updater))
+        }
         menu.addItem(.separator())
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
         services.submenu = NSMenu(title: "Services")
