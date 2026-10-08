@@ -1,8 +1,20 @@
 # Gull (native)
 
-A native macOS rewrite of [Gull](../gull), the typography-first e-book reader, in Swift with AppKit and SwiftUI. Requires **macOS 26** on Apple Silicon.
+A native macOS rewrite of [Gull](https://github.com/limboy/gull), the typography-first e-book reader, in Swift with AppKit and SwiftUI. Requires **macOS 26** on Apple Silicon.
 
 It reads DRM-free EPUB, MOBI / AZW3 / AZW / PRC (Kindle KF8 and legacy Mobipocket), and PDF, with the same features as the Electron app: library folders from disk (live-updated), pinned and finished books, cover thumbnails, table of contents, the segmented chapter scrollbar, in-book search, persistent highlights, footnote popovers, reading-style controls (font, size, line height, paragraph spacing, full width), PDF zoom, standalone book windows from Finder, and light/dark appearance.
+
+## Install
+
+1. Download **Gull-x.y.z.dmg** from the [latest release](https://github.com/limboy/gull-native/releases/latest).
+2. Open it and drag **Gull** to **Applications**.
+3. Open Gull, then add a folder of books with the sidebar's **Add Book Folder** button (or drag one from Finder onto the sidebar). Single books open with **File › Open…** (⌘O) or Finder's **Open With**.
+
+Gull is signed and notarized, so macOS opens it without warnings. It updates itself from then on; **Gull › Check for Updates…** checks right away.
+
+Coming from the Electron version (2.x)? It won't update to this one on its own: install 3.0.0 as above and replace the old app. Your library, highlights, and reading positions don't carry over, so re-add your book folders.
+
+Gull doesn't remove or bypass DRM; protected books won't open.
 
 ## Build
 
