@@ -17,9 +17,11 @@ struct LibrarySidebar: View {
             }
             // Folders are plain disclosure rows rather than sections, so their
             // titles read like rows and they stack without section spacing.
-            ForEach(sections.folders) { SubfolderRow(section: $0) }
-            if !sections.unfiled.isEmpty {
+            // They share one section with loose books so rows never spill into
+            // the Pinned section.
+            if !sections.folders.isEmpty || !sections.unfiled.isEmpty {
                 Section("Books") {
+                    ForEach(sections.folders) { SubfolderRow(section: $0) }
                     ForEach(sections.unfiled) { BookRow(book: $0) }
                 }
             }
