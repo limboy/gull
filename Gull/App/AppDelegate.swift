@@ -181,6 +181,7 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
     @objc func showHighlights(_ sender: Any?) { model.openPanel = .highlights }
     @objc func findInBook(_ sender: Any?) { model.focusSearch() }
     @objc func highlightSelectionCommand(_ sender: Any?) { model.highlightSelection() }
+    @objc func lookUpSelectionCommand(_ sender: Any?) { model.lookUpSelection() }
 
     @objc func addBookFolder(_ sender: Any?) { LibraryStore.shared.addFolderFromPanel(window: window) }
 
@@ -197,7 +198,7 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
             return kind == .library
         case #selector(addBookFolder(_:)):
             return kind == .library
-        case #selector(highlightSelectionCommand(_:)), #selector(findInBook(_:)),
+        case #selector(highlightSelectionCommand(_:)), #selector(lookUpSelectionCommand(_:)), #selector(findInBook(_:)),
              #selector(showContents(_:)), #selector(showHighlights(_:)):
             return model.hasBook
         case #selector(biggerText(_:)), #selector(smallerText(_:)):

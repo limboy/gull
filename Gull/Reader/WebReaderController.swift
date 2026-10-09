@@ -36,6 +36,8 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
         webView.unregisterDraggedTypes()
         webView.onHighlight = { [weak self] in self?.model?.highlightSelection() }
         webView.onRemoveHighlight = { [weak self] id in self?.model?.removeHighlight(id) }
+        webView.onSearch = { [weak self] text in self?.model?.searchInBook(text) }
+        webView.onLookUp = { [weak self] point in self?.lookUp(at: point) }
         #if DEBUG
         webView.isInspectable = true
         #endif
@@ -89,6 +91,28 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
     func setSearchTerms(_ terms: [String]) { call("Gull.setSearchTerms(terms)", ["terms": terms]) }
     func highlightSelection() { call("Gull.highlightSelection()") }
     func removeHighlight(_ id: String) { call("Gull.removeHighlight(id)", ["id": id]) }
+
+    /// Shows the system dictionary popover for the selection, as ⌃⌘D does in native text views.
+    func lookUpSelection() { showDefinition("return Gull.selectionForLookUp()") }
+
+    /// Shows the dictionary popover for the selection or word at `point` (three-finger tap).
+    private func lookUp(at point: NSPoint) {
+        showDefinition("return Gull.lookUpAt(x, y)", ["x": point.x, "y": point.y])
+    }
+
+    private func showDefinition(_ body: String, _ arguments: [String: Any] = [:]) {
+        guard pageReady else { return }
+        webView.callAsyncJavaScript(body, arguments: arguments, in: nil, in: .page) { [weak self] result in
+            guard let self, case .success(let value) = result, let dict = value as? [String: Any],
+                  let text = dict["text"] as? String else { return }
+            func number(_ key: String) -> Double { (dict[key] as? NSNumber)?.doubleValue ?? 0 }
+            let size = number("fontSize")
+            let font = NSFont(name: dict["fontFamily"] as? String ?? "", size: size) ?? .systemFont(ofSize: size)
+            // The page's coordinates match the (flipped) web view's; the popover wants the text baseline.
+            let baseline = NSPoint(x: number("x"), y: number("bottom") + font.descender)
+            webView.showDefinition(for: NSAttributedString(string: text, attributes: [.font: font]), at: baseline)
+        }
+    }
 
     func jumpToSearchResult(_ result: SearchIndex.Result) {
         call("Gull.jumpToSearchResult(chapterId, href, term, matchIndex)", [
@@ -166,8 +190,9 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
                 progress: number("progress"), chapterId: body["chapterId"] as? String, ratio: number("ratio"))
             model.readerScrolled(top: number("top"), height: number("height"), viewport: number("viewport"),
                                  position: position)
-        case "contextHighlight":
-            webView.contextHighlightId = body["id"] as? String
+        case "contextMenu":
+            webView.contextHighlightId = body["highlightId"] as? String
+            webView.contextText = body["text"] as? String ?? ""
         case "highlightCreated":
             if let highlight = Self.highlight(from: body["highlight"]) {
                 model.addHighlight(highlight, replacing: body["removedIds"] as? [String] ?? [])
@@ -225,13 +250,17 @@ private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-/// Adds "Highlight" / "Remove Highlight" to the context menu and drops items
-/// that make no sense in a reader (Reload, Back, Forward).
+/// Adds "Highlight", "Search in Book" and "Remove Highlight" to the context
+/// menu and drops items that make no sense in a reader (Reload, Back, Forward).
 final class ReaderWebView: WKWebView {
     var onHighlight: (() -> Void)?
     var onRemoveHighlight: ((String) -> Void)?
-    /// The highlight under the last right-click, reported by the page just before the menu opens.
+    var onSearch: ((String) -> Void)?
+    var onLookUp: ((NSPoint) -> Void)?
+    /// The highlight under the last right-click and the selected text, reported by
+    /// the page just before the menu opens.
     var contextHighlightId: String?
+    var contextText = ""
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
         super.willOpenMenu(menu, with: event)
@@ -240,24 +269,35 @@ final class ReaderWebView: WKWebView {
                         "WKMenuItemIdentifierOpenImageInNewWindow", "WKMenuItemIdentifierDownloadImage"]
         for item in menu.items where unwanted.contains(item.identifier?.rawValue ?? "") { menu.removeItem(item) }
         let hasSelection = menu.items.contains { $0.identifier?.rawValue == "WKMenuItemIdentifierCopy" }
-        if hasSelection {
-            let item = NSMenuItem(title: "Highlight", action: #selector(highlightFromMenu), keyEquivalent: "")
-            item.target = self
-            item.image = NSImage(systemSymbolName: "highlighter", accessibilityDescription: nil)
-            menu.insertItem(item, at: 0)
-            menu.insertItem(.separator(), at: 1)
-        }
+        var items: [NSMenuItem] = []
         if contextHighlightId != nil {
-            let item = NSMenuItem(title: "Remove Highlight", action: #selector(removeHighlightFromMenu), keyEquivalent: "")
-            item.target = self
-            item.image = NSImage(systemSymbolName: "eraser", accessibilityDescription: nil)
-            menu.insertItem(item, at: hasSelection ? 1 : 0)
-            if !hasSelection { menu.insertItem(.separator(), at: 1) }
+            items.append(menuItem("Remove Highlight", "eraser", #selector(removeHighlightFromMenu)))
+        } else if hasSelection {
+            items.append(menuItem("Highlight", "highlighter", #selector(highlightFromMenu)))
         }
+        if hasSelection, !contextText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            items.append(menuItem("Search in Book", "magnifyingglass", #selector(searchFromMenu)))
+        }
+        if !items.isEmpty { menu.insertItem(.separator(), at: 0) }
+        for (index, item) in items.enumerated() { menu.insertItem(item, at: index) }
         while menu.items.first?.isSeparatorItem == true { menu.removeItem(at: 0) }
         while menu.items.last?.isSeparatorItem == true { menu.removeItem(at: menu.items.count - 1) }
     }
 
     @objc private func highlightFromMenu() { onHighlight?() }
     @objc private func removeHighlightFromMenu() { if let id = contextHighlightId { onRemoveHighlight?(id) } }
+    @objc private func searchFromMenu() { onSearch?(contextText) }
+
+    /// The system Look Up gesture (three-finger tap). WebKit doesn't act on it in an
+    /// app's web view, so look the word up ourselves.
+    override func quickLook(with event: NSEvent) {
+        onLookUp?(convert(event.locationInWindow, from: nil))
+    }
+
+    private func menuItem(_ title: String, _ symbol: String, _ action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        return item
+    }
 }

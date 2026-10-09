@@ -24,6 +24,7 @@ final class PDFReaderController: NSObject {
         pdfView.autoScales = true
         pdfView.onHighlightMenu = { [weak self] in self?.highlightSelection() }
         pdfView.onRemoveHighlightMenu = { [weak self] id in self?.model?.removeHighlight(id) }
+        pdfView.onSearchMenu = { [weak self] text in self?.model?.searchInBook(text) }
 
         let center = NotificationCenter.default
         observers.append(center.addObserver(forName: .PDFViewPageChanged, object: pdfView, queue: .main) { [weak self] _ in
@@ -305,6 +306,20 @@ final class PDFReaderController: NSObject {
 
     func removeHighlight(_ id: String) { removeAnnotations(id) }
 
+    /// Shows the system dictionary popover for the first line of the selection.
+    func lookUpSelection() {
+        guard let line = pdfView.currentSelection?.selectionsByLine().first, let page = line.pages.first,
+              let text = pdfView.currentSelection?.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else { return }
+        let bounds = pdfView.convert(line.bounds(for: page), from: page)
+        let pageFont = line.attributedString?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+        let size = (pageFont?.pointSize ?? bounds.height * 0.8) * pdfView.scaleFactor
+        let font = pageFont.flatMap { NSFont(descriptor: $0.fontDescriptor, size: size) } ?? .systemFont(ofSize: size)
+        let baseline = NSPoint(x: bounds.minX, y: pdfView.isFlipped ? bounds.maxY + font.descender
+                                                                     : bounds.minY - font.descender)
+        pdfView.showDefinition(for: NSAttributedString(string: text, attributes: [.font: font]), at: baseline)
+    }
+
     func jumpToHighlight(_ highlight: Highlight) {
         guard let index = Int(highlight.chapterId.dropFirst("page-".count)),
               let page = pdfView.document?.page(at: index),
@@ -315,28 +330,37 @@ final class PDFReaderController: NSObject {
     }
 }
 
-/// A `PDFView` whose context menu offers "Highlight" for a selection and
-/// "Remove Highlight" over an existing Gull highlight.
+/// A `PDFView` whose context menu offers "Highlight" and "Search in Book" for a
+/// selection and "Remove Highlight" over an existing Gull highlight.
 final class ReaderPDFView: PDFView {
     var onHighlightMenu: (() -> Void)?
     var onRemoveHighlightMenu: ((String) -> Void)?
+    var onSearchMenu: ((String) -> Void)?
 
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = super.menu(for: event) ?? NSMenu()
         var index = 0
-        if let selection = currentSelection, !(selection.string ?? "").isEmpty {
-            let item = NSMenuItem(title: "Highlight", action: #selector(highlightFromMenu), keyEquivalent: "")
-            item.target = self
-            item.image = NSImage(systemSymbolName: "highlighter", accessibilityDescription: nil)
-            menu.insertItem(item, at: index)
-            index += 1
-        }
-        if let id = highlightId(at: event) {
+        let highlightId = highlightId(at: event)
+        if let id = highlightId {
             let item = NSMenuItem(title: "Remove Highlight", action: #selector(removeHighlightFromMenu), keyEquivalent: "")
             item.target = self
             item.image = NSImage(systemSymbolName: "eraser", accessibilityDescription: nil)
             item.representedObject = id
             menu.insertItem(item, at: index)
+            index += 1
+        }
+        if let selection = currentSelection, !(selection.string ?? "").isEmpty {
+            if highlightId == nil {
+                let item = NSMenuItem(title: "Highlight", action: #selector(highlightFromMenu), keyEquivalent: "")
+                item.target = self
+                item.image = NSImage(systemSymbolName: "highlighter", accessibilityDescription: nil)
+                menu.insertItem(item, at: index)
+                index += 1
+            }
+            let search = NSMenuItem(title: "Search in Book", action: #selector(searchFromMenu), keyEquivalent: "")
+            search.target = self
+            search.image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)
+            menu.insertItem(search, at: index)
             index += 1
         }
         if index > 0, menu.items.count > index { menu.insertItem(.separator(), at: index) }
@@ -352,6 +376,7 @@ final class ReaderPDFView: PDFView {
     }
 
     @objc private func highlightFromMenu() { onHighlightMenu?() }
+    @objc private func searchFromMenu() { if let text = currentSelection?.string { onSearchMenu?(text) } }
     @objc private func removeHighlightFromMenu(_ sender: NSMenuItem) {
         if let id = sender.representedObject as? String { onRemoveHighlightMenu?(id) }
     }

@@ -644,14 +644,70 @@
     setTimeout(() => marks.forEach(m => m.classList.remove('flash')), 500);
   }
 
-  // --- Highlight context menu ------------------------------------------------
-  // Tells the native side which highlight (if any) a right-click landed on, so the
-  // context menu can offer "Remove Highlight". Sent before the menu opens.
+  // --- Context menu & Look Up -----------------------------------------------
+  // Tells the native side which highlight (if any) a right-click landed on and what
+  // text is selected, so the context menu can offer "Remove Highlight" and
+  // "Search in Book". Sent before the menu opens.
 
   document.addEventListener('contextmenu', (event) => {
     const mark = event.target.closest ? event.target.closest('mark.reader-highlight') : null;
-    post({ type: 'contextHighlight', id: mark ? mark.dataset.highlightId : null });
+    const selection = window.getSelection();
+    post({
+      type: 'contextMenu',
+      highlightId: mark ? mark.dataset.highlightId : null,
+      text: selection.isCollapsed ? '' : selection.toString(),
+    });
   });
+
+  /** The range's text, where its first line sits, and its font, for the native dictionary popover. */
+  function describeForLookUp(range) {
+    const rect = Array.from(range.getClientRects()).find(r => r.width > 0 && r.height > 0);
+    const text = range.toString().trim();
+    if (!rect || !text) return null;
+    const node = range.startContainer;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    const style = getComputedStyle(el);
+    return {
+      text,
+      x: rect.left,
+      bottom: rect.bottom,
+      fontFamily: style.fontFamily.split(',')[0].replace(/["']/g, '').trim(),
+      fontSize: parseFloat(style.fontSize) || 16,
+    };
+  }
+
+  function selectionForLookUp() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount || selection.isCollapsed) return null;
+    return describeForLookUp(selection.getRangeAt(0));
+  }
+
+  /** What to look up at a viewport point: the selection if the point is on it, else the word there. */
+  function lookUpAt(x, y) {
+    const selection = window.getSelection();
+    if (selection.rangeCount && !selection.isCollapsed) {
+      const hit = Array.from(selection.getRangeAt(0).getClientRects())
+        .some(r => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+      if (hit) return selectionForLookUp();
+    }
+    const caret = document.caretRangeFromPoint(x, y);
+    if (!caret || caret.startContainer.nodeType !== Node.TEXT_NODE) return null;
+    const node = caret.startContainer;
+    const offset = caret.startOffset;
+    const segmenter = new Intl.Segmenter(document.documentElement.lang || undefined, { granularity: 'word' });
+    for (const segment of segmenter.segment(node.data)) {
+      const end = segment.index + segment.segment.length;
+      if (offset < segment.index || offset > end || !segment.isWordLike) continue;
+      const range = document.createRange();
+      range.setStart(node, segment.index);
+      range.setEnd(node, end);
+      // caretRangeFromPoint snaps to the nearest gap; make sure the point is really on this word.
+      const onWord = Array.from(range.getClientRects())
+        .some(r => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+      if (onWord) return describeForLookUp(range);
+    }
+    return null;
+  }
 
   function hasSelection() {
     return selectedChapterRange() !== null;
@@ -669,6 +725,8 @@
     removeHighlight,
     jumpToHighlight,
     hasSelection,
+    selectionForLookUp,
+    lookUpAt,
     clearSelection: () => window.getSelection().removeAllRanges(),
   };
 

@@ -77,6 +77,7 @@ enum MainMenu {
         menu.addItem(item("Select All", #selector(NSText.selectAll(_:)), "a"))
         menu.addItem(.separator())
         menu.addItem(item("Highlight Selection", #selector(ReaderWindowController.highlightSelectionCommand(_:)), "h", [.command, .control]))
+        menu.addItem(item("Look Up", #selector(ReaderWindowController.lookUpSelectionCommand(_:)), "d", [.command, .control]))
         menu.addItem(item("Find in Book", #selector(ReaderWindowController.findInBook(_:)), "f"))
         return menu
     }

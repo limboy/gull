@@ -370,6 +370,22 @@ final class ReaderModel {
         searchFocusRequest += 1
     }
 
+    /// Opens search with `text` (whitespace collapsed) as the query.
+    func searchInBook(_ text: String) {
+        let query = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !query.isEmpty else { return }
+        searchQuery = query
+        focusSearch()
+    }
+
+    func lookUpSelection() {
+        switch phase {
+        case .reflowable: web.lookUpSelection()
+        case .pdf: pdf.lookUpSelection()
+        default: break
+        }
+    }
+
     // MARK: Highlights
 
     func highlightSelection() {
