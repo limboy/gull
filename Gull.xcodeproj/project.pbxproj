@@ -19,6 +19,7 @@
 		42C17AD4373FD043FE43C7FE /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7100135A790BA9D3A784DEE7 /* MainMenu.swift */; };
 		579CFFDA77F3D6F6252901A5 /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */; };
 		5826515B497064E97B317E2D /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC630454464BA133C9DE15C /* Sparkle */; };
+		6C402ABF57B4AFFB9D8FAC8B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 91040737923977DAACBFCF39 /* Assets.xcassets */; };
 		70B5AF3733D39095132FD16E /* PDFReaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */; };
 		7F2A1E8893805958C85BE99E /* HTMLEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCAEC64726D5A5881DB5E25 /* HTMLEntities.swift */; };
 		808DA26855E3C8F22CA28750 /* ReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3326E9670498F03A39A1AC /* ReaderModel.swift */; };
@@ -73,6 +74,7 @@
 		812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSchemeHandler.swift; sourceTree = "<group>"; };
 		84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderController.swift; sourceTree = "<group>"; };
 		84FEA3E1F2995ECDE17B3CB3 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModels.swift; sourceTree = "<group>"; };
+		91040737923977DAACBFCF39 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9EBDFA1E34E8C22C775C960D /* Web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Web; path = Gull/Resources/Web; sourceTree = SOURCE_ROOT; };
 		A8A1E0B339B4A41378D06030 /* Gull.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gull.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B52089771E95E004788F4EAF /* LibrarySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySidebar.swift; sourceTree = "<group>"; };
@@ -175,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				0F103FF0517A61FEDB14AE34 /* AppIcon.icon */,
+				91040737923977DAACBFCF39 /* Assets.xcassets */,
 				9EBDFA1E34E8C22C775C960D /* Web */,
 			);
 			path = Resources;
@@ -292,6 +295,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC06F1DB5AFB84072E561E0F /* AppIcon.icon in Resources */,
+				6C402ABF57B4AFFB9D8FAC8B /* Assets.xcassets in Resources */,
 				D7E11E6B2EF6620A9428D986 /* Web in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

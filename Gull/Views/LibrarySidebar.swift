@@ -52,7 +52,7 @@ struct LibrarySidebar: View {
 /// Books are inset so they sit under the folder rather than flush with it.
 private struct FolderItems: View {
     let items: [SidebarEntry]
-    private let inset: CGFloat = 12
+    private let inset: CGFloat = 4
 
     var body: some View {
         if items.isEmpty {
@@ -87,6 +87,12 @@ private struct SubfolderRow: View {
             AnyView(FolderItems(items: section.items))
         } label: {
             FolderLabel(section: section)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                // Simultaneous, so a single click still selects the row at once.
+                .simultaneousGesture(TapGesture(count: 2).onEnded {
+                    withAnimation { library.setCollapsed(section.path, !section.collapsed) }
+                })
         }
     }
 }
@@ -96,7 +102,17 @@ private struct FolderLabel: View {
     private var library: LibraryStore { .shared }
 
     var body: some View {
-        Label(section.title, systemImage: section.collapsed ? "folder" : "folder")
+        Label {
+            Text(section.title)
+        } icon: {
+            // SF Symbols has no open folder; `folder.open` is a custom symbol
+            // drawn to match `folder`. Both stay laid out, so the icon keeps
+            // one size as the folder opens and closes.
+            ZStack {
+                Image(systemName: "folder").opacity(section.collapsed ? 1 : 0)
+                Image("folder.open").opacity(section.collapsed ? 0 : 1)
+            }
+        }
             .lineLimit(1)
             .contextMenu {
                 Button("Show in Finder") {
