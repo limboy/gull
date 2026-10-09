@@ -94,7 +94,7 @@ private struct Message: View {
         }
         .foregroundStyle(.secondary)
         .multilineTextAlignment(.center)
-        .frame(maxWidth: 300)
+        .frame(maxWidth: 440)
     }
 }
 
