@@ -124,6 +124,7 @@
     searchTerms = config.searchTerms || [];
     applyStyle(config.style);
     setScrollbarHidden(config.hideScrollbar);
+    setTrailingInset(config.trailingInset);
 
     let data;
     try {
@@ -355,6 +356,7 @@
     const theme = style.theme;
     if (theme) {
       root.classList.toggle('theme-dark', !!theme.dark);
+      root.style.setProperty('--page-bg', theme.background);
       root.style.setProperty('--text-primary', theme.text);
       root.style.setProperty('--text-secondary', theme.secondary);
       root.style.setProperty('--accent', theme.accent);
@@ -370,6 +372,11 @@
     await waitForFonts();
     applyAnchor(anchor);
     layoutChanged();
+  }
+
+  /** Space the native chapter scrollbar covers at the trailing edge. */
+  function setTrailingInset(inset) {
+    root.style.setProperty('--trailing-inset', (inset || 0) + 'px');
   }
 
   function setScrollbarHidden(hidden) {
@@ -725,6 +732,7 @@
     load,
     setStyle,
     setScrollbarHidden,
+    setTrailingInset,
     scrollToHref,
     scrollToOffset,
     setSearchTerms,

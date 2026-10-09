@@ -20,7 +20,6 @@ final class PDFReaderController: NSObject {
         super.init()
         pdfView.displayMode = .singlePageContinuous
         pdfView.displaysPageBreaks = true
-        pdfView.backgroundColor = .clear
         pdfView.autoScales = true
         pdfView.onHighlightMenu = { [weak self] in self?.highlightSelection() }
         pdfView.onRemoveHighlightMenu = { [weak self] id in self?.model?.removeHighlight(id) }
@@ -53,6 +52,7 @@ final class PDFReaderController: NSObject {
         annotations.removeAll()
         pdfView.document = document
         observeScrolling()
+        applyInsets()
         tocUnits = (model?.toc ?? []).compactMap { item in unit(forHref: item.href).map { (item.id, $0) } }
         applyHighlights()
         applyZoom(preservingPosition: false)
@@ -75,6 +75,23 @@ final class PDFReaderController: NSObject {
         pdfView.document = nil
         annotations.removeAll()
         tocUnits = []
+    }
+
+    private var insets = NSEdgeInsets()
+
+    /// How much of the view the toolbar (top) and chapter scrollbar (trailing) cover. Set
+    /// by hand: the scroll view's automatic insets only know about the toolbar.
+    func setInsets(top: CGFloat, trailing: CGFloat) {
+        guard insets.top != top || insets.right != trailing else { return }
+        insets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: trailing)
+        applyInsets()
+    }
+
+    private func applyInsets() {
+        guard let scrollView = pdfView.documentView?.enclosingScrollView else { return }
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = insets
+        if pdfView.autoScales { pdfView.autoScales = true }
     }
 
     private var scrollObserver: NSObjectProtocol?
@@ -182,6 +199,11 @@ final class PDFReaderController: NSObject {
     }
 
     // MARK: Zoom
+
+    /// PDFView paints its own background (white when clear), so it takes the theme's page color.
+    func apply(background: String) {
+        pdfView.backgroundColor = NSColor(hex: background)
+    }
 
     func apply(zoom: PDFZoom) {
         guard zoom != self.zoom else { return }

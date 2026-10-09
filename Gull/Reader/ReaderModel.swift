@@ -429,5 +429,6 @@ final class ReaderModel {
     func applySettings(_ settings: ReaderSettings, theme: ReaderTheme) {
         web.apply(style: settings.style(theme: theme), hideScrollbar: settings.chapterScrollbar)
         pdf.apply(zoom: settings.pdfZoom)
+        pdf.apply(background: theme.background)
     }
 }

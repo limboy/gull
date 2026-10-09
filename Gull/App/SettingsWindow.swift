@@ -109,11 +109,15 @@ private struct ThemeSwatch: View {
     }
 }
 
-extension Color {
+extension NSColor {
     /// A color from a `#rrggbb` string, as the reader themes are written.
-    init(hex: String) {
+    convenience init(hex: String) {
         let value = UInt32(hex.dropFirst(), radix: 16) ?? 0
-        self.init(red: Double((value >> 16) & 0xff) / 255, green: Double((value >> 8) & 0xff) / 255,
-                  blue: Double(value & 0xff) / 255)
+        self.init(srgbRed: CGFloat((value >> 16) & 0xff) / 255, green: CGFloat((value >> 8) & 0xff) / 255,
+                  blue: CGFloat(value & 0xff) / 255, alpha: 1)
     }
+}
+
+extension Color {
+    init(hex: String) { self.init(nsColor: NSColor(hex: hex)) }
 }

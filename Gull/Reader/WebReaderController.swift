@@ -10,6 +10,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
     private var pendingLoad: [String: Any]?
     private var appliedStyle: ReadingStyle?
     private var appliedHideScrollbar: Bool?
+    private var trailingInset: CGFloat = 0
 
     private static let schemeHandler = ReaderSchemeHandler()
     private static let readerURL = URL(string: "\(ResourceURL.origin)/reader.html")!
@@ -68,6 +69,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
             "highlights": highlights.map(Self.dictionary),
             "style": Self.dictionary(style),
             "hideScrollbar": settings.chapterScrollbar,
+            "trailingInset": trailingInset,
             "searchTerms": searchTerms,
         ]
         appliedStyle = style
@@ -77,6 +79,9 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
     }
 
     func apply(style: ReadingStyle, hideScrollbar: Bool) {
+        // WebKit fills the areas the page doesn't cover (the obscured strip under the
+        // chapter scrollbar, overscroll) with this, so it takes the theme's page color.
+        webView.underPageBackgroundColor = NSColor(hex: style.theme.background)
         if style != appliedStyle {
             appliedStyle = style
             call("Gull.setStyle(style)", ["style": Self.dictionary(style)])
@@ -87,10 +92,17 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
         }
     }
 
-    /// How much of the web view's top the toolbar covers.
-    func setTopInset(_ top: Double) {
-        guard webView.obscuredContentInsets.top != top else { return }
-        webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
+    /// How much of the web view the toolbar (top) and chapter scrollbar (trailing) cover.
+    /// Only the top is an obscured inset: WebKit draws an opaque panel over any obscured
+    /// edge, so the page pads itself for the scrollbar instead.
+    func setInsets(top: CGFloat, trailing: CGFloat) {
+        if webView.obscuredContentInsets.top != top {
+            webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
+        }
+        if trailingInset != trailing {
+            trailingInset = trailing
+            call("Gull.setTrailingInset(inset)", ["inset": trailing])
+        }
     }
 
     func scrollToHref(_ href: String) { call("Gull.scrollToHref(href, null)", ["href": href]) }
@@ -134,7 +146,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
     private static func dictionary(_ style: ReadingStyle) -> [String: Any] {
         ["fontFamily": style.font.cssFamily, "fontSize": style.fontSize, "lineHeight": style.lineHeight,
          "paraSpacing": style.paraSpacing, "fullWidth": style.fullWidth,
-         "theme": ["dark": style.theme.isDark, "text": style.theme.text, "secondary": style.theme.secondary,
+         "theme": ["dark": style.theme.isDark, "background": style.theme.background, "text": style.theme.text, "secondary": style.theme.secondary,
                    "accent": style.theme.accent, "border": style.theme.border]]
     }
 

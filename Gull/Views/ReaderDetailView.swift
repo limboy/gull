@@ -9,6 +9,7 @@ struct ReaderDetailView: View {
     @Bindable var model: ReaderModel
     @Bindable private var settings = ReaderSettings.shared
     @Environment(\.colorScheme) private var colorScheme
+    @State private var toolbarHeight: CGFloat = 0
 
     private struct SettingsKey: Equatable {
         var style: ReadingStyle
@@ -22,17 +23,28 @@ struct ReaderDetailView: View {
         SettingsKey(style: settings.style(theme: theme), chapterScrollbar: settings.chapterScrollbar, zoom: settings.pdfZoom)
     }
 
+    private var showsScrollbar: Bool {
+        settings.chapterScrollbar && model.hasBook && !model.scrollMap.segments.isEmpty
+    }
+
+    /// The width the chapter scrollbar takes at the trailing edge (bar, plus padding either side).
+    private static let scrollbarWidth: CGFloat = 18
+
     var body: some View {
-        HStack(spacing: 0) {
-            surface
-                .overlay { FootnoteOverlay(model: model) }
-            if settings.chapterScrollbar, model.hasBook, !model.scrollMap.segments.isEmpty {
-                ChapterScrollbar(map: model.scrollMap) { model.scrollTo(offset: $0) }
-                    .padding(.vertical, 12)
-                    .padding(.trailing, 8)
-                    .padding(.leading, 2)
+        surface
+            // Measured here, outside the book's `ignoresSafeArea`, where the toolbar still
+            // shows up as a safe-area inset (inside it, the inset reads as zero).
+            .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.top }) { toolbarHeight = $0 }
+            .overlay { FootnoteOverlay(model: model) }
+            // Over the book rather than beside it, so the book (and the toolbar's blur
+            // of it) spans the full width; the book reserves the strip as an inset.
+            .overlay(alignment: .trailing) {
+                if showsScrollbar {
+                    ChapterScrollbar(map: model.scrollMap) { model.scrollTo(offset: $0) }
+                        .padding(.vertical, 12)
+                        .padding(.trailing, 8)
+                }
             }
-        }
         .background(Color(hex: theme.background))
         .onChange(of: settingsKey, initial: true) { model.applySettings(settings, theme: theme) }
     }
@@ -51,20 +63,27 @@ struct ReaderDetailView: View {
         case .reflowable:
             // The page runs under the toolbar, which blurs it like a scroll pocket;
             // WebKit is told how much is covered so the text starts below it.
-            GeometryReader { proxy in
-                HostedNSView(view: model.web.webView)
-                    .onChange(of: proxy.safeAreaInsets.top, initial: true) { _, top in model.web.setTopInset(top) }
-            }
-            .ignoresSafeArea(.container, edges: .top)
+            HostedNSView(view: model.web.webView)
+                .ignoresSafeArea(.container, edges: .top)
+                .onChange(of: coveredInsets, initial: true) { _, insets in
+                    model.web.setInsets(top: insets.top, trailing: insets.trailing)
+                }
         case .pdf:
-            // PDFView's scroll view insets itself for the toolbar it runs under.
             HostedNSView(view: model.pdf.pdfView)
                 .ignoresSafeArea(.container, edges: .top)
+                .onChange(of: coveredInsets, initial: true) { _, insets in
+                    model.pdf.setInsets(top: insets.top, trailing: insets.trailing)
+                }
         case .failed(let message):
             Placeholder {
                 Message(title: "Couldn’t Open Book", systemImage: "exclamationmark.triangle", description: message)
             }
         }
+    }
+
+    /// What covers the book: the toolbar above, the chapter scrollbar at the trailing edge.
+    private var coveredInsets: EdgeInsets {
+        EdgeInsets(top: toolbarHeight, leading: 0, bottom: 0, trailing: showsScrollbar ? Self.scrollbarWidth : 0)
     }
 }
 

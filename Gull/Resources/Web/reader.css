@@ -50,7 +50,9 @@
 * { box-sizing: border-box; }
 
 html {
-  background: transparent;
+  /* The theme's page color, not transparent: WebKit paints the strip it is told is
+     covered (under the chapter scrollbar) from the page's own background. */
+  background: var(--page-bg, transparent);
   -webkit-text-size-adjust: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -62,12 +64,14 @@ html.hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
 body {
   margin: 0;
   padding: 40px 60px 80px;
+  /* Room for the native chapter scrollbar laid over the page's trailing edge. */
+  padding-right: calc(60px + var(--trailing-inset, 0px));
   background: transparent;
   color: var(--text-primary);
 }
 
 @media (max-width: 560px) {
-  body { padding: 28px 24px 64px; }
+  body { padding: 28px 24px 64px; padding-right: calc(24px + var(--trailing-inset, 0px)); }
 }
 
 .book-content {
