@@ -55,6 +55,9 @@ enum MainMenu {
     private static func fileMenu() -> NSMenu {
         let menu = NSMenu(title: "File")
         menu.addItem(item("Open…", #selector(AppDelegate.openDocument(_:)), "o", target: AppDelegate.shared))
+        let recent = NSMenu(title: "Open Recent")
+        recent.delegate = RecentBooksMenu.shared
+        menu.addItem(submenu(recent))
         menu.addItem(item("Add Book Folder…", #selector(ReaderWindowController.addBookFolder(_:)), "o", [.command, .shift]))
         menu.addItem(item("Show Library", #selector(AppDelegate.showLibrary(_:)), "l", [.command, .shift],
                           target: AppDelegate.shared))
@@ -102,5 +105,41 @@ enum MainMenu {
         menu.addItem(.separator())
         menu.addItem(item("Bring All to Front", #selector(NSApplication.arrangeInFront(_:)), target: NSApp))
         return menu
+    }
+}
+
+/// File › Open Recent: books opened with File › Open or from Finder, newest
+/// first, rebuilt from the system's recent documents each time it opens.
+final class RecentBooksMenu: NSObject, NSMenuDelegate {
+    static let shared = RecentBooksMenu()
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        let urls = NSDocumentController.shared.recentDocumentURLs
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+        for url in urls {
+            let item = NSMenuItem(title: FileManager.default.displayName(atPath: url.path),
+                                  action: #selector(openRecent(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = url
+            item.toolTip = url.path
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            icon.size = NSSize(width: 16, height: 16)
+            item.image = icon
+            menu.addItem(item)
+        }
+        if !urls.isEmpty { menu.addItem(.separator()) }
+        let clear = NSMenuItem(title: "Clear Menu", action: urls.isEmpty ? nil : #selector(clear(_:)), keyEquivalent: "")
+        clear.target = self
+        menu.addItem(clear)
+    }
+
+    @objc private func openRecent(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        AppDelegate.shared.openBook(url)
+    }
+
+    @objc private func clear(_ sender: Any?) {
+        NSDocumentController.shared.clearRecentDocuments(sender)
     }
 }

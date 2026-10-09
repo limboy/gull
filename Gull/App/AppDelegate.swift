@@ -79,6 +79,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func openBook(_ url: URL) {
         let path = url.standardizedFileURL.path
         guard FileManager.default.fileExists(atPath: path) else { return }
+        // Feeds File › Open Recent, the Dock menu, and the system's Recent Items.
+        NSDocumentController.shared.noteNewRecentDocumentURL(URL(fileURLWithPath: path))
         if let existing = bookWindows[path] {
             existing.window?.makeKeyAndOrderFront(nil)
             return
