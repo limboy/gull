@@ -171,6 +171,64 @@ html.full-width .book-content { max-width: none !important; }
 }
 
 .book-content .gull-chapter { margin-bottom: 1em; }
+
+/* Paginated: the book flows through fixed-height columns, two to a spread,
+   and reader.js slides the strip of columns one spread at a time. The page
+   itself never scrolls. Sizes come from reader.js as variables. */
+#folios { display: none; }
+
+html.paginated, html.paginated body { height: 100%; overflow: hidden; }
+html.paginated body { padding-bottom: 0; }
+
+html.paginated #pages {
+  max-width: 1240px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+html.paginated.full-width #pages { max-width: none; }
+
+html.paginated .book-content {
+  width: var(--page-width) !important;
+  max-width: none !important;
+  height: var(--page-height);
+  margin: 0 !important;
+  column-count: var(--column-count, 2);
+  column-gap: var(--column-gap, 72px);
+  column-fill: auto;
+}
+html.paginated .book-content > hr { display: none; }
+/* Each chapter starts on a fresh page. */
+html.paginated .book-content > .gull-chapter { margin-bottom: 0; break-before: column; }
+html.paginated .book-content > .gull-chapter:first-child { break-before: auto; }
+html.paginated .book-content img,
+html.paginated .book-content svg {
+  max-height: var(--page-height) !important;
+  object-fit: contain;
+  break-inside: avoid;
+}
+html.paginated .book-content pre,
+html.paginated .book-content tr { break-inside: avoid; }
+/* WebKit can't break a grid or flex box between lines, only slice through
+   them, so in pages they flow as plain blocks. */
+html.paginated .book-content .gull-grid { display: block !important; }
+html.paginated .book-content h1, html.paginated .book-content h2, html.paginated .book-content h3,
+html.paginated .book-content h4, html.paginated .book-content h5, html.paginated .book-content h6 { break-after: avoid; }
+
+html.paginated #folios {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1240px;
+  height: 56px;
+  margin: 0 auto;
+  color: var(--text-secondary);
+  font: 12px -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html.paginated.full-width #folios { max-width: none; }
+html.paginated #folios.single { justify-content: center; }
 .book-content small, .book-content sup { font-size: smaller !important; }
 
 mark.reader-highlight {

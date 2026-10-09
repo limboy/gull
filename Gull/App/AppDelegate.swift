@@ -190,6 +190,7 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
     @objc func smallerText(_ sender: Any?) { ReaderSettings.shared.stepFontSize(-1) }
     @objc func toggleChapterScrollbar(_ sender: Any?) { ReaderSettings.shared.chapterScrollbar.toggle() }
     @objc func toggleFullWidth(_ sender: Any?) { ReaderSettings.shared.fullWidth.toggle() }
+    @objc func togglePaginated(_ sender: Any?) { ReaderSettings.shared.paginated.toggle() }
 
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         let settings = ReaderSettings.shared
@@ -209,6 +210,9 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
             return true
         case #selector(toggleFullWidth(_:)):
             item.state = settings.fullWidth ? .on : .off
+            return !model.isPDF
+        case #selector(togglePaginated(_:)):
+            item.state = settings.paginated ? .on : .off
             return !model.isPDF
         default:
             return true

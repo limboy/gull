@@ -125,6 +125,7 @@ struct ReadingSettingsMenu: View {
                 }
                 .pickerStyle(.inline)
             } else {
+                Toggle("Paginated", isOn: $settings.paginated)
                 Toggle("Full Width", isOn: $settings.fullWidth)
                 Divider()
                 Picker(selection: $settings.font) {

@@ -95,6 +95,7 @@ enum MainMenu {
         menu.addItem(.separator())
         menu.addItem(item("Bigger Text", #selector(ReaderWindowController.biggerText(_:)), "+"))
         menu.addItem(item("Smaller Text", #selector(ReaderWindowController.smallerText(_:)), "-"))
+        menu.addItem(item("Paginated", #selector(ReaderWindowController.togglePaginated(_:)), "p", [.command, .control]))
         menu.addItem(item("Full Width", #selector(ReaderWindowController.toggleFullWidth(_:))))
         menu.addItem(item("Chapter Scrollbar", #selector(ReaderWindowController.toggleChapterScrollbar(_:))))
         menu.addItem(.separator())

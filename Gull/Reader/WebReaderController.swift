@@ -138,7 +138,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
 
     private static func dictionary(_ style: ReadingStyle) -> [String: Any] {
         ["fontFamily": style.font.cssFamily, "fontSize": style.fontSize, "lineHeight": style.lineHeight,
-         "paraSpacing": style.paraSpacing, "fullWidth": style.fullWidth,
+         "paraSpacing": style.paraSpacing, "fullWidth": style.fullWidth, "paginated": style.paginated,
          "theme": ["dark": style.theme.isDark, "background": style.theme.background, "text": style.theme.text, "secondary": style.theme.secondary,
                    "accent": style.theme.accent, "border": style.theme.border]]
     }

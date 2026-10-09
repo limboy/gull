@@ -8,9 +8,14 @@
   const content = document.getElementById('content');
   const bookStyle = document.getElementById('book-style');
   const root = document.documentElement;
+  const pages = document.getElementById('pages');
+  const folios = document.getElementById('folios');
 
   const HIGHLIGHT_CONTEXT_LENGTH = 32;
   const RESTORE_SETTLE_MS = 2500;
+  const COLUMN_GAP = 72;          // the gutter between the two pages of a spread
+  const MIN_SPREAD_WIDTH = 720;   // narrower than this, a spread shows one page
+  const FOLIO_HEIGHT = 56;        // room under the pages for their numbers
 
   let chapters = [];       // [{ id, href }]
   let tocHrefs = [];       // TOC hrefs, in the native app's flattened TOC order
@@ -21,6 +26,15 @@
   let restoreAnchor = null; // { section, ratio } held while late images settle
   let restoreUntil = 0;
 
+  // Paginated mode lays the book out in fixed-height columns, two to a spread,
+  // and shows one spread at a time by translating the column strip. Positions
+  // are then horizontal offsets into that strip instead of scroll offsets.
+  let paginated = false;
+  let spread = 0;           // index of the spread showing
+  let columnsPerSpread = 2;
+  let spreadAnchor = null;  // the text at the start of the spread, kept across relayouts
+  let hasGrids = false;      // whether the book's styles use grid or flex layout
+
   const post = (message) => {
     try { window.webkit.messageHandlers.gull.postMessage(message); } catch (_) { /* not hosted */ }
   };
@@ -30,8 +44,6 @@
 
   // --- Small helpers -------------------------------------------------------
 
-  const docTop = (el) => el.getBoundingClientRect().top + window.scrollY;
-  const maxScroll = () => Math.max(0, root.scrollHeight - window.innerHeight);
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const sectionFor = (id) => document.getElementById('chapter-' + id);
   const chapterIdOf = (section) => section.id.slice('chapter-'.length);
@@ -116,9 +128,13 @@
     ready = false;
     content.classList.remove('ready');
     content.textContent = '';
+    sections = [];
     bookStyle.textContent = '';
     root.classList.add('instant');
     window.scrollTo(0, 0);
+    spread = 0;
+    spreadAnchor = null;
+    content.style.transform = '';
 
     highlights = config.highlights || [];
     searchTerms = config.searchTerms || [];
@@ -136,8 +152,11 @@
     if (current !== generation) return;
 
     chapters = data.chapters.map(c => ({ id: c.id, href: c.href }));
+    sections = [];
     tocHrefs = data.tocHrefs || [];
     bookStyle.textContent = data.css || '';
+    // Scanning every element's style is only worth it when the book uses grids or flex boxes.
+    hasGrids = /display\s*:\s*(?:inline-)?(?:grid|flex)/i.test(data.css || '');
     if (data.language) content.setAttribute('lang', data.language);
     else content.removeAttribute('lang');
 
@@ -161,6 +180,8 @@
           prepareChapter(section);
           applyHighlightsToChapter(chapter.id, section);
           content.appendChild(section);
+          sections.push(section);
+          if (hasGrids) markGrids(section);
           if (index < data.chapters.length - 1) content.appendChild(document.createElement('hr'));
           index++;
         }
@@ -171,6 +192,7 @@
     });
     if (current !== generation) return;
 
+    layoutPages();
     restorePosition(config.position);
     content.classList.add('ready');
     ready = true;
@@ -192,6 +214,18 @@
         new Promise(resolve => setTimeout(resolve, 800)),
       ]);
     } catch (_) {}
+  }
+
+  /**
+   * Marks grid and flex boxes, which pages lay out as plain blocks: WebKit
+   * slices them through a line at a page break instead of breaking between
+   * lines. Bilingual editions set every paragraph pair in a grid this way.
+   */
+  function markGrids(section) {
+    for (const el of section.querySelectorAll('*')) {
+      const display = getComputedStyle(el).display;
+      if (display === 'grid' || display === 'flex') el.classList.add('gull-grid');
+    }
   }
 
   function prepareChapter(section) {
@@ -231,48 +265,136 @@
   }, true);
 
   // --- Position ------------------------------------------------------------
+  // Scrolling, a position is a vertical document offset. Paginated, it is a
+  // horizontal offset into the strip of columns, where spread k starts at
+  // k * spreadWidth().
 
-  /** The chapter at the top of the viewport and how far into it we are. */
-  function currentAnchor() {
-    const sections = content.children;
-    // Section offsets are relative to the (positioned) content column.
-    const top = window.scrollY - content.offsetTop;
+  let sections = [];       // the chapter sections, in order
+
+  const spreadWidth = () => content.clientWidth + COLUMN_GAP;
+  const columnWidth = () => (content.clientWidth - COLUMN_GAP * (columnsPerSpread - 1)) / columnsPerSpread;
+
+  /** How many pages (columns) the book fills. */
+  function columnCount() {
+    const last = sections[sections.length - 1];
+    if (!last) return 1;
+    const right = last.getBoundingClientRect().right - content.getBoundingClientRect().left;
+    return Math.max(1, Math.ceil((right + COLUMN_GAP / 2) / (columnWidth() + COLUMN_GAP)));
+  }
+
+  const spreadCount = () => Math.max(1, Math.ceil(columnCount() / columnsPerSpread));
+  const viewPosition = () => paginated ? spread * spreadWidth() : window.scrollY;
+  const viewLength = () => paginated ? spreadWidth() : window.innerHeight;
+  const documentLength = () => paginated ? spreadCount() * spreadWidth() : root.scrollHeight;
+  const maxPosition = () => paginated
+    ? (spreadCount() - 1) * spreadWidth()
+    : Math.max(0, root.scrollHeight - window.innerHeight);
+
+  /** Where an element starts. */
+  function positionOf(el) {
+    const rect = el.getBoundingClientRect();
+    return paginated ? rect.left - content.getBoundingClientRect().left : rect.top + window.scrollY;
+  }
+
+  // A section's start and length. Scrolling uses offsets, which are cheap; a
+  // section broken across columns reports the box around all its pieces.
+  const sectionStart = (section) => paginated ? positionOf(section) : content.offsetTop + section.offsetTop;
+  const sectionLength = (section) => (paginated ? section.getBoundingClientRect().width : section.offsetHeight) || 1;
+
+  /** The chapter at a position and how far into it that is. */
+  function anchorAt(position) {
     let lo = 0;
     let hi = sections.length - 1;
-    let found = null;
-    // Binary search over chapter sections (hr separators are skipped).
+    let found = sections[0];
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      let el = sections[mid];
-      if (el.tagName !== 'SECTION') el = sections[mid - 1] || sections[mid + 1];
-      if (!el) break;
-      const elTop = el.offsetTop;
-      if (elTop <= top) { found = el; lo = mid + 1; } else { hi = mid - 1; }
+      if (sectionStart(sections[mid]) <= position) { found = sections[mid]; lo = mid + 1; } else { hi = mid - 1; }
     }
-    if (!found || found.tagName !== 'SECTION') found = content.querySelector('section.gull-chapter');
     if (!found) return null;
-    const height = found.offsetHeight || 1;
-    return { section: found, ratio: Math.max(0, Math.min(1, (top - found.offsetTop) / height)) };
+    return { section: found, ratio: Math.max(0, Math.min(1, (position - sectionStart(found)) / sectionLength(found))) };
+  }
+
+  /** The chapter at the top of the viewport (or start of the spread) and how far into it we are. */
+  const currentAnchor = () => anchorAt(viewPosition());
+
+  /** The box of a range's first character, or of the element it sits in. */
+  function rangeRect(range) {
+    const r = range.cloneRange();
+    const node = r.startContainer;
+    if (r.collapsed && node.nodeType === Node.TEXT_NODE && r.startOffset < node.length) r.setEnd(node, r.startOffset + 1);
+    const rect = Array.from(r.getClientRects()).find(b => b.width > 0 || b.height > 0);
+    if (rect) return rect;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    return el.getBoundingClientRect();
+  }
+
+  /**
+   * The first text on the spread showing, so the same words stay on screen as
+   * images load, fonts change, or the window resizes. Falls back to the chapter.
+   */
+  function spreadTextAnchor() {
+    const anchor = currentAnchor();
+    const box = pages.getBoundingClientRect();
+    const bottom = box.top + content.clientHeight;
+    for (let y = box.top + 4; y < bottom; y += 12) {
+      const caret = document.caretRangeFromPoint(box.left + 2, y);
+      if (!caret || caret.startContainer.nodeType !== Node.TEXT_NODE || !content.contains(caret.startContainer)) continue;
+      const rect = rangeRect(caret);
+      if (rect.left >= box.left - 1 && rect.left < box.right) return { ...anchor, range: caret };
+    }
+    return anchor;
+  }
+
+  /** Shows a position: scrolls to it, or shows the spread it falls on. */
+  function show(position) {
+    if (paginated) showSpread(Math.floor((position + 1) / spreadWidth()));
+    else window.scrollTo(0, position);
+  }
+
+  /** Moves the reader to a position at the user's request. */
+  function goTo(position) {
+    restoreAnchor = null;
+    show(position);
+    if (paginated) spreadAnchor = spreadTextAnchor();
+  }
+
+  /** Brings an element into view, as a link, search result, or highlight jump does. */
+  function reveal(element, block) {
+    if (!paginated) {
+      restoreAnchor = null;
+      element.scrollIntoView({ behavior: 'instant', block });
+      return;
+    }
+    goTo(positionOf(element));
   }
 
   function applyAnchor(anchor) {
-    if (!anchor || !anchor.section.isConnected) return;
-    window.scrollTo(0, content.offsetTop + anchor.section.offsetTop + anchor.section.offsetHeight * anchor.ratio);
+    if (!anchor) return;
+    if (anchor.range && anchor.range.startContainer.isConnected) {
+      const rect = rangeRect(anchor.range);
+      show(paginated ? rect.left - content.getBoundingClientRect().left : rect.top + window.scrollY);
+      return;
+    }
+    if (!anchor.section || !anchor.section.isConnected) return;
+    show(sectionStart(anchor.section) + sectionLength(anchor.section) * anchor.ratio);
   }
 
   function restorePosition(position) {
     restoreAnchor = null;
     if (!position) return;
-    if (position.chapterId) {
-      const section = sectionFor(position.chapterId);
-      if (section) {
-        restoreAnchor = { section, ratio: position.ratio || 0 };
-        restoreUntil = performance.now() + RESTORE_SETTLE_MS;
-        applyAnchor(restoreAnchor);
-        return;
-      }
+    const section = position.chapterId ? sectionFor(position.chapterId) : null;
+    if (section) {
+      restoreAnchor = { section, ratio: position.ratio || 0 };
+      restoreUntil = performance.now() + RESTORE_SETTLE_MS;
+      applyAnchor(restoreAnchor);
+    } else if (typeof position.progress === 'number') {
+      show(maxPosition() * position.progress);
     }
-    if (typeof position.progress === 'number') window.scrollTo(0, maxScroll() * position.progress);
+    // Paginated, the spread's first words hold the place instead.
+    if (paginated) {
+      restoreAnchor = null;
+      spreadAnchor = spreadTextAnchor();
+    }
   }
 
   // Images above the restored position load after the first scroll; keep the
@@ -282,11 +404,109 @@
   window.addEventListener('keydown', stopRestoring);
   window.addEventListener('mousedown', stopRestoring);
 
+  // --- Pages -------------------------------------------------------------------
+
+  /** Sizes the columns to the window. Paginated mode only. */
+  function layoutPages() {
+    root.classList.toggle('paginated', paginated);
+    if (!paginated) {
+      content.style.transform = '';
+      return;
+    }
+    const box = pages.getBoundingClientRect();
+    const width = Math.floor(box.width);
+    columnsPerSpread = width >= MIN_SPREAD_WIDTH ? 2 : 1;
+    root.style.setProperty('--page-width', width + 'px');
+    root.style.setProperty('--page-height', Math.max(160, Math.floor(window.innerHeight - box.top - FOLIO_HEIGHT)) + 'px');
+    root.style.setProperty('--column-count', String(columnsPerSpread));
+    root.style.setProperty('--column-gap', COLUMN_GAP + 'px');
+  }
+
+  function showSpread(index) {
+    spread = Math.max(0, Math.min(spreadCount() - 1, index));
+    content.style.transform = spread > 0 ? `translateX(${-spread * spreadWidth()}px)` : '';
+    updateFolios();
+    viewMoved();
+  }
+
+  function turnPage(delta) {
+    goTo((spread + delta) * spreadWidth());
+  }
+
+  /** Page numbers under each page of the spread. */
+  function updateFolios() {
+    if (!paginated) return;
+    const [left, right] = folios.children;
+    const total = columnCount();
+    const first = spread * columnsPerSpread + 1;
+    left.textContent = first <= total ? String(first) : '';
+    right.textContent = columnsPerSpread > 1 && first + 1 <= total ? String(first + 1) : '';
+    folios.classList.toggle('single', columnsPerSpread === 1);
+  }
+
+  // Arrow keys, space, Page Up/Down, Home and End turn pages. Shift-arrows are
+  // left alone (they extend a selection), as is anything with a modifier.
+  document.addEventListener('keydown', (event) => {
+    if (!paginated || !ready || event.metaKey || event.ctrlKey || event.altKey) return;
+    let target = null;
+    switch (event.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown':
+        if (!event.shiftKey) target = spread + 1;
+        break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        if (!event.shiftKey) target = spread - 1;
+        break;
+      case ' ':
+        target = spread + (event.shiftKey ? -1 : 1);
+        break;
+      case 'Home':
+        target = 0;
+        break;
+      case 'End':
+        target = spreadCount() - 1;
+        break;
+    }
+    if (target === null) return;
+    event.preventDefault();
+    turnPage(target - spread);
+  });
+
+  // A swipe or a turn of the wheel turns one page; the rest of the gesture
+  // (and its momentum) is ignored until it comes to rest.
+  let wheelTotal = 0;
+  let wheelSpent = false;
+  let wheelTimer = null;
+  window.addEventListener('wheel', (event) => {
+    if (!paginated) return;
+    event.preventDefault();
+    if (!ready || event.ctrlKey) return;
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => { wheelTotal = 0; wheelSpent = false; }, 200);
+    if (wheelSpent) return;
+    wheelTotal += Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(wheelTotal) < 24) return;
+    wheelSpent = true;
+    turnPage(Math.sign(wheelTotal));
+  }, { passive: false });
+
   // --- Layout and scroll reports ------------------------------------------
 
   let layoutTimer = null;
+  let relayoutFrame = null;
   function layoutChanged() {
-    if (restoreAnchor && performance.now() < restoreUntil) applyAnchor(restoreAnchor);
+    if (paginated) {
+      // Coalesced: a book's images can finish loading by the hundred.
+      if (relayoutFrame === null) {
+        relayoutFrame = requestAnimationFrame(() => {
+          relayoutFrame = null;
+          if (!paginated) return;
+          layoutPages();
+          if (spreadAnchor) applyAnchor(spreadAnchor); else showSpread(spread);
+        });
+      }
+    } else if (restoreAnchor && performance.now() < restoreUntil) {
+      applyAnchor(restoreAnchor);
+    }
     if (layoutTimer) return;
     layoutTimer = setTimeout(() => {
       layoutTimer = null;
@@ -301,18 +521,14 @@
     tocHrefs.forEach((href, index) => {
       if (!href) return;
       const resolved = resolveHref(href);
-      if (resolved) targets.push({ index, top: docTop(resolved.element) });
+      if (resolved) targets.push({ index, top: positionOf(resolved.element) });
     });
-    const chapterTops = [];
-    for (const section of content.querySelectorAll('section.gull-chapter')) {
-      chapterTops.push({ id: chapterIdOf(section), top: section.offsetTop + content.offsetTop });
-    }
     post({
       type: 'layout',
-      height: root.scrollHeight,
-      viewport: window.innerHeight,
+      height: documentLength(),
+      viewport: viewLength(),
       targets,
-      chapters: chapterTops,
+      chapters: sections.map(section => ({ id: chapterIdOf(section), top: sectionStart(section) })),
     });
   }
 
@@ -320,25 +536,30 @@
   function reportScroll() {
     if (!ready) return;
     const anchor = currentAnchor();
-    const max = maxScroll();
+    const top = viewPosition();
+    const max = maxPosition();
     post({
       type: 'scroll',
-      top: window.scrollY,
-      height: root.scrollHeight,
-      viewport: window.innerHeight,
-      progress: max > 0 ? window.scrollY / max : 0,
+      top,
+      height: documentLength(),
+      viewport: viewLength(),
+      progress: max > 0 ? Math.min(1, top / max) : 0,
       chapterId: anchor ? chapterIdOf(anchor.section) : null,
       ratio: anchor ? anchor.ratio : 0,
     });
   }
 
-  window.addEventListener('scroll', () => {
+  /** The view scrolled or turned a page: report it (once a frame) and close any footnote. */
+  function viewMoved() {
+    post({ type: 'dismissFootnote' });
     if (scrollFrame !== null) return;
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = null;
       reportScroll();
     });
-  }, { passive: true });
+  }
+
+  window.addEventListener('scroll', viewMoved, { passive: true });
 
   new ResizeObserver(() => layoutChanged()).observe(content);
   window.addEventListener('resize', () => layoutChanged());
@@ -352,6 +573,8 @@
     root.style.setProperty('--book-line-height', String(style.lineHeight));
     root.style.setProperty('--book-para-spacing', style.paraSpacing + 'em');
     root.classList.toggle('full-width', !!style.fullWidth);
+    paginated = !!style.paginated;
+    layoutPages();
     const theme = style.theme;
     if (theme) {
       root.classList.toggle('theme-dark', !!theme.dark);
@@ -363,14 +586,24 @@
     }
   }
 
-  /** Restyles without losing the reader's place. */
+  /** Restyles (or switches between scrolling and pages) without losing the reader's place. */
   async function setStyle(style) {
-    const anchor = ready ? currentAnchor() : null;
+    const anchor = ready ? (paginated && spreadAnchor) || currentAnchor() : null;
+    const wasPaginated = paginated;
     applyStyle(style);
     if (!ready) return;
+    if (paginated !== wasPaginated) {
+      spread = 0;
+      spreadAnchor = null;
+      window.scrollTo(0, 0);
+    }
     await waitForFonts();
+    layoutPages();
     applyAnchor(anchor);
-    layoutChanged();
+    if (paginated) spreadAnchor = spreadTextAnchor();
+    updateFolios();
+    reportLayout();
+    reportScroll();
   }
 
   function setScrollbarHidden(hidden) {
@@ -383,13 +616,12 @@
     restoreAnchor = null;
     const resolved = resolveHref(href, fallbackChapterId);
     if (!resolved) return false;
-    resolved.element.scrollIntoView({ behavior: 'instant', block: 'start' });
+    reveal(resolved.element, 'start');
     return true;
   }
 
   function scrollToOffset(top) {
-    restoreAnchor = null;
-    window.scrollTo(0, Math.max(0, Math.min(maxScroll(), top)));
+    goTo(Math.max(0, Math.min(maxPosition(), top)));
   }
 
   // --- Links and footnotes ---------------------------------------------------
@@ -423,8 +655,6 @@
     const section = link.closest('section.gull-chapter');
     scrollToHref(href, section ? chapterIdOf(section) : null);
   });
-
-  window.addEventListener('scroll', () => post({ type: 'dismissFootnote' }), { passive: true });
 
   // --- Search ------------------------------------------------------------------
 
@@ -492,7 +722,7 @@
     const lower = term.toLowerCase();
     const marks = [...section.querySelectorAll('mark.search-match')].filter(m => m.textContent.toLowerCase() === lower);
     const target = marks[matchIndex] || marks[0];
-    if (target) target.scrollIntoView({ behavior: 'instant', block: 'center' });
+    if (target) reveal(target, 'center');
   }
 
   // --- Highlights --------------------------------------------------------------
@@ -647,7 +877,7 @@
     scrollToHref('', chapterId);
     const mark = content.querySelector(`mark.reader-highlight[data-highlight-id="${CSS.escape(id)}"]`);
     if (!mark) return;
-    mark.scrollIntoView({ behavior: 'instant', block: 'center' });
+    reveal(mark, 'center');
     const marks = content.querySelectorAll(`mark.reader-highlight[data-highlight-id="${CSS.escape(id)}"]`);
     marks.forEach(m => m.classList.add('flash'));
     setTimeout(() => marks.forEach(m => m.classList.remove('flash')), 500);

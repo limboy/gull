@@ -2,7 +2,7 @@
 
 A native macOS rewrite of [Gull](https://github.com/limboy/gull), the typography-first e-book reader, in Swift with AppKit and SwiftUI. Requires **macOS 26** on Apple Silicon.
 
-It reads DRM-free EPUB, MOBI / AZW3 / AZW / PRC (Kindle KF8 and legacy Mobipocket), and PDF, with the same features as the Electron app: library folders from disk (live-updated), pinned and finished books, cover thumbnails, table of contents, the segmented chapter scrollbar, in-book search, persistent highlights, footnote popovers, reading-style controls (font, size, line height, paragraph spacing, full width), PDF zoom, standalone book windows from Finder, and light/dark appearance.
+It reads DRM-free EPUB, MOBI / AZW3 / AZW / PRC (Kindle KF8 and legacy Mobipocket), and PDF, with the same features as the Electron app: library folders from disk (live-updated), pinned and finished books, cover thumbnails, table of contents, the segmented chapter scrollbar, in-book search, persistent highlights, footnote popovers, reading-style controls (font, size, line height, paragraph spacing, full width), a paginated two-page spread as an alternative to scrolling, PDF zoom, standalone book windows from Finder, and light/dark appearance.
 
 ## Install
 

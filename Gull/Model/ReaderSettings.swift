@@ -125,6 +125,7 @@ nonisolated struct ReadingStyle: Equatable, Sendable {
     var lineHeight: Double
     var paraSpacing: Double
     var fullWidth: Bool
+    var paginated: Bool
     var theme: ReaderTheme
 }
 
@@ -151,6 +152,8 @@ final class ReaderSettings {
     var lineHeight: Double { didSet { defaults.set(lineHeight, forKey: "lineHeight") } }
     var paraSpacing: Double { didSet { defaults.set(paraSpacing, forKey: "paraSpacing") } }
     var fullWidth: Bool { didSet { defaults.set(fullWidth, forKey: "fullWidth") } }
+    /// Reflowable books show as two-page spreads, turned with the arrow keys, instead of scrolling.
+    var paginated: Bool { didSet { defaults.set(paginated, forKey: "paginated") } }
     var chapterScrollbar: Bool { didSet { defaults.set(chapterScrollbar, forKey: "chapterScrollbar") } }
     var pdfZoom: PDFZoom { didSet { defaults.set(pdfZoom.storageValue, forKey: "pdfZoom") } }
     var appearance: AppearanceMode {
@@ -162,7 +165,7 @@ final class ReaderSettings {
     private init() {
         defaults.register(defaults: [
             "font": ReadingFont.charter.rawValue, "fontSize": 16.0, "lineHeight": 1.8, "paraSpacing": 0.6,
-            "fullWidth": false, "chapterScrollbar": true, "pdfZoom": "fit-width",
+            "fullWidth": false, "paginated": false, "chapterScrollbar": true, "pdfZoom": "fit-width",
             "appearance": AppearanceMode.auto.rawValue, "lightTheme": "paper", "darkTheme": "night",
         ])
         font = ReadingFont(rawValue: defaults.string(forKey: "font") ?? "") ?? .charter
@@ -170,6 +173,7 @@ final class ReaderSettings {
         lineHeight = Self.nearest(Self.lineHeights, defaults.double(forKey: "lineHeight"))
         paraSpacing = Self.nearest(Self.paragraphSpacings, defaults.double(forKey: "paraSpacing"))
         fullWidth = defaults.bool(forKey: "fullWidth")
+        paginated = defaults.bool(forKey: "paginated")
         chapterScrollbar = defaults.bool(forKey: "chapterScrollbar")
         pdfZoom = PDFZoom(storageValue: defaults.string(forKey: "pdfZoom"))
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .auto
@@ -204,7 +208,7 @@ final class ReaderSettings {
 
     func style(theme: ReaderTheme) -> ReadingStyle {
         ReadingStyle(font: font, fontSize: fontSize, lineHeight: lineHeight, paraSpacing: paraSpacing,
-                     fullWidth: fullWidth, theme: theme)
+                     fullWidth: fullWidth, paginated: paginated, theme: theme)
     }
 
     /// Steps the font size through the menu's sizes (⌘+ / ⌘−).

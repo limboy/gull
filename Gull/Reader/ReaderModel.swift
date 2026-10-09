@@ -309,10 +309,13 @@ final class ReaderModel {
         if rendered, let filePath { PositionStore.shared.setPosition(position, for: filePath) }
     }
 
-    /// The active entry is the last one (in TOC order) whose target has scrolled past the top.
+    /// The active entry is the last one (in TOC order) whose target has scrolled past the top,
+    /// or, in pages, the last one on the spread showing.
     private func updateActiveToc() {
         guard let first = tocTargets.first else { return }
-        let threshold = scrollMap.viewportTop + 60
+        let threshold = ReaderSettings.shared.paginated && phase == .reflowable
+            ? scrollMap.viewportTop + scrollMap.viewportHeight - 1
+            : scrollMap.viewportTop + 60
         var active = first.index
         for target in tocTargets where target.top <= threshold { active = target.index }
         if active != activeTocIndex { activeTocIndex = active }
