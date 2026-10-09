@@ -52,6 +52,8 @@ private struct ReaderChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+        // A hairline between the toolbar and the page, like system document apps.
+        .safeAreaInset(edge: .top, spacing: 0) { Divider() }
         .toolbar {
             if let version = AppUpdater.shared.readyVersion {
                 ToolbarItem(placement: .primaryAction) {
