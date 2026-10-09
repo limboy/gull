@@ -10,7 +10,6 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
     private var pendingLoad: [String: Any]?
     private var appliedStyle: ReadingStyle?
     private var appliedHideScrollbar: Bool?
-    private var trailingInset: CGFloat = 0
 
     private static let schemeHandler = ReaderSchemeHandler()
     private static let readerURL = URL(string: "\(ResourceURL.origin)/reader.html")!
@@ -69,7 +68,6 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
             "highlights": highlights.map(Self.dictionary),
             "style": Self.dictionary(style),
             "hideScrollbar": settings.chapterScrollbar,
-            "trailingInset": trailingInset,
             "searchTerms": searchTerms,
         ]
         appliedStyle = style
@@ -92,17 +90,12 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
         }
     }
 
-    /// How much of the web view the toolbar (top) and chapter scrollbar (trailing) cover.
-    /// Only the top is an obscured inset: WebKit draws an opaque panel over any obscured
-    /// edge, so the page pads itself for the scrollbar instead.
-    func setInsets(top: CGFloat, trailing: CGFloat) {
-        if webView.obscuredContentInsets.top != top {
-            webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
-        }
-        if trailingInset != trailing {
-            trailingInset = trailing
-            call("Gull.setTrailingInset(inset)", ["inset": trailing])
-        }
+    /// How much of the web view's top the toolbar covers. The chapter scrollbar needs no
+    /// inset: it fits in the page's side padding (and WebKit would draw an opaque panel
+    /// over an obscured trailing edge).
+    func setTopInset(_ top: CGFloat) {
+        guard webView.obscuredContentInsets.top != top else { return }
+        webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
     }
 
     func scrollToHref(_ href: String) { call("Gull.scrollToHref(href, null)", ["href": href]) }

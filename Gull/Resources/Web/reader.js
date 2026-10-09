@@ -124,7 +124,6 @@
     searchTerms = config.searchTerms || [];
     applyStyle(config.style);
     setScrollbarHidden(config.hideScrollbar);
-    setTrailingInset(config.trailingInset);
 
     let data;
     try {
@@ -372,11 +371,6 @@
     await waitForFonts();
     applyAnchor(anchor);
     layoutChanged();
-  }
-
-  /** Space the native chapter scrollbar covers at the trailing edge. */
-  function setTrailingInset(inset) {
-    root.style.setProperty('--trailing-inset', (inset || 0) + 'px');
   }
 
   function setScrollbarHidden(hidden) {
@@ -732,7 +726,6 @@
     load,
     setStyle,
     setScrollbarHidden,
-    setTrailingInset,
     scrollToHref,
     scrollToOffset,
     setSearchTerms,

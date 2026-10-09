@@ -37,7 +37,8 @@ struct ReaderDetailView: View {
             .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.top }) { toolbarHeight = $0 }
             .overlay { FootnoteOverlay(model: model) }
             // Over the book rather than beside it, so the book (and the toolbar's blur
-            // of it) spans the full width; the book reserves the strip as an inset.
+            // of it) spans the full width. A PDF reserves the strip as an inset; a page
+            // already has the room in its side padding.
             .overlay(alignment: .trailing) {
                 if showsScrollbar {
                     ChapterScrollbar(map: model.scrollMap) { model.scrollTo(offset: $0) }
@@ -65,9 +66,7 @@ struct ReaderDetailView: View {
             // WebKit is told how much is covered so the text starts below it.
             HostedNSView(view: model.web.webView)
                 .ignoresSafeArea(.container, edges: .top)
-                .onChange(of: coveredInsets, initial: true) { _, insets in
-                    model.web.setInsets(top: insets.top, trailing: insets.trailing)
-                }
+                .onChange(of: toolbarHeight, initial: true) { _, top in model.web.setTopInset(top) }
         case .pdf:
             HostedNSView(view: model.pdf.pdfView)
                 .ignoresSafeArea(.container, edges: .top)
@@ -81,9 +80,12 @@ struct ReaderDetailView: View {
         }
     }
 
-    /// What covers the book: the toolbar above, the chapter scrollbar at the trailing edge.
+    /// What covers a PDF: the toolbar above, the chapter scrollbar at the trailing edge.
+    /// The strip is reserved whenever the scrollbar is turned on, not only once its
+    /// chapters are known, so the page doesn't shift when they arrive.
     private var coveredInsets: EdgeInsets {
-        EdgeInsets(top: toolbarHeight, leading: 0, bottom: 0, trailing: showsScrollbar ? Self.scrollbarWidth : 0)
+        EdgeInsets(top: toolbarHeight, leading: 0, bottom: 0,
+                   trailing: settings.chapterScrollbar ? Self.scrollbarWidth : 0)
     }
 }
 

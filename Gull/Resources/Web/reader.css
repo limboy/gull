@@ -64,14 +64,12 @@ html.hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
 body {
   margin: 0;
   padding: 40px 60px 80px;
-  /* Room for the native chapter scrollbar laid over the page's trailing edge. */
-  padding-right: calc(60px + var(--trailing-inset, 0px));
   background: transparent;
   color: var(--text-primary);
 }
 
 @media (max-width: 560px) {
-  body { padding: 28px 24px 64px; padding-right: calc(24px + var(--trailing-inset, 0px)); }
+  body { padding: 28px 24px 64px; }
 }
 
 .book-content {
