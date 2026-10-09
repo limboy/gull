@@ -35,6 +35,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
         webView.underPageBackgroundColor = .clear
         webView.unregisterDraggedTypes()
         webView.onHighlight = { [weak self] in self?.model?.highlightSelection() }
+        webView.onRemoveHighlight = { [weak self] id in self?.model?.removeHighlight(id) }
         #if DEBUG
         webView.isInspectable = true
         #endif
@@ -165,14 +166,8 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
                 progress: number("progress"), chapterId: body["chapterId"] as? String, ratio: number("ratio"))
             model.readerScrolled(top: number("top"), height: number("height"), viewport: number("viewport"),
                                  position: position)
-        case "selection":
-            if let rect = Self.rect(body["rect"]) {
-                model.selection = SelectionPopupState(rect: rect, existingId: body["existingId"] as? String)
-            } else {
-                model.selection = nil
-            }
-        case "selectionMoved":
-            if let rect = Self.rect(body["rect"]), model.selection != nil { model.selection?.rect = rect }
+        case "contextHighlight":
+            webView.contextHighlightId = body["id"] as? String
         case "highlightCreated":
             if let highlight = Self.highlight(from: body["highlight"]) {
                 model.addHighlight(highlight, replacing: body["removedIds"] as? [String] ?? [])
@@ -230,10 +225,13 @@ private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-/// Adds "Highlight" to the text context menu and drops items that make no
-/// sense in a reader (Reload, Back, Forward).
+/// Adds "Highlight" / "Remove Highlight" to the context menu and drops items
+/// that make no sense in a reader (Reload, Back, Forward).
 final class ReaderWebView: WKWebView {
     var onHighlight: (() -> Void)?
+    var onRemoveHighlight: ((String) -> Void)?
+    /// The highlight under the last right-click, reported by the page just before the menu opens.
+    var contextHighlightId: String?
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
         super.willOpenMenu(menu, with: event)
@@ -249,9 +247,17 @@ final class ReaderWebView: WKWebView {
             menu.insertItem(item, at: 0)
             menu.insertItem(.separator(), at: 1)
         }
+        if contextHighlightId != nil {
+            let item = NSMenuItem(title: "Remove Highlight", action: #selector(removeHighlightFromMenu), keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: "eraser", accessibilityDescription: nil)
+            menu.insertItem(item, at: hasSelection ? 1 : 0)
+            if !hasSelection { menu.insertItem(.separator(), at: 1) }
+        }
         while menu.items.first?.isSeparatorItem == true { menu.removeItem(at: 0) }
         while menu.items.last?.isSeparatorItem == true { menu.removeItem(at: menu.items.count - 1) }
     }
 
     @objc private func highlightFromMenu() { onHighlight?() }
+    @objc private func removeHighlightFromMenu() { if let id = contextHighlightId { onRemoveHighlight?(id) } }
 }

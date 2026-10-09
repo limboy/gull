@@ -4,7 +4,7 @@ import SwiftUI
 import WebKit
 
 /// The reading area: the book surface, the chapter scrollbar beside it, and
-/// the selection popup / footnote popover floating over it.
+/// the footnote popover floating over it.
 struct ReaderDetailView: View {
     @Bindable var model: ReaderModel
     @Bindable private var settings = ReaderSettings.shared
@@ -22,7 +22,6 @@ struct ReaderDetailView: View {
     var body: some View {
         HStack(spacing: 0) {
             surface
-                .overlay { SelectionPopupOverlay(model: model) }
                 .overlay { FootnoteOverlay(model: model) }
             if settings.chapterScrollbar, model.hasBook, !model.scrollMap.segments.isEmpty {
                 ChapterScrollbar(map: model.scrollMap) { model.scrollTo(offset: $0) }
@@ -104,39 +103,6 @@ struct HostedNSView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView { view }
     func updateNSView(_ nsView: NSView, context: Context) {}
-}
-
-// MARK: - Selection popup
-
-private struct SelectionPopupOverlay: View {
-    @Bindable var model: ReaderModel
-    private let height: CGFloat = 36
-
-    var body: some View {
-        GeometryReader { proxy in
-            if let selection = model.selection {
-                let above = selection.rect.minY - height / 2 - 10
-                let y = above < height / 2 + 4 ? selection.rect.maxY + height / 2 + 10 : above
-                let x = min(max(selection.rect.midX, 90), proxy.size.width - 90)
-                Button {
-                    model.popupAction()
-                } label: {
-                    Label(selection.existingId == nil ? "Highlight" : "Remove Highlight",
-                          systemImage: selection.existingId == nil ? "highlighter" : "eraser")
-                        .font(.system(size: 13, weight: .medium))
-                        .padding(.horizontal, 4)
-                }
-                .buttonStyle(.glass)
-                .controlSize(.large)
-                .fixedSize()
-                .position(x: x, y: y)
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .keyboardShortcut(.return, modifiers: [])
-            }
-        }
-        .animation(.easeOut(duration: 0.12), value: model.selection?.existingId)
-        .animation(.easeOut(duration: 0.12), value: model.selection == nil)
-    }
 }
 
 // MARK: - Footnote popover

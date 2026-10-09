@@ -22,11 +22,8 @@ final class PDFReaderController: NSObject {
         pdfView.displaysPageBreaks = true
         pdfView.backgroundColor = .clear
         pdfView.autoScales = true
-        pdfView.onMouseUp = { [weak self] in self?.selectionFinished() }
-        pdfView.onHighlightClick = { [weak self] id, rect in
-            self?.model?.selection = SelectionPopupState(rect: rect, existingId: id)
-        }
         pdfView.onHighlightMenu = { [weak self] in self?.highlightSelection() }
+        pdfView.onRemoveHighlightMenu = { [weak self] id in self?.model?.removeHighlight(id) }
 
         let center = NotificationCenter.default
         observers.append(center.addObserver(forName: .PDFViewPageChanged, object: pdfView, queue: .main) { [weak self] _ in
@@ -181,7 +178,6 @@ final class PDFReaderController: NSObject {
         PositionStore.shared.setPosition(
             ReadingPosition(progress: min(1, top / maxTop), chapterId: Self.pdfUnitMarker, ratio: top),
             for: model.filePath ?? "")
-        if model.selection != nil, model.selection?.existingId == nil { updateSelectionPopup() }
     }
 
     // MARK: Zoom
@@ -300,7 +296,6 @@ final class PDFReaderController: NSObject {
             addAnnotations(for: highlight, on: page)
         }
         pdfView.clearSelection()
-        model.selection = nil
     }
 
     private func removeAnnotations(_ id: String) {
@@ -318,63 +313,46 @@ final class PDFReaderController: NSObject {
         pdfView.go(to: selection)
         pdfView.setCurrentSelection(selection, animate: true)
     }
-
-    // MARK: Selection popup
-
-    private func selectionFinished() {
-        guard let selection = pdfView.currentSelection, !(selection.string ?? "").isEmpty else {
-            if model?.selection?.existingId == nil { model?.selection = nil }
-            return
-        }
-        updateSelectionPopup()
-    }
-
-    private func updateSelectionPopup() {
-        guard let selection = pdfView.currentSelection, let page = selection.pages.first,
-              !(selection.string ?? "").isEmpty else { model?.selection = nil; return }
-        var rect = pdfView.convert(selection.bounds(for: page), from: page)
-        if !isFlipped { rect.origin.y = pdfView.bounds.height - rect.maxY }
-        model?.selection = SelectionPopupState(rect: rect, existingId: nil)
-    }
 }
 
-/// A `PDFView` that reports finished selections and clicks on Gull highlights.
+/// A `PDFView` whose context menu offers "Highlight" for a selection and
+/// "Remove Highlight" over an existing Gull highlight.
 final class ReaderPDFView: PDFView {
-    var onMouseUp: (() -> Void)?
-    var onHighlightClick: ((String, CGRect) -> Void)?
     var onHighlightMenu: (() -> Void)?
-
-    override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        if let page = page(for: point, nearest: false) {
-            let local = convert(point, to: page)
-            if let annotation = page.annotation(at: local), let name = annotation.userName, name.hasPrefix("gull:"),
-               currentSelection == nil || currentSelection?.string?.isEmpty != false {
-                var rect = convert(annotation.bounds, from: page)
-                if !isFlipped { rect.origin.y = bounds.height - rect.maxY }
-                onHighlightClick?(String(name.dropFirst(5)), rect)
-                return
-            }
-        }
-        super.mouseDown(with: event)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-        onMouseUp?()
-    }
+    var onRemoveHighlightMenu: ((String) -> Void)?
 
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = super.menu(for: event) ?? NSMenu()
+        var index = 0
         if let selection = currentSelection, !(selection.string ?? "").isEmpty {
             let item = NSMenuItem(title: "Highlight", action: #selector(highlightFromMenu), keyEquivalent: "")
             item.target = self
             item.image = NSImage(systemSymbolName: "highlighter", accessibilityDescription: nil)
-            menu.insertItem(item, at: 0)
-            menu.insertItem(.separator(), at: 1)
+            menu.insertItem(item, at: index)
+            index += 1
         }
+        if let id = highlightId(at: event) {
+            let item = NSMenuItem(title: "Remove Highlight", action: #selector(removeHighlightFromMenu), keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: "eraser", accessibilityDescription: nil)
+            item.representedObject = id
+            menu.insertItem(item, at: index)
+            index += 1
+        }
+        if index > 0, menu.items.count > index { menu.insertItem(.separator(), at: index) }
         return menu
     }
 
+    private func highlightId(at event: NSEvent) -> String? {
+        let point = convert(event.locationInWindow, from: nil)
+        guard let page = page(for: point, nearest: false),
+              let name = page.annotation(at: convert(point, to: page))?.userName, name.hasPrefix("gull:")
+        else { return nil }
+        return String(name.dropFirst(5))
+    }
+
     @objc private func highlightFromMenu() { onHighlightMenu?() }
+    @objc private func removeHighlightFromMenu(_ sender: NSMenuItem) {
+        if let id = sender.representedObject as? String { onRemoveHighlightMenu?(id) }
+    }
 }

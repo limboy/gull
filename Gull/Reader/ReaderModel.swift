@@ -25,11 +25,6 @@ struct ScrollMap: Equatable {
     var viewportHeight: Double = 0
 }
 
-struct SelectionPopupState: Equatable {
-    var rect: CGRect
-    var existingId: String?
-}
-
 struct FootnoteState: Equatable, Identifiable {
     let id = UUID()
     var text: String
@@ -85,7 +80,6 @@ final class ReaderModel {
     /// The toolbar popover showing contents, highlights, or search, if any.
     var openPanel: InspectorMode?
     var searchQuery = "" { didSet { if oldValue != searchQuery { scheduleSearch() } } }
-    var selection: SelectionPopupState?
     var footnote: FootnoteState?
     var searchFocusRequest = 0
 
@@ -146,7 +140,6 @@ final class ReaderModel {
         scrollMap = ScrollMap()
         searchIndex = nil
         searchResults = []
-        selection = nil
         footnote = nil
         highlightKey = ""
         pdf.unload()
@@ -390,7 +383,6 @@ final class ReaderModel {
     func addHighlight(_ highlight: Highlight, replacing removed: [String]) {
         guard !highlightKey.isEmpty else { return }
         HighlightStore.shared.add(highlight, replacing: removed, key: highlightKey)
-        selection = nil
     }
 
     func repairHighlights(_ repaired: [Highlight]) {
@@ -406,7 +398,6 @@ final class ReaderModel {
         case .pdf: pdf.removeHighlight(id)
         default: break
         }
-        selection = nil
     }
 
     func openHighlight(_ highlight: Highlight) {
@@ -415,11 +406,6 @@ final class ReaderModel {
         case .pdf: pdf.jumpToHighlight(highlight)
         default: break
         }
-    }
-
-    func popupAction() {
-        guard let selection else { return }
-        if let id = selection.existingId { removeHighlight(id) } else { highlightSelection() }
     }
 
     // MARK: Style

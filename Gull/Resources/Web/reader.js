@@ -20,7 +20,6 @@
   let ready = false;
   let restoreAnchor = null; // { section, ratio } held while late images settle
   let restoreUntil = 0;
-  let selectionAnchor = null;
 
   const post = (message) => {
     try { window.webkit.messageHandlers.gull.postMessage(message); } catch (_) { /* not hosted */ }
@@ -115,7 +114,6 @@
   async function load(config) {
     const current = ++generation;
     ready = false;
-    hideSelection();
     content.classList.remove('ready');
     content.textContent = '';
     bookStyle.textContent = '';
@@ -339,7 +337,6 @@
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = null;
       reportScroll();
-      updateSelectionRect();
     });
   }, { passive: true });
 
@@ -629,14 +626,12 @@
     highlights.push(highlight);
     wrapHighlight(section, start, end, highlight.id);
     window.getSelection().removeAllRanges();
-    hideSelection();
     post({ type: 'highlightCreated', highlight, removedIds });
   }
 
   function removeHighlight(id) {
     highlights = highlights.filter(h => h.id !== id);
     unwrapHighlight(id);
-    hideSelection();
   }
 
   function jumpToHighlight(id, chapterId) {
@@ -649,69 +644,13 @@
     setTimeout(() => marks.forEach(m => m.classList.remove('flash')), 500);
   }
 
-  // --- Selection popup anchor ---------------------------------------------------
-  // The popup itself is native; the page only says where and what it is for.
+  // --- Highlight context menu ------------------------------------------------
+  // Tells the native side which highlight (if any) a right-click landed on, so the
+  // context menu can offer "Remove Highlight". Sent before the menu opens.
 
-  function hideSelection() {
-    if (selectionAnchor) post({ type: 'selection', rect: null });
-    selectionAnchor = null;
-  }
-
-  function anchorRect() {
-    if (!selectionAnchor) return null;
-    if (selectionAnchor.element) {
-      return selectionAnchor.element.isConnected ? selectionAnchor.element.getBoundingClientRect() : null;
-    }
-    const range = selectionAnchor.range;
-    const container = range.commonAncestorContainer;
-    const el = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
-    return el && el.isConnected ? range.getBoundingClientRect() : null;
-  }
-
-  function updateSelectionRect() {
-    if (!selectionAnchor) return;
-    const rect = anchorRect();
-    if (!rect || (rect.width === 0 && rect.height === 0)) { hideSelection(); return; }
-    post({ type: 'selectionMoved', rect: rectOf(rect) });
-  }
-
-  function handleSelectionChange(target) {
-    const selection = window.getSelection();
-    const collapsed = !selection.rangeCount || selection.isCollapsed;
-    const mark = target && target.closest ? target.closest('mark.reader-highlight') : null;
-
-    if (collapsed && !mark) { hideSelection(); return; }
-
-    let existingId = null;
-    if (collapsed && mark) {
-      existingId = mark.dataset.highlightId;
-      selectionAnchor = { element: mark };
-    } else {
-      const selected = selectedChapterRange();
-      if (!selected) { hideSelection(); return; }
-      const chapterId = chapterIdOf(selected.section);
-      const existing = highlights.find(h => h.chapterId === chapterId
-        && Math.abs(h.start - selected.offsets.start) < 2 && Math.abs(h.end - selected.offsets.end) < 2);
-      existingId = existing ? existing.id : null;
-      selectionAnchor = { range: selected.range.cloneRange() };
-    }
-    const rect = anchorRect();
-    if (!rect) { hideSelection(); return; }
-    post({ type: 'selection', rect: rectOf(rect), existingId });
-  }
-
-  document.addEventListener('mouseup', (event) => {
-    if (event.button !== 0) return;
-    setTimeout(() => handleSelectionChange(event.target), 20);
-  });
-  document.addEventListener('keyup', (event) => {
-    if (event.shiftKey || event.key === 'Shift') setTimeout(() => handleSelectionChange(null), 20);
-  });
-  document.addEventListener('selectionchange', () => {
-    if (selectionAnchor && selectionAnchor.range) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount || selection.isCollapsed) hideSelection();
-    }
+  document.addEventListener('contextmenu', (event) => {
+    const mark = event.target.closest ? event.target.closest('mark.reader-highlight') : null;
+    post({ type: 'contextHighlight', id: mark ? mark.dataset.highlightId : null });
   });
 
   function hasSelection() {
@@ -730,7 +669,7 @@
     removeHighlight,
     jumpToHighlight,
     hasSelection,
-    clearSelection: () => { window.getSelection().removeAllRanges(); hideSelection(); },
+    clearSelection: () => window.getSelection().removeAllRanges(),
   };
 
   post({ type: 'ready' });
