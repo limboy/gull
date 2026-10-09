@@ -38,26 +38,63 @@ struct ReaderDetailView: View {
     @ViewBuilder private var surface: some View {
         switch model.phase {
         case .empty:
-            ContentUnavailableView {
-                Label("No Book Open", systemImage: "book.closed")
-            } description: {
-                Text(model.isStandalone
-                     ? "This book is no longer available."
-                     : "Choose a book from the sidebar, or open one with ⌘O.")
+            Placeholder {
+                Message(title: "No Book Open", systemImage: "book.closed",
+                        description: model.isStandalone
+                            ? "This book is no longer available."
+                            : "Choose a book from the sidebar, or open one with ⌘O.")
             }
         case .loading:
-            ProgressView().controlSize(.small).frame(maxWidth: .infinity, maxHeight: .infinity)
+            Placeholder { ProgressView().controlSize(.small) }
         case .reflowable:
             HostedNSView(view: model.web.webView)
         case .pdf:
             HostedNSView(view: model.pdf.pdfView)
         case .failed(let message):
-            ContentUnavailableView {
-                Label("Couldn’t Open Book", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(message)
+            Placeholder {
+                Message(title: "Couldn’t Open Book", systemImage: "exclamationmark.triangle", description: message)
             }
         }
+    }
+}
+
+/// What fills the reader instead of a book. Over plain content the toolbar
+/// draws a separator line, so it sits in a scroll view whose top edge effect
+/// is hidden.
+private struct Placeholder<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        // Sized from the proxy: `containerRelativeFrame` left the scroll view
+        // at a default 500pt wide, with its own edge line above it.
+        GeometryReader { proxy in
+            ScrollView {
+                content.frame(width: proxy.size.width, height: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollEdgeEffectHidden(true, for: .top)
+        }
+    }
+}
+
+/// Laid out like `ContentUnavailableView`, which scrolls internally and so
+/// brings its own edge line back.
+private struct Message: View {
+    let title: String
+    let systemImage: String
+    let description: String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 40))
+                .padding(.bottom, 10)
+            Text(title).font(.title3.bold())
+            Text(description)
+        }
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: 300)
     }
 }
 

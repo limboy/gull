@@ -30,7 +30,13 @@ struct LibraryWindowView: View {
             ReaderDetailView(model: model)
                 .readerChrome(model: model)
         }
-        .onChange(of: library.activePath, initial: true) { _, path in model.open(path) }
+        .onChange(of: library.activePath, initial: true) { _, path in
+            // A selected folder row isn't a book: show the empty reader instead.
+            var isDirectory: ObjCBool = false
+            let isFolder = path.map { FileManager.default.fileExists(atPath: $0, isDirectory: &isDirectory) } == true
+                && isDirectory.boolValue
+            model.open(isFolder ? nil : path)
+        }
         .frame(minWidth: 500, minHeight: 530)
     }
 }
@@ -53,7 +59,7 @@ private struct ReaderChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
         // A hairline between the toolbar and the page, like system document apps.
-        .safeAreaInset(edge: .top, spacing: 0) { Divider() }
+        .safeAreaInset(edge: .top, spacing: 0) { if model.hasBook { Divider() } }
         .toolbar {
             if let version = AppUpdater.shared.readyVersion {
                 ToolbarItem(placement: .primaryAction) {
