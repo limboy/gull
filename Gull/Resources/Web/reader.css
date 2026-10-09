@@ -197,8 +197,14 @@ html.paginated .book-content {
   column-fill: auto;
 }
 html.paginated .book-content > hr { display: none; }
-/* Each chapter starts on a fresh page. */
-html.paginated .book-content > .gull-chapter { margin-bottom: 0; break-before: column; }
+/* Each chapter starts on a fresh page. The pages bring their own margins, so
+   a book's body padding (applied to each chapter) would only widen the gutter. */
+html.paginated .book-content > .gull-chapter {
+  margin-bottom: 0;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  break-before: column;
+}
 html.paginated .book-content > .gull-chapter:first-child { break-before: auto; }
 html.paginated .book-content img,
 html.paginated .book-content svg {
