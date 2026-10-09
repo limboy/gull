@@ -81,8 +81,8 @@ private struct TocRow: View {
     var body: some View {
         Button(action: action) {
             Text(item.title)
-                .font(.system(size: 13, weight: item.level == 1 ? .regular : .regular))
-                .foregroundStyle(isActive ? AnyShapeStyle(.tint) : AnyShapeStyle(item.level == 1 ? .primary : .secondary))
+                .font(.system(size: 13, weight: isActive ? .medium : .regular))
+                .foregroundStyle(isActive || item.level == 1 ? .primary : .secondary)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, CGFloat(item.level - 1) * 14 + 8)
@@ -90,7 +90,8 @@ private struct TocRow: View {
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isActive ? Color.accentColor.opacity(0.12) : hovered ? Color.primary.opacity(0.06) : .clear))
+                        .fill(isActive ? Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+                              : hovered ? Color.primary.opacity(0.06) : .clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
