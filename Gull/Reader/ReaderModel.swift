@@ -163,7 +163,9 @@ final class ReaderModel {
                     ? try EPUBParser.parse(url: url, token: token)
                     : try MOBIParser.parse(url: url, token: token)
                 let payload = try JSONSerialization.data(withJSONObject: [
-                    "chapters": book.chapters.map { ["id": $0.id, "href": $0.href, "html": $0.html] },
+                    "chapters": book.chapters.map {
+                        ["id": $0.id, "href": $0.href, "html": $0.html, "styleScope": $0.styleScope]
+                    },
                     "css": book.css,
                     "language": book.language,
                     "tocHrefs": Self.flatten(book.toc).map(\.href),

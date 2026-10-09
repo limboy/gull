@@ -158,14 +158,19 @@ import Testing
              <?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0">
              <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test Book</dc:title><dc:identifier>id-1</dc:identifier><dc:language>en</dc:language></metadata>
              <manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+             <item id="cover" href="titlepage.xhtml" media-type="application/xhtml+xml"/>
              <item id="c1" href="text/c1.xhtml" media-type="application/xhtml+xml"/>
              <item id="css" href="style.css" media-type="text/css"/>
              <item id="img" href="images/cover.png" media-type="image/png" properties="cover-image"/></manifest>
-             <spine><itemref idref="c1"/></spine></package>
+             <spine><itemref idref="cover"/><itemref idref="c1"/></spine></package>
              """),
             ("OEBPS/nav.xhtml", """
              <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body>
              <nav epub:type="toc"><ol><li><a href="text/c1.xhtml#start">Chapter One</a></li></ol></nav></body></html>
+             """),
+            ("OEBPS/titlepage.xhtml", """
+             <html xmlns="http://www.w3.org/1999/xhtml"><head><style>body { text-align: center }</style></head>
+             <body><div>Cover</div></body></html>
              """),
             ("OEBPS/style.css", "p { color: red; text-indent: 1em }"),
             ("OEBPS/text/c1.xhtml", """
@@ -196,14 +201,18 @@ import Testing
         let book = try EPUBParser.parse(url: url, token: "tok")
         #expect(book.title == "Test Book")
         #expect(book.identifier == "id-1")
-        #expect(book.chapters.count == 1)
-        #expect(book.chapters[0].href == "text/c1.xhtml")
+        #expect(book.chapters.count == 2)
+        #expect(book.chapters[1].href == "text/c1.xhtml")
         #expect(book.toc.first?.title == "Chapter One")
         #expect(book.toc.first?.href == "text/c1.xhtml#start")
-        let html = book.chapters[0].html
+        let html = book.chapters[1].html
         #expect(html.contains("gull://app/book/tok/res/OEBPS/images/cover.png"))
         #expect(html.contains("<div></div>"))
-        #expect(book.css.contains(".book-content p { text-indent: 1em; }"))
+        // Each page's styles apply only to the chapters that use them.
+        let cover = book.chapters[0].styleScope, chapter = book.chapters[1].styleScope
+        #expect(!cover.isEmpty && !chapter.isEmpty && cover != chapter)
+        #expect(book.css.contains(".book-content :where(.\(cover)) { text-align: center; }"))
+        #expect(book.css.contains(".book-content :where(.\(chapter)) p { text-indent: 1em; }"))
         #expect(book.resources.resource(at: "OEBPS/images/cover.png") != nil)
         #expect(try EPUBParser.cover(url: url) != nil)
     }

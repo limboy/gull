@@ -95,7 +95,10 @@ nonisolated enum EPUBParser {
         let toc = parseToc(zip, package: package)
         var chapters: [Chapter] = []
         var cssParts: [String] = []
-        var seenCSS = Set<String>()
+        // Each distinct set of chapter styles gets a class on the chapters that
+        // use it, so one page's rules (a cover's `body { text-align: center }`)
+        // don't restyle the whole book.
+        var styleScopes: [String: String] = [:]
         var stylesheetCache: [String: String] = [:]
 
         for idref in spine {
@@ -149,10 +152,19 @@ nonisolated enum EPUBParser {
 
             let (html, text) = ContentSanitizer.bodyHTML(of: document)
             let trimmedCSS = chapterCSS.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmedCSS.isEmpty, seenCSS.insert(trimmedCSS).inserted {
-                cssParts.append(ContentSanitizer.filterStylesheet(trimmedCSS))
+            var styleScope = ""
+            if !trimmedCSS.isEmpty {
+                if let existing = styleScopes[trimmedCSS] {
+                    styleScope = existing
+                } else {
+                    styleScope = "gull-css-\(styleScopes.count)"
+                    styleScopes[trimmedCSS] = styleScope
+                    // `:where` keeps the book's selectors at their usual specificity.
+                    cssParts.append(ContentSanitizer.filterStylesheet(
+                        trimmedCSS, scope: ".book-content :where(.\(styleScope))"))
+                }
             }
-            chapters.append(Chapter(id: idref, href: chapterHref, html: html, text: text))
+            chapters.append(Chapter(id: idref, href: chapterHref, html: html, text: text, styleScope: styleScope))
         }
 
         if chapters.isEmpty { throw BookError.malformed("This book has no readable chapters.") }

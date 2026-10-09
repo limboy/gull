@@ -157,6 +157,7 @@
           const chapter = data.chapters[index];
           const section = document.createElement('section');
           section.className = 'gull-chapter';
+          if (chapter.styleScope) section.classList.add(chapter.styleScope);
           section.id = 'chapter-' + chapter.id;
           section.innerHTML = chapter.html;
           prepareChapter(section);
