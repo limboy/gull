@@ -5,7 +5,7 @@ description: Cut a Gull release — pick the version, draft release notes, push 
 
 # Releasing Gull
 
-A release is a pushed `v*` tag. `.github/workflows/release.yml` builds that tag with `scripts/build-release.sh`: Developer ID signing, notarization with an App Store Connect API key, the Sparkle-signed zip (what updates install), a notarized DMG (what people download), and `appcast.xml`. It publishes all three as a GitHub release on `limboy/gull-native`. Installed copies find updates through `releases/latest/download/appcast.xml`, so **the newest release is what every user's Sparkle sees**.
+A release is a pushed `v*` tag. `.github/workflows/release.yml` builds that tag with `scripts/build-release.sh`: Developer ID signing, notarization with an App Store Connect API key, the Sparkle-signed zip (what updates install), a notarized DMG (what people download), and `appcast.xml`. It publishes all three as a GitHub release on `limboy/gull`. Installed copies find updates through `releases/latest/download/appcast.xml`, so **the newest release is what every user's Sparkle sees**.
 
 Publishing is outward-facing and can't be quietly undone once users have updated. Confirm the version and notes with the user before pushing anything.
 
@@ -16,7 +16,7 @@ git status --short && git branch --show-current
 git fetch --tags -q && git tag --sort=-v:refname | head -5
 git status -sb | head -1
 grep MARKETING_VERSION project.yml
-gh secret list -R limboy/gull-native
+gh secret list -R limboy/gull
 ```
 
 - The tree must be clean and on `main`; `scripts/release.sh` refuses otherwise. Don't commit or stash the user's work on your own; ask.
@@ -61,14 +61,14 @@ This sets `MARKETING_VERSION`, regenerates the Xcode project, commits `chore: re
 ## 5. Watch the workflow
 
 ```bash
-gh run list -R limboy/gull-native --workflow release.yml -L 1
-gh run watch <run-id> -R limboy/gull-native --exit-status
+gh run list -R limboy/gull --workflow release.yml -L 1
+gh run watch <run-id> -R limboy/gull --exit-status
 ```
 
 Notarization usually takes a few minutes; the run notarizes twice (zip, then DMG). If a run fails:
 
 ```bash
-gh run view <run-id> -R limboy/gull-native --log-failed | tail -60
+gh run view <run-id> -R limboy/gull --log-failed | tail -60
 ```
 
 - **Select Xcode / build errors about the SDK.** The runner's newest Xcode is too old for the project (macOS 26 SDK). Check `runs-on` against GitHub's current macOS images.
@@ -83,14 +83,14 @@ If the build can't be fixed under the same tag and nothing was published, delete
 ## 6. Verify what users get
 
 ```bash
-gh release view v<version> -R limboy/gull-native --json assets --jq '.assets[].name'
-curl -sL https://github.com/limboy/gull-native/releases/latest/download/appcast.xml | grep -E 'shortVersionString|<sparkle:version>|enclosure'
+gh release view v<version> -R limboy/gull --json assets --jq '.assets[].name'
+curl -sL https://github.com/limboy/gull/releases/latest/download/appcast.xml | grep -E 'shortVersionString|<sparkle:version>|enclosure'
 ```
 
 The release needs `Gull-<version>.dmg`, `Gull-<version>.zip` and `appcast.xml`, and the latest appcast must name this version and link to this release's zip. Optionally confirm Gatekeeper accepts the download:
 
 ```bash
-cd "$(mktemp -d)" && gh release download v<version> -R limboy/gull-native -p '*.zip' && ditto -x -k Gull-*.zip . && spctl -a -vv Gull.app
+cd "$(mktemp -d)" && gh release download v<version> -R limboy/gull -p '*.zip' && ditto -x -k Gull-*.zip . && spctl -a -vv Gull.app
 ```
 
 It should report `accepted` and `source=Notarized Developer ID`.

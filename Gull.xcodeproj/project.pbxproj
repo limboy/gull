@@ -368,7 +368,7 @@
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
 				SPARKLE_AUTOMATIC_CHECKS = YES;
-				SPARKLE_FEED_URL = "https://github.com/limboy/gull-native/releases/latest/download/appcast.xml";
+				SPARKLE_FEED_URL = "https://github.com/limboy/gull/releases/latest/download/appcast.xml";
 			};
 			name = Release;
 		};
@@ -494,7 +494,7 @@
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
 				SPARKLE_AUTOMATIC_CHECKS = NO;
-				SPARKLE_FEED_URL = "https://github.com/limboy/gull-native/releases/latest/download/appcast.xml";
+				SPARKLE_FEED_URL = "https://github.com/limboy/gull/releases/latest/download/appcast.xml";
 			};
 			name = Debug;
 		};

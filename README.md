@@ -6,7 +6,7 @@ It reads DRM-free EPUB, MOBI / AZW3 / AZW / PRC (Kindle KF8 and legacy Mobipocke
 
 ## Install
 
-1. Download **Gull-x.y.z.dmg** from the [latest release](https://github.com/limboy/gull-native/releases/latest).
+1. Download **Gull-x.y.z.dmg** from the [latest release](https://github.com/limboy/gull/releases/latest).
 2. Open it and drag **Gull** to **Applications**.
 3. Open Gull, then add a folder of books with the sidebar's **Add Book Folder** button (or drag one from Finder onto the sidebar). Single books open with **File › Open…** (⌘O) or Finder's **Open With**.
 
@@ -26,7 +26,7 @@ xcodebuild -scheme Gull test
 
 ## Releases and auto-update
 
-Gull updates itself with [Sparkle](https://sparkle-project.org). Release builds check at launch and every 6 hours, download in the background, and install on quit; once an update is ready, a **Restart to Update** button appears in the toolbar. **Gull › Check for Updates…** checks on demand (Debug builds only check from the menu). The feed is the `appcast.xml` attached to the latest [GitHub release](https://github.com/limboy/gull-native/releases/latest).
+Gull updates itself with [Sparkle](https://sparkle-project.org). Release builds check at launch and every 6 hours, download in the background, and install on quit; once an update is ready, a **Restart to Update** button appears in the toolbar. **Gull › Check for Updates…** checks on demand (Debug builds only check from the menu). The feed is the `appcast.xml` attached to the latest [GitHub release](https://github.com/limboy/gull/releases/latest).
 
 ```bash
 scripts/release.sh 3.0.0 notes.md

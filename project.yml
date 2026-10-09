@@ -50,7 +50,7 @@ targets:
         COMBINE_HIDPI_IMAGES: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
         # Each GitHub release carries its own appcast.xml (scripts/build-release.sh).
-        SPARKLE_FEED_URL: https://github.com/limboy/gull-native/releases/latest/download/appcast.xml
+        SPARKLE_FEED_URL: https://github.com/limboy/gull/releases/latest/download/appcast.xml
       configs:
         # Builds run from Xcode never offer to replace themselves; the menu
         # item still checks.

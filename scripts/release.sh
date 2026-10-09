@@ -40,7 +40,7 @@ if (( ${#notes_args} )); then git tag -a "$tag" "${notes_args[@]}"; else git tag
 if [[ ${LOCAL:-0} != 1 ]]; then
   git push -q origin main "$tag"
   echo "Pushed $tag; the Release workflow takes it from here:"
-  echo "  https://github.com/limboy/gull-native/actions"
+  echo "  https://github.com/limboy/gull/actions"
   exit 0
 fi
 

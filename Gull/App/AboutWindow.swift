@@ -140,9 +140,9 @@ private struct LicenseCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 8) {
                     LinkButton("Read License", systemImage: "doc.text",
-                               url: "https://github.com/limboy/gull-native/blob/main/LICENSE")
+                               url: "https://github.com/limboy/gull/blob/main/LICENSE")
                     LinkButton("Source Code", systemImage: "chevron.left.forwardslash.chevron.right",
-                               url: "https://github.com/limboy/gull-native")
+                               url: "https://github.com/limboy/gull")
                 }
             }
             .padding(14)
