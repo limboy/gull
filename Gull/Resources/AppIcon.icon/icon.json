@@ -6,9 +6,21 @@
     {
       "layers" : [
         {
-          "glass" : true,
-          "image-name" : "icon.png",
-          "name" : "icon"
+          "glass" : false,
+          "image-name" : "White bird on cornflower blue.png",
+          "name" : "White bird on cornflower blue",
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 0.82,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         }
       ],
       "shadow" : {
