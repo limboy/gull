@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = MainMenu.build()
         NSWindow.allowsAutomaticWindowTabbing = false
+        ReaderSettings.shared.applyAppearance()
         #if DEBUG
         // `-GullAppearance dark|light` previews a theme without changing the system's.
         switch UserDefaults.standard.string(forKey: "GullAppearance") {

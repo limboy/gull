@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Observation
 
 nonisolated enum ReadingFont: String, CaseIterable, Identifiable, Codable, Sendable {
@@ -61,6 +61,63 @@ nonisolated enum PDFZoom: Hashable, Sendable {
     }
 }
 
+/// Whether the app follows the system's light/dark setting or forces one.
+nonisolated enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
+    case auto, light, dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .auto: "Auto"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+}
+
+/// The colors of the reading surface. Each appearance (light, dark) has its own set.
+nonisolated struct ReaderTheme: Identifiable, Equatable, Sendable {
+    let id: String
+    let name: String
+    let isDark: Bool
+    let background: String
+    let text: String
+    let secondary: String
+    let accent: String
+    let border: String
+
+    static let light: [ReaderTheme] = [
+        .init(id: "paper", name: "Paper", isDark: false, background: "#ffffff", text: "#171717",
+              secondary: "#717171", accent: "#007aff", border: "#d5d5d5"),
+        .init(id: "ivory", name: "Ivory", isDark: false, background: "#fbf8f1", text: "#262421",
+              secondary: "#7a756c", accent: "#2f6fd0", border: "#e2dccf"),
+        .init(id: "sepia", name: "Sepia", isDark: false, background: "#f3e9d6", text: "#4a3a2a",
+              secondary: "#8a7560", accent: "#a0522d", border: "#dccbb0"),
+        .init(id: "sage", name: "Sage", isDark: false, background: "#e6eee2", text: "#24322a",
+              secondary: "#66766a", accent: "#2f7a55", border: "#c9d6c3"),
+        .init(id: "mist", name: "Mist", isDark: false, background: "#e8edf4", text: "#1d2733",
+              secondary: "#66717f", accent: "#2f6fd0", border: "#ccd5e1"),
+        .init(id: "stone", name: "Stone", isDark: false, background: "#ebebea", text: "#232323",
+              secondary: "#727272", accent: "#4a6fa5", border: "#d2d2d0"),
+    ]
+
+    static let dark: [ReaderTheme] = [
+        .init(id: "night", name: "Night", isDark: true, background: "#1e1e1e", text: "#cecdc3",
+              secondary: "#888888", accent: "#4aa3ff", border: "#3c3c3c"),
+        .init(id: "black", name: "Black", isDark: true, background: "#000000", text: "#c4c4c4",
+              secondary: "#7a7a7a", accent: "#4aa3ff", border: "#2a2a2a"),
+        .init(id: "graphite", name: "Graphite", isDark: true, background: "#2b2c2f", text: "#dadada",
+              secondary: "#8e8f93", accent: "#6cb2ff", border: "#44464a"),
+        .init(id: "midnight", name: "Midnight", isDark: true, background: "#161c27", text: "#c7d0dc",
+              secondary: "#7b8698", accent: "#6ea8ff", border: "#2c3546"),
+        .init(id: "forest", name: "Forest", isDark: true, background: "#18211c", text: "#c6d2c4",
+              secondary: "#7f8f82", accent: "#7cc49a", border: "#2c3a31"),
+        .init(id: "mocha", name: "Mocha", isDark: true, background: "#262019", text: "#dccbb2",
+              secondary: "#9a8a74", accent: "#e0a066", border: "#3e3528"),
+    ]
+}
+
 /// The reading-style values the reflowable reader applies as CSS variables.
 nonisolated struct ReadingStyle: Equatable, Sendable {
     var font: ReadingFont
@@ -68,6 +125,7 @@ nonisolated struct ReadingStyle: Equatable, Sendable {
     var lineHeight: Double
     var paraSpacing: Double
     var fullWidth: Bool
+    var theme: ReaderTheme
 }
 
 /// Reader preferences shared by every window, persisted in UserDefaults.
@@ -95,11 +153,17 @@ final class ReaderSettings {
     var fullWidth: Bool { didSet { defaults.set(fullWidth, forKey: "fullWidth") } }
     var chapterScrollbar: Bool { didSet { defaults.set(chapterScrollbar, forKey: "chapterScrollbar") } }
     var pdfZoom: PDFZoom { didSet { defaults.set(pdfZoom.storageValue, forKey: "pdfZoom") } }
+    var appearance: AppearanceMode {
+        didSet { defaults.set(appearance.rawValue, forKey: "appearance"); applyAppearance() }
+    }
+    var lightThemeId: String { didSet { defaults.set(lightThemeId, forKey: "lightTheme") } }
+    var darkThemeId: String { didSet { defaults.set(darkThemeId, forKey: "darkTheme") } }
 
     private init() {
         defaults.register(defaults: [
             "font": ReadingFont.charter.rawValue, "fontSize": 16.0, "lineHeight": 1.8, "paraSpacing": 0.6,
             "fullWidth": false, "chapterScrollbar": true, "pdfZoom": "fit-width",
+            "appearance": AppearanceMode.auto.rawValue, "lightTheme": "paper", "darkTheme": "night",
         ])
         font = ReadingFont(rawValue: defaults.string(forKey: "font") ?? "") ?? .charter
         fontSize = Self.nearest(Self.fontSizes, defaults.double(forKey: "fontSize"))
@@ -108,14 +172,39 @@ final class ReaderSettings {
         fullWidth = defaults.bool(forKey: "fullWidth")
         chapterScrollbar = defaults.bool(forKey: "chapterScrollbar")
         pdfZoom = PDFZoom(storageValue: defaults.string(forKey: "pdfZoom"))
+        appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .auto
+        lightThemeId = defaults.string(forKey: "lightTheme") ?? "paper"
+        darkThemeId = defaults.string(forKey: "darkTheme") ?? "night"
+    }
+
+    /// Forces the app light or dark, or lets it follow the system (Auto).
+    func applyAppearance() {
+        switch appearance {
+        case .auto: NSApp.appearance = nil
+        case .light: NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+
+    /// The chosen theme for a light or dark appearance.
+    func theme(dark: Bool) -> ReaderTheme {
+        let themes = dark ? ReaderTheme.dark : ReaderTheme.light
+        let id = dark ? darkThemeId : lightThemeId
+        return themes.first { $0.id == id } ?? themes[0]
+    }
+
+    /// The theme for the app's current effective appearance.
+    var currentTheme: ReaderTheme {
+        theme(dark: NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
     }
 
     static func nearest(_ options: [ReadingOption<Double>], _ value: Double) -> Double {
         options.min { abs($0.value - value) < abs($1.value - value) }?.value ?? options[0].value
     }
 
-    var style: ReadingStyle {
-        ReadingStyle(font: font, fontSize: fontSize, lineHeight: lineHeight, paraSpacing: paraSpacing, fullWidth: fullWidth)
+    func style(theme: ReaderTheme) -> ReadingStyle {
+        ReadingStyle(font: font, fontSize: fontSize, lineHeight: lineHeight, paraSpacing: paraSpacing,
+                     fullWidth: fullWidth, theme: theme)
     }
 
     /// Steps the font size through the menu's sizes (⌘+ / ⌘−).

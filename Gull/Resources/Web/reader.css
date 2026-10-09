@@ -19,7 +19,7 @@
 @font-face { font-family: 'Geist Mono'; src: url('fonts/GeistMono-Variable.woff2') format('woff2'); font-weight: 100 900; }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --text-primary: #171717;
   --text-secondary: #717171;
   --accent: #007aff;
@@ -36,18 +36,15 @@
   --book-para-spacing: 0.6em;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-primary: #cecdc3;
-    --text-secondary: #888888;
-    --accent: #4aa3ff;
-    --border: #3c3c3c;
-    --code-bg: rgba(255, 255, 255, 0.06);
-    --highlight: rgba(255, 213, 0, 0.26);
-    --highlight-hover: rgba(255, 213, 0, 0.4);
-    --highlight-flash: rgba(255, 213, 0, 0.6);
-    --search-match: rgba(255, 196, 0, 0.36);
-  }
+/* Text, accent and border colors come from the chosen theme (set inline by
+   reader.js); the dark class picks the tints that read on a dark page. */
+:root.theme-dark {
+  color-scheme: dark;
+  --code-bg: rgba(255, 255, 255, 0.06);
+  --highlight: rgba(255, 213, 0, 0.26);
+  --highlight-hover: rgba(255, 213, 0, 0.4);
+  --highlight-flash: rgba(255, 213, 0, 0.6);
+  --search-match: rgba(255, 196, 0, 0.36);
 }
 
 * { box-sizing: border-box; }

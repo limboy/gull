@@ -352,6 +352,14 @@
     root.style.setProperty('--book-line-height', String(style.lineHeight));
     root.style.setProperty('--book-para-spacing', style.paraSpacing + 'em');
     root.classList.toggle('full-width', !!style.fullWidth);
+    const theme = style.theme;
+    if (theme) {
+      root.classList.toggle('theme-dark', !!theme.dark);
+      root.style.setProperty('--text-primary', theme.text);
+      root.style.setProperty('--text-secondary', theme.secondary);
+      root.style.setProperty('--accent', theme.accent);
+      root.style.setProperty('--border', theme.border);
+    }
   }
 
   /** Restyles without losing the reader's place. */

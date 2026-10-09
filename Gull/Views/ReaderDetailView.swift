@@ -8,6 +8,7 @@ import WebKit
 struct ReaderDetailView: View {
     @Bindable var model: ReaderModel
     @Bindable private var settings = ReaderSettings.shared
+    @Environment(\.colorScheme) private var colorScheme
 
     private struct SettingsKey: Equatable {
         var style: ReadingStyle
@@ -15,8 +16,10 @@ struct ReaderDetailView: View {
         var zoom: PDFZoom
     }
 
+    private var theme: ReaderTheme { settings.theme(dark: colorScheme == .dark) }
+
     private var settingsKey: SettingsKey {
-        SettingsKey(style: settings.style, chapterScrollbar: settings.chapterScrollbar, zoom: settings.pdfZoom)
+        SettingsKey(style: settings.style(theme: theme), chapterScrollbar: settings.chapterScrollbar, zoom: settings.pdfZoom)
     }
 
     var body: some View {
@@ -30,8 +33,8 @@ struct ReaderDetailView: View {
                     .padding(.leading, 2)
             }
         }
-        .background(Color(nsColor: .textBackgroundColor))
-        .onChange(of: settingsKey, initial: true) { model.applySettings(settings) }
+        .background(Color(hex: theme.background))
+        .onChange(of: settingsKey, initial: true) { model.applySettings(settings, theme: theme) }
     }
 
     @ViewBuilder private var surface: some View {
@@ -46,9 +49,17 @@ struct ReaderDetailView: View {
         case .loading:
             Placeholder { ProgressView().controlSize(.small) }
         case .reflowable:
-            HostedNSView(view: model.web.webView)
+            // The page runs under the toolbar, which blurs it like a scroll pocket;
+            // WebKit is told how much is covered so the text starts below it.
+            GeometryReader { proxy in
+                HostedNSView(view: model.web.webView)
+                    .onChange(of: proxy.safeAreaInsets.top, initial: true) { _, top in model.web.setTopInset(top) }
+            }
+            .ignoresSafeArea(.container, edges: .top)
         case .pdf:
+            // PDFView's scroll view insets itself for the toolbar it runs under.
             HostedNSView(view: model.pdf.pdfView)
+                .ignoresSafeArea(.container, edges: .top)
         case .failed(let message):
             Placeholder {
                 Message(title: "Couldn’t Open Book", systemImage: "exclamationmark.triangle", description: message)

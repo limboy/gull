@@ -55,6 +55,7 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
 
     func load(token: String, position: ReadingPosition?, highlights: [Highlight], searchTerms: [String]) {
         let settings = ReaderSettings.shared
+        let style = settings.style(theme: settings.currentTheme)
         var positionValue: [String: Any] = [:]
         if let position {
             positionValue["progress"] = position.progress
@@ -65,11 +66,11 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
             "contentURL": ResourceURL.content(token: token),
             "position": positionValue,
             "highlights": highlights.map(Self.dictionary),
-            "style": Self.dictionary(settings.style),
+            "style": Self.dictionary(style),
             "hideScrollbar": settings.chapterScrollbar,
             "searchTerms": searchTerms,
         ]
-        appliedStyle = settings.style
+        appliedStyle = style
         appliedHideScrollbar = settings.chapterScrollbar
         if pageReady { call("Gull.load(config)", ["config": config]) } else { pendingLoad = config }
         webView.window?.makeFirstResponder(webView)
@@ -84,6 +85,12 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
             appliedHideScrollbar = hideScrollbar
             call("Gull.setScrollbarHidden(hidden)", ["hidden": hideScrollbar])
         }
+    }
+
+    /// How much of the web view's top the toolbar covers.
+    func setTopInset(_ top: Double) {
+        guard webView.obscuredContentInsets.top != top else { return }
+        webView.obscuredContentInsets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
     }
 
     func scrollToHref(_ href: String) { call("Gull.scrollToHref(href, null)", ["href": href]) }
@@ -126,7 +133,9 @@ final class WebReaderController: NSObject, WKNavigationDelegate, WKScriptMessage
 
     private static func dictionary(_ style: ReadingStyle) -> [String: Any] {
         ["fontFamily": style.font.cssFamily, "fontSize": style.fontSize, "lineHeight": style.lineHeight,
-         "paraSpacing": style.paraSpacing, "fullWidth": style.fullWidth]
+         "paraSpacing": style.paraSpacing, "fullWidth": style.fullWidth,
+         "theme": ["dark": style.theme.isDark, "text": style.theme.text, "secondary": style.theme.secondary,
+                   "accent": style.theme.accent, "border": style.theme.border]]
     }
 
     private static func dictionary(_ highlight: Highlight) -> [String: Any] {
