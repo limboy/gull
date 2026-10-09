@@ -174,10 +174,9 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
     // MARK: Commands
 
     @objc func toggleLibrarySidebar(_ sender: Any?) { state.toggleSidebar() }
-    @objc func toggleReaderInspector(_ sender: Any?) { withAnimation { model.showInspector.toggle() } }
 
-    @objc func showContents(_ sender: Any?) { model.showInspector = true; model.inspectorMode = .toc }
-    @objc func showHighlights(_ sender: Any?) { model.showInspector = true; model.inspectorMode = .highlights }
+    @objc func showContents(_ sender: Any?) { model.openPanel = .toc }
+    @objc func showHighlights(_ sender: Any?) { model.openPanel = .highlights }
     @objc func findInBook(_ sender: Any?) { model.focusSearch() }
     @objc func highlightSelectionCommand(_ sender: Any?) { model.highlightSelection() }
 
@@ -194,9 +193,6 @@ final class ReaderWindowController: NSWindowController, NSWindowDelegate, NSMenu
         case #selector(toggleLibrarySidebar(_:)):
             item.title = state.columnVisibility == .detailOnly ? "Show Library" : "Hide Library"
             return kind == .library
-        case #selector(toggleReaderInspector(_:)):
-            item.title = model.showInspector ? "Hide Inspector" : "Show Inspector"
-            return true
         case #selector(addBookFolder(_:)):
             return kind == .library
         case #selector(highlightSelectionCommand(_:)), #selector(findInBook(_:)),

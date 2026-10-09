@@ -81,7 +81,6 @@ enum MainMenu {
     private static func viewMenu() -> NSMenu {
         let menu = NSMenu(title: "View")
         menu.addItem(item("Hide Library", #selector(ReaderWindowController.toggleLibrarySidebar(_:)), "s", [.command, .control]))
-        menu.addItem(item("Hide Inspector", #selector(ReaderWindowController.toggleReaderInspector(_:)), "i", [.command, .option]))
         menu.addItem(.separator())
         menu.addItem(item("Contents", #selector(ReaderWindowController.showContents(_:)), "1", [.command, .option]))
         menu.addItem(item("Highlights", #selector(ReaderWindowController.showHighlights(_:)), "2", [.command, .option]))

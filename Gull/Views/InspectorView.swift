@@ -1,31 +1,20 @@
 import SwiftUI
 
-/// The right-hand panel: table of contents, highlights, and search.
+/// One toolbar popover: table of contents, highlights, or search.
 struct InspectorView: View {
     @Bindable var model: ReaderModel
+    let mode: InspectorMode
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Panel", selection: $model.inspectorMode) {
-                ForEach(InspectorMode.allCases) { mode in
-                    Image(systemName: mode.symbol)
-                        .help(mode.title)
-                        .accessibilityLabel(mode.title)
-                        .tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            switch model.inspectorMode {
+            switch mode {
             case .toc: TocPanel(model: model)
             case .highlights: HighlightsPanel(model: model)
             case .search: SearchPanel(model: model)
             }
         }
-        .frame(maxHeight: .infinity, alignment: .top)
+        .padding(.top, 8)
+        .frame(width: 320, height: 460, alignment: .top)
     }
 }
 
@@ -61,7 +50,10 @@ private struct TocPanel: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         ForEach(model.toc) { item in
-                            TocRow(item: item, isActive: item.id == model.activeTocIndex) { model.goToToc(item) }
+                            TocRow(item: item, isActive: item.id == model.activeTocIndex) {
+                                model.goToToc(item)
+                                model.openPanel = nil
+                            }
                                 .id(item.id)
                         }
                     }
@@ -122,7 +114,10 @@ private struct HighlightsPanel: View {
             List {
                 ForEach(highlights) { highlight in
                     HighlightRow(highlight: highlight,
-                                 open: { model.openHighlight(highlight) },
+                                 open: {
+                                     model.openHighlight(highlight)
+                                     model.openPanel = nil
+                                 },
                                  delete: { model.removeHighlight(highlight.id) })
                 }
             }

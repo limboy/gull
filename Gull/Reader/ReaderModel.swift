@@ -82,15 +82,13 @@ final class ReaderModel {
     private(set) var searchResults: [SearchIndex.Result] = []
     private(set) var isIndexing = false
 
-    var inspectorMode: InspectorMode = .toc
+    /// The toolbar popover showing contents, highlights, or search, if any.
+    var openPanel: InspectorMode?
     var searchQuery = "" { didSet { if oldValue != searchQuery { scheduleSearch() } } }
     var selection: SelectionPopupState?
     var footnote: FootnoteState?
     var searchFocusRequest = 0
 
-    var showInspector: Bool {
-        didSet { UserDefaults.standard.set(showInspector, forKey: isStandalone ? "bookInspectorShown" : "inspectorShown") }
-    }
 
     var isPDF: Bool { phase == .pdf }
     var hasBook: Bool { phase == .reflowable || phase == .pdf }
@@ -113,9 +111,6 @@ final class ReaderModel {
 
     init(standalone: Bool) {
         isStandalone = standalone
-        let key = standalone ? "bookInspectorShown" : "inspectorShown"
-        UserDefaults.standard.register(defaults: [key: true])
-        showInspector = UserDefaults.standard.bool(forKey: key)
     }
 
     // MARK: Opening
@@ -376,8 +371,7 @@ final class ReaderModel {
     }
 
     func focusSearch() {
-        showInspector = true
-        inspectorMode = .search
+        openPanel = .search
         searchFocusRequest += 1
     }
 

@@ -30,7 +30,6 @@ struct LibraryWindowView: View {
             ReaderDetailView(model: model)
                 .readerChrome(model: model)
         }
-        .readerInspector(model: model)
         .onChange(of: library.activePath, initial: true) { _, path in model.open(path) }
         .frame(minWidth: 500, minHeight: 530)
     }
@@ -42,18 +41,9 @@ struct BookWindowView: View {
     @Bindable var model: ReaderModel
 
     var body: some View {
-        // A split view with no sidebar, so the inspector gets the same
-        // full-height column it has in the library window.
-        NavigationSplitView(columnVisibility: .constant(.detailOnly)) {
-            EmptyView()
-                .toolbar(removing: .sidebarToggle)
-        } detail: {
-            ReaderDetailView(model: model)
-                .readerChrome(model: model)
-        }
-        .toolbar(removing: .sidebarToggle)
-        .readerInspector(model: model)
-        .frame(minWidth: 500, minHeight: 530)
+        ReaderDetailView(model: model)
+            .readerChrome(model: model)
+            .frame(minWidth: 500, minHeight: 530)
     }
 }
 
@@ -62,52 +52,56 @@ private struct ReaderChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .toolbar {
-                if let version = AppUpdater.shared.readyVersion {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            AppUpdater.shared.restartToUpdate()
-                        } label: {
-                            Label("Restart to Update", systemImage: "arrow.down.circle")
-                                .labelStyle(.titleAndIcon)
-                        }
-                        .tint(.orange)
-                        .help("Gull \(version) is ready to install")
-                    }
-                }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    ReadingSettingsMenu(model: model)
-                }
+        .toolbar {
+            if let version = AppUpdater.shared.readyVersion {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        withAnimation { model.showInspector.toggle() }
+                        AppUpdater.shared.restartToUpdate()
                     } label: {
-                        Label("Inspector", systemImage: "sidebar.trailing")
+                        Label("Restart to Update", systemImage: "arrow.down.circle")
+                            .labelStyle(.titleAndIcon)
                     }
-                    .help(model.showInspector ? "Hide Inspector" : "Show Inspector")
+                    .tint(.orange)
+                    .help("Gull \(version) is ready to install")
                 }
             }
-            .navigationTitle(model.title.isEmpty ? "Gull" : model.title)
-            .navigationSubtitle(model.currentTocTitle ?? "")
+            // One item group so the toolbar draws the three as a single glass capsule.
+            ToolbarItemGroup(placement: .primaryAction) {
+                ForEach(InspectorMode.allCases) { PanelButton(model: model, mode: $0) }
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                ReadingSettingsMenu(model: model)
+            }
+        }
+        .navigationTitle(model.title.isEmpty ? "Gull" : model.title)
+        .navigationSubtitle(model.currentTocTitle ?? "")
     }
 }
 
-/// Attached to the split view itself (not its detail column) so the inspector
-/// runs the full height of the window, under the toolbar, like the sidebar.
-private struct ReaderInspector: ViewModifier {
+/// A toolbar button for contents, highlights, or search, opening that panel
+/// in a popover anchored to it.
+private struct PanelButton: View {
     @Bindable var model: ReaderModel
+    let mode: InspectorMode
 
-    func body(content: Content) -> some View {
-        content.inspector(isPresented: $model.showInspector) {
-            InspectorView(model: model)
-                .inspectorColumnWidth(min: 240, ideal: 290, max: 480)
+    var body: some View {
+        Button {
+            model.openPanel = model.openPanel == mode ? nil : mode
+        } label: {
+            Label(mode.title, systemImage: mode.symbol)
+        }
+        .help(mode.title)
+        .popover(isPresented: Binding(
+            get: { model.openPanel == mode },
+            set: { if !$0, model.openPanel == mode { model.openPanel = nil } }
+        ), arrowEdge: .bottom) {
+            InspectorView(model: model, mode: mode)
         }
     }
 }
 
 extension View {
     func readerChrome(model: ReaderModel) -> some View { modifier(ReaderChrome(model: model)) }
-    func readerInspector(model: ReaderModel) -> some View { modifier(ReaderInspector(model: model)) }
 }
 
 /// The toolbar's reading settings: typography for reflowable books, page zoom for PDFs.
