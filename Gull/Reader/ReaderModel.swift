@@ -430,5 +430,6 @@ final class ReaderModel {
         web.apply(style: settings.style(theme: theme), hideScrollbar: settings.chapterScrollbar)
         pdf.apply(zoom: settings.pdfZoom)
         pdf.apply(background: theme.background)
+        pdf.setScrollerHidden(settings.chapterScrollbar)
     }
 }

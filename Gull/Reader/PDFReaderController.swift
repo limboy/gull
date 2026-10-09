@@ -52,7 +52,7 @@ final class PDFReaderController: NSObject {
         annotations.removeAll()
         pdfView.document = document
         observeScrolling()
-        applyInsets()
+        applyScrollView()
         tocUnits = (model?.toc ?? []).compactMap { item in unit(forHref: item.href).map { (item.id, $0) } }
         applyHighlights()
         applyZoom(preservingPosition: false)
@@ -84,13 +84,29 @@ final class PDFReaderController: NSObject {
     func setInsets(top: CGFloat, trailing: CGFloat) {
         guard insets.top != top || insets.right != trailing else { return }
         insets = NSEdgeInsets(top: top, left: 0, bottom: 0, right: trailing)
-        applyInsets()
+        applyScrollView()
     }
 
-    private func applyInsets() {
+    private var hidesScroller = false
+
+    /// Hides PDFView's own scroller while the chapter scrollbar stands in for it.
+    func setScrollerHidden(_ hidden: Bool) {
+        guard hidden != hidesScroller else { return }
+        hidesScroller = hidden
+        applyScrollView()
+    }
+
+    /// The scroll view inside PDFView is only there once a document is set, so this
+    /// runs again on every load.
+    private func applyScrollView() {
         guard let scrollView = pdfView.documentView?.enclosingScrollView else { return }
         scrollView.automaticallyAdjustsContentInsets = false
         scrollView.contentInsets = insets
+        // PDFView turns its scroller back on as it lays out and scrolls, so rather than
+        // turning it off, swap in one that never draws.
+        if hidesScroller != (scrollView.verticalScroller is InvisibleScroller) {
+            scrollView.verticalScroller = hidesScroller ? InvisibleScroller() : NSScroller()
+        }
         if pdfView.autoScales { pdfView.autoScales = true }
     }
 
@@ -350,6 +366,16 @@ final class PDFReaderController: NSObject {
         pdfView.go(to: selection)
         pdfView.setCurrentSelection(selection, animate: true)
     }
+}
+
+/// A scroller that takes up no room and never draws or takes clicks.
+private final class InvisibleScroller: NSScroller {
+    override class var isCompatibleWithOverlayScrollers: Bool { true }
+    override class func scrollerWidth(for controlSize: NSControl.ControlSize, scrollerStyle: NSScroller.Style) -> CGFloat { 0 }
+    override func draw(_ dirtyRect: NSRect) {}
+    override func drawKnob() {}
+    override func drawKnobSlot(in slotRect: NSRect, highlight flag: Bool) {}
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 /// A `PDFView` whose context menu offers "Highlight" and "Search in Book" for a
