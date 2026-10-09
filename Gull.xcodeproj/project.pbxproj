@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		044BAFB242D48BCD4E6F1F4C /* AboutWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A29D30A5738D96917E64933 /* AboutWindow.swift */; };
 		1B1EAE3B8305AF50ABAA4E87 /* ReaderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */; };
 		1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07F90EE2499527EC8F04C9B /* AppUpdater.swift */; };
 		265363287B2B7617FAC67694 /* LibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52089771E95E004788F4EAF /* LibrarySidebar.swift */; };
@@ -67,6 +68,7 @@
 		713FFECBA9ECF228B5396A9A /* SearchIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchIndex.swift; sourceTree = "<group>"; };
 		758636935D52A2008BEC8460 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		78DA437DDBB25E1C2682385F /* HighlightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightStore.swift; sourceTree = "<group>"; };
+		7A29D30A5738D96917E64933 /* AboutWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutWindow.swift; sourceTree = "<group>"; };
 		7C9FE575ED15233AC609F066 /* MOBIParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MOBIParser.swift; sourceTree = "<group>"; };
 		812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSchemeHandler.swift; sourceTree = "<group>"; };
 		84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderController.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 		6E6D8EF8584424A3E369F604 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				7A29D30A5738D96917E64933 /* AboutWindow.swift */,
 				5B7962895C58E940312BEE6A /* AppDelegate.swift */,
 				E07F90EE2499527EC8F04C9B /* AppUpdater.swift */,
 				7100135A790BA9D3A784DEE7 /* MainMenu.swift */,
@@ -300,6 +303,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				044BAFB242D48BCD4E6F1F4C /* AboutWindow.swift in Sources */,
 				3B54E88D5134FB02566F33D8 /* AppDelegate.swift in Sources */,
 				1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */,
 				8F4F02D7F83101CBEE3189AB /* BookContent.swift in Sources */,

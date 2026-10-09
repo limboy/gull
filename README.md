@@ -61,3 +61,10 @@ Book markup reaches the web view only after sanitizing (no scripts, handlers, re
 - Library state, highlights, and positions start fresh — Electron's localStorage is not migrated.
 - MOBI6 `filepos` links and TOC entries now resolve (anchors are inserted at their byte offsets).
 - Reading positions are saved for standalone book windows too, anchored to a chapter rather than a raw scroll ratio.
+
+## License
+
+Gull is licensed under the [MIT License](LICENSE).
+Copyright © 2026 Limboy.
+
+Gull uses [Sparkle](https://sparkle-project.org) (MIT) for software updates, and bundles the Charter, Inter, Open Sans and Geist Mono typefaces under their own licenses.

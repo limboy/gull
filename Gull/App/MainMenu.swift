@@ -35,7 +35,7 @@ enum MainMenu {
 
     private static func appMenu() -> NSMenu {
         let menu = NSMenu(title: "Gull")
-        menu.addItem(item("About Gull", #selector(NSApplication.orderFrontStandardAboutPanel(_:)), target: NSApp))
+        menu.addItem(item("About Gull", #selector(AboutWindowController.show(_:)), target: AboutWindowController.shared))
         menu.addItem(item("Check for Updates…", #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
                           target: AppUpdater.shared.menuTarget))
         menu.addItem(.separator())
