@@ -37,7 +37,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: me.limboy.gull
         PRODUCT_NAME: Gull
-        MARKETING_VERSION: "3.2.1"
+        MARKETING_VERSION: "3.3.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: Gull/Info.plist
         CODE_SIGN_ENTITLEMENTS: Gull/Gull.entitlements
