@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		044BAFB242D48BCD4E6F1F4C /* AboutWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A29D30A5738D96917E64933 /* AboutWindow.swift */; };
-		5E77A1C0D3B24F0A9C6E2B01 /* SettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77A1C0D3B24F0A9C6E2B02 /* SettingsWindow.swift */; };
 		1B1EAE3B8305AF50ABAA4E87 /* ReaderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */; };
 		1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07F90EE2499527EC8F04C9B /* AppUpdater.swift */; };
 		265363287B2B7617FAC67694 /* LibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52089771E95E004788F4EAF /* LibrarySidebar.swift */; };
@@ -38,6 +37,7 @@
 		D8B5DB4B87275FD8908A88B5 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0524713D9EA2F88D620B02F /* InspectorView.swift */; };
 		DB5B5BBBD00803020690DE71 /* MOBIParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9FE575ED15233AC609F066 /* MOBIParser.swift */; };
 		DC900715AFD0818657AA3290 /* ContentSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89E0D332C778FEE7BCD9AB6 /* ContentSanitizer.swift */; };
+		EC80FE9821562884AB37D838 /* SettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB120BF8EE8230056A1C850 /* SettingsWindow.swift */; };
 		FC06F1DB5AFB84072E561E0F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 0F103FF0517A61FEDB14AE34 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -64,6 +64,7 @@
 		4C59272F1EC3D3432BAAD658 /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
 		50E5C7A763E268B3F98A10AE /* GullTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GullTests.swift; sourceTree = "<group>"; };
 		54C2E4A82F1EE4879D370E95 /* ReaderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderDetailView.swift; sourceTree = "<group>"; };
+		5AB120BF8EE8230056A1C850 /* SettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindow.swift; sourceTree = "<group>"; };
 		5B7962895C58E940312BEE6A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		620589E90CF1D97C40DC68EA /* GullTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GullTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7100135A790BA9D3A784DEE7 /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
@@ -71,7 +72,6 @@
 		758636935D52A2008BEC8460 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		78DA437DDBB25E1C2682385F /* HighlightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightStore.swift; sourceTree = "<group>"; };
 		7A29D30A5738D96917E64933 /* AboutWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutWindow.swift; sourceTree = "<group>"; };
-		5E77A1C0D3B24F0A9C6E2B02 /* SettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindow.swift; sourceTree = "<group>"; };
 		7C9FE575ED15233AC609F066 /* MOBIParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MOBIParser.swift; sourceTree = "<group>"; };
 		812A4F7DD479B3930D4A27F0 /* ReaderSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSchemeHandler.swift; sourceTree = "<group>"; };
 		84C5BCDB6C15277AEA04C155 /* PDFReaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderController.swift; sourceTree = "<group>"; };
@@ -133,10 +133,10 @@
 			isa = PBXGroup;
 			children = (
 				7A29D30A5738D96917E64933 /* AboutWindow.swift */,
-				5E77A1C0D3B24F0A9C6E2B02 /* SettingsWindow.swift */,
 				5B7962895C58E940312BEE6A /* AppDelegate.swift */,
 				E07F90EE2499527EC8F04C9B /* AppUpdater.swift */,
 				7100135A790BA9D3A784DEE7 /* MainMenu.swift */,
+				5AB120BF8EE8230056A1C850 /* SettingsWindow.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -311,7 +311,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				044BAFB242D48BCD4E6F1F4C /* AboutWindow.swift in Sources */,
-				5E77A1C0D3B24F0A9C6E2B01 /* SettingsWindow.swift in Sources */,
 				3B54E88D5134FB02566F33D8 /* AppDelegate.swift in Sources */,
 				1ECC95CFD8975CA80AD2077E /* AppUpdater.swift in Sources */,
 				8F4F02D7F83101CBEE3189AB /* BookContent.swift in Sources */,
@@ -333,6 +332,7 @@
 				8AF7D8D124ABD9B664AA00D2 /* ReaderSchemeHandler.swift in Sources */,
 				3335DA68DC02F2A20DF0A451 /* ReaderSettings.swift in Sources */,
 				950655DC9BCCA78F8810DBAD /* SearchIndex.swift in Sources */,
+				EC80FE9821562884AB37D838 /* SettingsWindow.swift in Sources */,
 				88AAC2B1CA1F86A066E8C4EB /* Storage.swift in Sources */,
 				3DE36E5F31180D84040D183A /* WebReaderController.swift in Sources */,
 				8F3F9F997B2992C6138F40AD /* WindowViews.swift in Sources */,
@@ -371,7 +371,7 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				INFOPLIST_FILE = Gull/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 3.3.0;
+				MARKETING_VERSION = 3.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
@@ -497,7 +497,7 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				INFOPLIST_FILE = Gull/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 3.3.0;
+				MARKETING_VERSION = 3.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.limboy.gull;
 				PRODUCT_NAME = Gull;
 				SDKROOT = macosx;
