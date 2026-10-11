@@ -55,13 +55,6 @@ The workflow needs these repository secrets: `CSC_LINK` (the Developer ID Applic
 
 Book markup reaches the web view only after sanitizing (no scripts, handlers, remote URLs, or book typography), images are served from the open book by an unguessable per-load token, and every navigation besides the reader shell is cancelled.
 
-## Differences from the Electron app
-
-- Updates come through Sparkle instead of electron-updater. Electron releases can't update into the native app on their own; users need to install the first native release by hand.
-- Library state, highlights, and positions start fresh — Electron's localStorage is not migrated.
-- MOBI6 `filepos` links and TOC entries now resolve (anchors are inserted at their byte offsets).
-- Reading positions are saved for standalone book windows too, anchored to a chapter rather than a raw scroll ratio.
-
 ## License
 
 Gull is licensed under the [MIT License](LICENSE).
