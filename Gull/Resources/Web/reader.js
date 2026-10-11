@@ -175,6 +175,7 @@
           const section = document.createElement('section');
           section.className = 'gull-chapter';
           if (chapter.styleScope) section.classList.add(chapter.styleScope);
+          if (chapter.bodyClasses) section.classList.add(...chapter.bodyClasses.split(' '));
           section.id = 'chapter-' + chapter.id;
           section.innerHTML = chapter.html;
           prepareChapter(section);

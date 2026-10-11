@@ -29,6 +29,15 @@ import Testing
         #expect(!css.contains("font-face"))
     }
 
+    @Test func keepsBodyQualifiersWhenScoping() {
+        let css = ContentSanitizer.filterStylesheet(
+            "body.Copyright p { border-left: solid 0.2em } html body { margin: 0 }", scope: ".book-content :where(.s)")
+        #expect(css.contains(".book-content :where(.s).Copyright p { border-left: solid 0.2em; }"))
+        let document = ContentSanitizer.parseDocument(
+            Data(#"<html><body class="Copyright  gull-x bad\"x"><p>x</p></body></html>"#.utf8))!
+        #expect(ContentSanitizer.bodyClasses(of: document) == "Copyright")
+    }
+
     @Test func urlSafety() {
         #expect(ContentSanitizer.isSafePublicationURL("chapter.xhtml#x", tag: "a", attribute: "href"))
         #expect(ContentSanitizer.isSafePublicationURL("https://example.com", tag: "a", attribute: "href"))

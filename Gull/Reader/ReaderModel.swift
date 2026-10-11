@@ -157,7 +157,10 @@ final class ReaderModel {
                     : try MOBIParser.parse(url: url, token: token)
                 let payload = try JSONSerialization.data(withJSONObject: [
                     "chapters": book.chapters.map {
-                        ["id": $0.id, "href": $0.href, "html": $0.html, "styleScope": $0.styleScope]
+                        [
+                            "id": $0.id, "href": $0.href, "html": $0.html,
+                            "styleScope": $0.styleScope, "bodyClasses": $0.bodyClasses,
+                        ]
                     },
                     "css": book.css,
                     "language": book.language,

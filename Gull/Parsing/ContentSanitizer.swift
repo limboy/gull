@@ -40,7 +40,7 @@ nonisolated enum ContentSanitizer {
     private static let cssComment = try! NSRegularExpression(pattern: #"/\*[\s\S]*?\*/"#)
     private static let dropCap = try! NSRegularExpression(pattern: "drop-?cap", options: .caseInsensitive)
     private static let rootSelector = try! NSRegularExpression(
-        pattern: #"^\s*(?:html|body)\b[^\s>+~]*"#, options: .caseInsensitive)
+        pattern: #"^\s*(html|body)\b([^\s>+~]*)"#, options: .caseInsensitive)
 
     static func hasUnsafeCSSValue(_ value: String) -> Bool {
         unsafeCSS.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil
@@ -136,7 +136,10 @@ nonisolated enum ContentSanitizer {
             let range = NSRange(selector.startIndex..., in: selector)
             if let match = rootSelector.firstMatch(in: selector, range: range),
                let swiftRange = Range(match.range, in: selector) {
-                return scope + selector[swiftRange.upperBound...]
+                // `body.Copyright p` keeps its qualifier, so it only matches chapters
+                // whose `<body>` carried that class (see `bodyClasses`).
+                let qualifier = Range(match.range(at: 2), in: selector).map { String(selector[$0]) } ?? ""
+                return scope + qualifier + selector[swiftRange.upperBound...]
             }
             return "\(scope) \(selector)"
         }.joined(separator: ", ")
@@ -300,6 +303,18 @@ nonisolated enum ContentSanitizer {
             if let resolved = resolve(href) { attr.stringValue = resolved }
             else { element.removeAttribute(forName: "href") }
         }
+    }
+
+    /// The `<body>` classes, to carry onto the chapter's section so `body.X`
+    /// rules from the book's CSS keep applying only where the book meant them.
+    static func bodyClasses(of document: XMLDocument) -> String {
+        guard let body = firstElement(in: document, named: "body") else { return "" }
+        return (attribute(body, "class") ?? "")
+            .split(whereSeparator: \.isWhitespace)
+            .filter { name in
+                !name.hasPrefix("gull-") && name.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+            }
+            .joined(separator: " ")
     }
 
     /// Serializes the children of `<body>` (or the whole document) as HTML that

@@ -34,6 +34,8 @@ nonisolated struct Chapter: Sendable, Codable {
     var text: String
     /// The class that scopes this chapter's own stylesheets, if it has any.
     var styleScope = ""
+    /// Classes from the chapter's `<body>`, applied to its section.
+    var bodyClasses = ""
 }
 
 /// The payload a reflowable book is reduced to, whatever its source format.

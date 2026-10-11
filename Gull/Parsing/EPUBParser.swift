@@ -164,7 +164,9 @@ nonisolated enum EPUBParser {
                         trimmedCSS, scope: ".book-content :where(.\(styleScope))"))
                 }
             }
-            chapters.append(Chapter(id: idref, href: chapterHref, html: html, text: text, styleScope: styleScope))
+            chapters.append(Chapter(
+                id: idref, href: chapterHref, html: html, text: text, styleScope: styleScope,
+                bodyClasses: ContentSanitizer.bodyClasses(of: document)))
         }
 
         if chapters.isEmpty { throw BookError.malformed("This book has no readable chapters.") }
