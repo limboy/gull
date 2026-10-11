@@ -193,8 +193,10 @@ nonisolated enum ContentSanitizer {
             let text = HTMLEntities.replaceNamedEntities(ZipArchive.decodeText(data))
             if let document = try? XMLDocument(data: Data(text.utf8), options: xmlOptions) { return document }
         }
-        return try? XMLDocument(data: data, options: [.documentTidyHTML, .nodeLoadExternalEntitiesNever,
-                                                      .nodePreserveWhitespace])
+        // Tidy reads raw bytes as Latin-1 whatever the markup declares, so hand it
+        // already-decoded text or every CJK character turns to mojibake.
+        return try? XMLDocument(xmlString: ZipArchive.decodeText(data),
+                                options: [.documentTidyHTML, .nodeLoadExternalEntitiesNever, .nodePreserveWhitespace])
     }
 
     static func elements(in node: XMLNode, named name: String) -> [XMLElement] {

@@ -246,4 +246,13 @@ import Testing
         let compressed: [UInt8] = [0x61, 0x62, 0x63, 0x80, 0x18, 0xE1]
         #expect(MobiFile.decompressPalmDOC(compressed) == Array("abcabc a".utf8))
     }
+
+    @Test func tagSoupKeepsUTF8() throws {
+        // MOBI6 text always goes through the tidy-HTML parser, which once read UTF-8 as Latin-1.
+        let html = "<html><body><p>中文测试 &nbsp; café<br></p></body></html>"
+        let document = try #require(ContentSanitizer.parseDocument(Data(html.utf8), preferHTML: true))
+        let text = try #require(document.rootElement()?.stringValue)
+        #expect(text.contains("中文测试"))
+        #expect(text.contains("café"))
+    }
 }
