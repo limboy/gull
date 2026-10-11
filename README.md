@@ -1,6 +1,6 @@
 # Gull
 
-A native macOS rewrite of [Gull](https://github.com/limboy/gull-electron), the typography-first e-book reader, in Swift with AppKit and SwiftUI. Requires **macOS 26** on Apple Silicon.
+A native macOS e-book reader, in Swift with AppKit and SwiftUI. Requires **macOS 26** on Apple Silicon.
 
 ![](assets/s1.jpg)
 
