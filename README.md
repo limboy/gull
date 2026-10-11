@@ -12,8 +12,6 @@ It reads DRM-free EPUB, MOBI / AZW3 / AZW / PRC (Kindle KF8 and legacy Mobipocke
 
 Gull is signed and notarized, so macOS opens it without warnings. It updates itself from then on; **Gull › Check for Updates…** checks right away.
 
-Coming from the Electron version (2.x)? It won't update to this one on its own: install 3.0.0 as above and replace the old app. Your library, highlights, and reading positions don't carry over, so re-add your book folders.
-
 Gull doesn't remove or bypass DRM; protected books won't open.
 
 ## Build
