@@ -177,7 +177,8 @@ nonisolated enum EPUBParser {
     }
 
     /// Encrypted or obfuscated fonts are harmless (the reader drops book fonts),
-    /// but encrypted chapters or images mean DRM.
+    /// but encrypted chapters or images mean DRM. Entries the archive doesn't
+    /// have are skipped: DuoKan books list a `dkagent.css` that was never packed.
     private static func hasEncryptedContent(_ zip: ZipArchive) -> Bool {
         guard let data = zip.read("META-INF/encryption.xml"),
               let document = ContentSanitizer.parseDocument(data) else { return false }
@@ -185,6 +186,8 @@ nonisolated enum EPUBParser {
         for reference in ContentSanitizer.elements(in: document, named: "cipherreference") {
             let uri = ContentSanitizer.attribute(reference, "URI") ?? ""
             if fontExtensions.contains((uri as NSString).pathExtension.lowercased()) { continue }
+            let path = BookPath.splitFragment(uri).path
+            guard zip.contains(path) || zip.contains(path.removingPercentEncoding ?? path) else { continue }
             return true
         }
         return false

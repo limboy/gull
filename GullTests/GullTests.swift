@@ -156,8 +156,8 @@ import Testing
 }
 
 @Suite struct ParserTests {
-    private func makeEPUB() throws -> URL {
-        let files: [(String, String)] = [
+    private func makeEPUB(extra: [(String, String)] = []) throws -> URL {
+        let files: [(String, String)] = extra + [
             ("mimetype", "application/epub+zip"),
             ("META-INF/container.xml", """
              <?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -203,6 +203,21 @@ import Testing
         try process.run()
         process.waitUntilExit()
         return output
+    }
+
+    private func encryption(_ uri: String) -> (String, String) {
+        ("META-INF/encryption.xml", """
+         <encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container" xmlns:enc="http://www.w3.org/2001/04/xmlenc#">
+         <enc:EncryptedData><enc:CipherData><enc:CipherReference URI="\(uri)"/></enc:CipherData></enc:EncryptedData></encryption>
+         """)
+    }
+
+    @Test func encryptionOnlyCountsEntriesThatExist() throws {
+        // DuoKan lists an encrypted `dkagent.css` that isn't in the archive.
+        let missing = try makeEPUB(extra: [encryption("OEBPS/Styles/dkagent.css")])
+        #expect(try EPUBParser.parse(url: missing, token: "tok").chapters.count == 2)
+        let present = try makeEPUB(extra: [encryption("OEBPS/text/c1.xhtml")])
+        #expect(throws: BookError.self) { try EPUBParser.parse(url: present, token: "tok") }
     }
 
     @Test func parsesEPUB() throws {
