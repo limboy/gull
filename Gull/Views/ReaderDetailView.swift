@@ -35,6 +35,8 @@ struct ReaderDetailView: View {
             // Measured here, outside the book's `ignoresSafeArea`, where the toolbar still
             // shows up as a safe-area inset (inside it, the inset reads as zero).
             .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.top }) { toolbarHeight = $0 }
+            // Inside the safe area: with `obscuredContentInsets`, WebKit's client
+            // coordinates start below the toolbar too.
             .overlay { FootnoteOverlay(model: model) }
             // Over the book rather than beside it, so the book (and the toolbar's blur
             // of it) spans the full width. A PDF reserves the strip as an inset; a page
@@ -145,9 +147,10 @@ private struct FootnoteOverlay: View {
     var body: some View {
         GeometryReader { _ in
             if let footnote = model.footnote {
+                // The popover goes on the note-sized anchor, before `.position`:
+                // after it, the anchor is the whole overlay.
                 Color.clear
                     .frame(width: max(footnote.rect.width, 1), height: max(footnote.rect.height, 1))
-                    .position(x: footnote.rect.midX, y: footnote.rect.midY)
                     .popover(isPresented: Binding(
                         get: { model.footnote?.id == footnote.id },
                         set: { if !$0 { model.footnote = nil } }
@@ -164,6 +167,7 @@ private struct FootnoteOverlay: View {
                         .frame(maxHeight: 320)
                         .fixedSize(horizontal: false, vertical: true)
                     }
+                    .position(x: footnote.rect.midX, y: footnote.rect.midY)
             }
         }
         .allowsHitTesting(model.footnote != nil)
