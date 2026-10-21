@@ -6,6 +6,8 @@ import SwiftUI
 struct LibrarySidebar: View {
     @Bindable private var library = LibraryStore.shared
     @State private var filter = ""
+    @State private var refocusAfterPin = false
+    @FocusState private var listFocused: Bool
 
     var body: some View {
         let sections = library.sections(filter: filter)
@@ -27,6 +29,22 @@ struct LibrarySidebar: View {
             }
         }
         .listStyle(.sidebar)
+        // The backing outline view mixes up rows when a whole section comes or
+        // goes (unpinning the last book drew a book over its folder row), so
+        // rebuild the list whenever the Pinned section appears or disappears.
+        .id(sections.pinned.isEmpty)
+        // The rebuilt list starts without focus, which greys out the selection;
+        // hand focus back when a pin toggle (always made from the list) caused it.
+        .focused($listFocused)
+        .onChange(of: sections.pinned.isEmpty) {
+            guard refocusAfterPin else { return }
+            refocusAfterPin = false
+            Task { listFocused = true }
+        }
+        .environment(\.togglePin) { path in
+            refocusAfterPin = true
+            library.togglePin(path)
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) { SidebarBottomBar(filter: $filter) }
         .overlay {
             if library.folders.isEmpty, library.books.isEmpty {
@@ -129,9 +147,14 @@ private struct FolderLabel: View {
     }
 }
 
+private extension EnvironmentValues {
+    @Entry var togglePin: (String) -> Void = { LibraryStore.shared.togglePin($0) }
+}
+
 struct BookRow: View {
     let book: LibraryBook
     private var library: LibraryStore { .shared }
+    @Environment(\.togglePin) private var togglePin
 
     var body: some View {
         HStack(spacing: 8) {
@@ -152,7 +175,7 @@ struct BookRow: View {
             Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([book.url]) }
             Button("Open in New Window") { AppDelegate.shared.openBook(book.url) }
             Divider()
-            Toggle("Pin", isOn: Binding(get: { book.pinned }, set: { _ in library.togglePin(book.filePath) }))
+            Toggle("Pin", isOn: Binding(get: { book.pinned }, set: { _ in togglePin(book.filePath) }))
             Toggle("Mark as Finished", isOn: Binding(get: { book.finished }, set: { _ in library.toggleFinished(book.filePath) }))
         }
     }
